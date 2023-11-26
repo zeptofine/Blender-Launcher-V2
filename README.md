@@ -1,8 +1,11 @@
-## Discord link if you want to discus about this project: https://discord.gg/3jrTZFJkTd  
+# Blender Launcher V2
+![Blender Launcher Logo](docs/mkdocs/imgs/bl_logo.png)
+## Join the [Discord](https://discord.gg/3jrTZFJkTd) if you want to discuss about the project 
 
 # [Discussions](https://github.com/Victor-IX/Blender-Launcher/discussions) │ [Documentation](https://Victor-IX.github.io/Blender-Launcher) │ [Latest Release](https://github.com/Victor-IX/Blender-Launcher/releases/latest)
 
-![Blender Launcher Logo](docs/mkdocs/imgs/bl_logo.png)
+# Original [Project](https://github.com/DotBow/Blender-Launcher) By [DotBow](https://github.com/DotBow)
+
 
 <details>
 <summary>Screenshots</summary>
