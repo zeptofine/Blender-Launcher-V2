@@ -5,7 +5,6 @@ import time
 import traceback
 from datetime import datetime, timezone
 from pathlib import Path
-from pprint import pprint
 from urllib.parse import urljoin
 
 import cchardet
