@@ -1,6 +1,7 @@
 import json
 import logging
 import re
+import sys
 import time
 import traceback
 from datetime import datetime, timezone
@@ -10,7 +11,7 @@ from urllib.parse import urljoin
 import cchardet
 import lxml
 from bs4 import BeautifulSoup, SoupStrainer
-from modules._platform import get_platform, set_locale
+from modules._platform import set_locale
 from modules.build_info import BuildInfo
 from modules.connection_manager import ConnectionManager
 from PyQt5.QtCore import QThread, pyqtSignal
@@ -26,13 +27,13 @@ class Scraper(QThread):
         QThread.__init__(self)
         self.parent = parent
         self.manager: ConnectionManager = man
-        self.platform = get_platform().lower()
+        self.platform = sys.platform
 
-        if self.platform == 'windows':
+        if self.platform == 'win32':
             filter = r'blender-.+win.+64.+zip$'
-        elif self.platform == 'linux':
+        elif self.platform in ('linux', 'linux1', 'linux2'):
             filter = r'blender-.+lin.+64.+tar+(?!.*sha256).*'
-        elif self.platform == 'macOS':
+        elif self.platform == 'darwin':
             filter = r'blender-.+(macOS|darwin).+dmg$'
 
         self.b3d_link = re.compile(filter, re.IGNORECASE)
