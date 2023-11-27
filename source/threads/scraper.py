@@ -110,7 +110,7 @@ class Scraper(QThread):
         soup_stainer = SoupStrainer('a', href=True)
         soup = BeautifulSoup(content, 'lxml', parse_only=soup_stainer)
 
-        for tag in soup.find_all(limit=_limit, href=re.compile(self.b3d_link)):
+        for tag in soup.find_all(limit=_limit, href=self.b3d_link):
             build_info = self.new_blender_build(tag, url, branch_type)
 
             if build_info is not None:
