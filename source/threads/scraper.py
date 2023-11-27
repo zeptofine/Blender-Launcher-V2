@@ -1,8 +1,11 @@
+import json
 import logging
 import re
 import time
 import traceback
+from datetime import datetime, timezone
 from pathlib import Path
+from pprint import pprint
 from urllib.parse import urljoin
 
 import cchardet
@@ -10,6 +13,7 @@ import lxml
 from bs4 import BeautifulSoup, SoupStrainer
 from modules._platform import get_platform, set_locale
 from modules.build_info import BuildInfo
+from modules.connection_manager import ConnectionManager
 from PyQt5.QtCore import QThread, pyqtSignal
 
 
@@ -22,19 +26,17 @@ class Scraper(QThread):
     def __init__(self, parent, man):
         QThread.__init__(self)
         self.parent = parent
-        self.manager = man
-        self.platform = get_platform()
+        self.manager: ConnectionManager = man
+        self.platform = get_platform().lower()
 
-        if self.platform == 'Windows':
+        if self.platform == 'windows':
             filter = r'blender-.+win.+64.+zip$'
-            filter_experimental = r'blender-[^\s\/]+-windows\.amd64-release\.zip$'
-        elif self.platform == 'Linux':
+        elif self.platform == 'linux':
             filter = r'blender-.+lin.+64.+tar+(?!.*sha256).*'
         elif self.platform == 'macOS':
             filter = r'blender-.+(macOS|darwin).+dmg$'
 
-        self.b3d_link = re.compile(filter)
-        self.b3d_experimental_link = re.compile(filter_experimental)
+        self.b3d_link = re.compile(filter, re.IGNORECASE)
         self.hash = re.compile(r'\w{12}')
         self.subversion = re.compile(r'-\d\.[a-zA-Z0-9.]+-')
 
@@ -66,13 +68,36 @@ class Scraper(QThread):
         # Stable Builds
         self.scrap_stable_releases()
 
-        # Daily Builds
-        self.scrap_download_links(
-            "https://builder.blender.org/download/daily/", 'daily')
+        # Daily, Experimental build
+        self.gather_automated_builds()
+        
+    def gather_automated_builds(self):
+        base_fmt = "https://builder.blender.org/download/{}/?format=json&v=1"
+        for branch_type in ("daily", "experimental", "patch"):
+            url = base_fmt.format(branch_type)
+            r = self.manager._request('GET', url)
 
-        # Experimental Branches
-        self.scrap_download_links(
-            "https://builder.blender.org/download/experimental", 'experimental')
+            if r is None:
+                continue
+
+            data = json.loads(r.data)
+            for build in data:
+                if build['platform'] == self.platform:
+                    new_build = self.new_build_from_dict(build, branch_type)
+                    self.links.emit(new_build)
+
+
+    def new_build_from_dict(self, build, branch_type):
+        self.strptime = datetime.fromtimestamp(build["file_mtime"], tz=timezone.utc)
+        commit_time = self.strptime.strftime("%d-%b-%y-%H:%M")
+        return BuildInfo(
+            build["url"],
+            build["version"],
+            build["hash"],
+            commit_time,
+            branch_type,
+        )
+
 
     def scrap_download_links(self, url, branch_type, _limit=None, stable=False):
         r = self.manager._request('GET', url)
@@ -85,19 +110,11 @@ class Scraper(QThread):
         soup_stainer = SoupStrainer('a', href=True)
         soup = BeautifulSoup(content, 'lxml', parse_only=soup_stainer)
 
-        if stable is False:
-            for tag in soup.find_all(limit=_limit, href=re.compile(self.b3d_experimental_link)):
-                build_info = self.new_blender_build(tag, url, branch_type)
+        for tag in soup.find_all(limit=_limit, href=re.compile(self.b3d_link)):
+            build_info = self.new_blender_build(tag, url, branch_type)
 
-                if build_info is not None:
-                    self.links.emit(build_info)
-
-        if stable is True:
-            for tag in soup.find_all(limit=_limit, href=re.compile(self.b3d_link)):
-                build_info = self.new_blender_build(tag, url, branch_type)
-
-                if build_info is not None:
-                    self.links.emit(build_info)
+            if build_info is not None:
+                self.links.emit(build_info)
 
         r.release_conn()
         r.close()
@@ -172,7 +189,11 @@ class Scraper(QThread):
         b3d_link = re.compile(r'Blender\d+\.\d+')
         subversion = re.compile(r'\d+\.\d+')
 
-        for release in soup.find_all(href=b3d_link):
+        releases = soup.find_all(href=b3d_link)
+        if not any(releases):
+            print("Failed to gather stable releases")
+
+        for release in releases:
             href = release['href']
             match = re.search(subversion, href)
 
