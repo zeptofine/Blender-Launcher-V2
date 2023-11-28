@@ -11,7 +11,7 @@ from urllib.parse import urljoin
 import cchardet
 import lxml
 from bs4 import BeautifulSoup, SoupStrainer
-from modules._platform import set_locale
+from modules._platform import get_platform, set_locale
 from modules.build_info import BuildInfo
 from modules.connection_manager import ConnectionManager
 from PyQt5.QtCore import QThread, pyqtSignal
@@ -27,13 +27,18 @@ class Scraper(QThread):
         QThread.__init__(self)
         self.parent = parent
         self.manager: ConnectionManager = man
-        self.platform = sys.platform
+        self.platform = get_platform()
+        self.json_platform = {
+            "Windows": "windows",
+            "Linux": "linux",
+            "macOS": "darwin",
+        }.get(self.platform, self.platform)
 
-        if self.platform == 'win32':
+        if self.platform == 'Windows':
             filter = r'blender-.+win.+64.+zip$'
-        elif self.platform in ('linux', 'linux1', 'linux2'):
+        elif self.platform == 'Linux':
             filter = r'blender-.+lin.+64.+tar+(?!.*sha256).*'
-        elif self.platform == 'darwin':
+        elif self.platform == 'macOS':
             filter = r'blender-.+(macOS|darwin).+dmg$'
 
         self.b3d_link = re.compile(filter, re.IGNORECASE)
@@ -82,7 +87,7 @@ class Scraper(QThread):
 
             data = json.loads(r.data)
             for build in data:
-                if build['platform'] == self.platform:
+                if build['platform'] == self.json_platform:
                     new_build = self.new_build_from_dict(build, branch_type)
                     self.links.emit(new_build)
 
