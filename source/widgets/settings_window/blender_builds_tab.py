@@ -1,15 +1,21 @@
-from modules.settings import (favorite_pages, get_bash_arguments,
-                              get_blender_startup_arguments,
-                              get_enable_quick_launch_key_seq,
-                              get_install_template,
-                              get_launch_blender_no_console,
-                              get_mark_as_favorite, get_platform,
-                              get_quick_launch_key_seq, set_bash_arguments,
-                              set_blender_startup_arguments,
-                              set_enable_quick_launch_key_seq,
-                              set_install_template,
-                              set_launch_blender_no_console,
-                              set_mark_as_favorite, set_quick_launch_key_seq)
+from modules.settings import (
+    favorite_pages,
+    get_bash_arguments,
+    get_blender_startup_arguments,
+    get_enable_quick_launch_key_seq,
+    get_install_template,
+    get_launch_blender_no_console,
+    get_mark_as_favorite,
+    get_platform,
+    get_quick_launch_key_seq,
+    set_bash_arguments,
+    set_blender_startup_arguments,
+    set_enable_quick_launch_key_seq,
+    set_install_template,
+    set_launch_blender_no_console,
+    set_mark_as_favorite,
+    set_quick_launch_key_seq,
+)
 from PyQt5 import QtGui
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QCheckBox, QComboBox, QHBoxLayout, QLineEdit
@@ -84,14 +90,14 @@ class BlenderBuildsTabWidget(SettingsFormWidget):
         self.QuickLaunchKeySeqRow = self._addRow(
             "Quick Launch Global Shortcut", sub_layout)
 
-        if get_platform() == 'Windows':
+        if get_platform() == "Windows":
             self._addRow("Hide Console On Startup",
                          self.LaunchBlenderNoConsole)
 
         self._addRow("Startup Arguments:",
                      self.BlenderStartupArguments, True)
 
-        if get_platform() == 'Linux':
+        if get_platform() == "Linux":
             self._addRow("Bash Arguments:", self.BashArguments, True)
 
     def change_mark_as_favorite(self, page):
@@ -121,7 +127,7 @@ class BlenderBuildsTabWidget(SettingsFormWidget):
 
     def _keyPressEvent(self, e: QtGui.QKeyEvent) -> None:
         MOD_MASK = (Qt.CTRL | Qt.ALT | Qt.SHIFT)
-        key_name = ''
+        key_name = ""
         key = e.key()
         modifiers = int(e.modifiers())
 
@@ -133,9 +139,9 @@ class BlenderBuildsTabWidget(SettingsFormWidget):
         elif not modifiers and (key != Qt.Key_Meta):
             key_name = QtGui.QKeySequence(key).toString()
 
-        if key_name != '':
+        if key_name != "":
             # Remap <Shift + *> keys sequences
-            if 'Shift' in key_name:
+            if "Shift" in key_name:
                 alt_chars = '~!@#$%^&*()_+|{}:"<>?'
                 real_chars = r"`1234567890-=\[];',./"
                 trans_table = str.maketrans(alt_chars, real_chars)

@@ -15,8 +15,8 @@ class DateTimeWidget(QPushButton):
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
 
-        datetime_parts = datetime.rsplit('-', 1)
-        date_parts = datetime_parts[0].rsplit('-')
+        datetime_parts = datetime.rsplit("-", 1)
+        date_parts = datetime_parts[0].rsplit("-")
 
         self.DayLabel = QLabel(date_parts[0])
         self.MonthLabel = QLabel(date_parts[1])

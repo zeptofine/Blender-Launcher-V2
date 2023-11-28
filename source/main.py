@@ -1,22 +1,21 @@
 import logging
 import sys
 
+from modules._platform import get_cwd, get_platform
 from PyQt5.QtCore import QByteArray
 from PyQt5.QtNetwork import QLocalSocket
 from PyQt5.QtWidgets import QApplication
-
-from modules._platform import get_cwd, get_platform
 from windows.main_window import BlenderLauncher
 from windows.update_window import BlenderLauncherUpdater
 
 version = "1.16.0"
 
 # Setup logging config
-_format = '%(asctime)s - %(message)s'
+_format = "%(asctime)s - %(message)s"
 logging.basicConfig(format=_format,
                     handlers=[
                         logging.FileHandler(
-                            (get_cwd() / "Blender Launcher.log")),
+                            get_cwd() / "Blender Launcher.log"),
                         logging.StreamHandler(stream=sys.stdout)
                     ])
 logger = logging.getLogger(__name__)
@@ -28,7 +27,7 @@ def handle_exception(exc_type, exc_value, exc_traceback):
         sys.__excepthook__(exc_type, exc_value, exc_traceback)
         return
 
-    logger.error("{0} - Blender Launcher {1}".format(get_platform(), version),
+    logger.error(f"{get_platform()} - Blender Launcher {version}",
                  exc_info=(exc_type, exc_value, exc_traceback))
 
 
@@ -53,7 +52,7 @@ help = \
 def main():
     # Create an instance of application and set its core properties
     app = QApplication(sys.argv)
-    app.setStyle('Fusion')
+    app.setStyle("Fusion")
     app.setApplicationVersion(version)
     app.setQuitOnLastWindowClosed(False)
 
@@ -97,5 +96,5 @@ def main():
     sys.exit()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

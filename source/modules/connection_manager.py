@@ -1,14 +1,18 @@
 import ssl
 import sys
 
+from modules._platform import get_cwd, get_platform_full, is_frozen
+from modules.settings import (
+    get_proxy_host,
+    get_proxy_password,
+    get_proxy_port,
+    get_proxy_type,
+    get_proxy_user,
+    get_use_custom_tls_certificates,
+)
 from PyQt5.QtCore import QObject, pyqtSignal
 from urllib3 import PoolManager, ProxyManager, make_headers
 from urllib3.contrib.socks import SOCKSProxyManager
-
-from modules._platform import get_cwd, get_platform_full, is_frozen
-from modules.settings import (get_proxy_host, get_proxy_password,
-                              get_proxy_port, get_proxy_type, get_proxy_user,
-                              get_use_custom_tls_certificates)
 
 proxy_types_chemes = {
     1: "http://",
@@ -33,8 +37,7 @@ class ConnectionManager(QObject):
 
         # Basic Headers
         self._headers = {
-            'user-agent': 'Blender Launcher/{0} ({1})'.format(
-                self.version, get_platform_full())}
+            "user-agent": f"Blender Launcher/{self.version} ({get_platform_full()})"}
 
         # Get custom certificates file path
         if is_frozen() is True:
@@ -64,7 +67,7 @@ class ConnectionManager(QObject):
                 if get_use_custom_tls_certificates():
                     # SOCKS Proxy with CERT_REQUIRED
                     self.manager = SOCKSProxyManager(
-                        proxy_url="{0}{1}:{2}".format(scheme, ip, port),
+                        proxy_url=f"{scheme}{ip}:{port}",
                         num_pools=50, maxsize=10, headers=self._headers,
                         username=get_proxy_user(),
                         password=get_proxy_password(),
@@ -72,27 +75,26 @@ class ConnectionManager(QObject):
                 else:
                     # SOCKS Proxy w/o CERT_REQUIRED
                     self.manager = SOCKSProxyManager(
-                        proxy_url="{0}{1}:{2}".format(scheme, ip, port),
+                        proxy_url=f"{scheme}{ip}:{port}",
                         num_pools=50, maxsize=10, headers=self._headers,
                         username=get_proxy_user(),
                         password=get_proxy_password())
             else:  # Use HTTP Proxy
                 # HTTP Proxy autherification headers
                 auth_headers = make_headers(
-                    proxy_basic_auth='{0}:{1}'.format(
-                        get_proxy_user(), get_proxy_password()))
+                    proxy_basic_auth=f"{get_proxy_user()}:{get_proxy_password()}")
 
                 if get_use_custom_tls_certificates():
                     # HTTP Proxy with CERT_REQUIRED
                     self.manager = ProxyManager(
-                        proxy_url="{0}{1}:{2}".format(scheme, ip, port),
+                        proxy_url=f"{scheme}{ip}:{port}",
                         num_pools=50, maxsize=10,
                         headers=self._headers, proxy_headers=auth_headers,
                         cert_reqs=ssl.CERT_REQUIRED, ca_certs=self.cacert)
                 else:
                     # HTTP Proxy w/o CERT_REQUIRED
                     self.manager = ProxyManager(
-                        proxy_url="{0}{1}:{2}".format(scheme, ip, port),
+                        proxy_url=f"{scheme}{ip}:{port}",
                         num_pools=50, maxsize=10,
                         headers=self._headers, proxy_headers=auth_headers)
 

@@ -38,7 +38,6 @@ class FolderObserver(QThread):
 
             QThread.sleep(3)
 
-        return
 
     def get_subfolders(self):
         subfolders = []

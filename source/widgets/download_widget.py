@@ -11,7 +11,6 @@ from threads.downloader import Downloader
 from threads.extractor import Extractor
 from threads.renamer import Renamer
 from threads.template_installer import TemplateInstaller
-
 from widgets.base_build_widget import BaseBuildWidget
 from widgets.base_progress_bar_widget import BaseProgressBarWidget
 from widgets.build_state_widget import BuildStateWidget
@@ -73,13 +72,13 @@ class DownloadWidget(BaseBuildWidget):
         self.progress_bar_hl.setContentsMargins(16, 0, 8, 0)
         self.main_hl.setSpacing(0)
 
-        if self.build_info.branch == 'lts':
+        if self.build_info.branch == "lts":
             branch_name = "LTS"
-        elif self.build_info.branch == 'daily':
+        elif self.build_info.branch == "daily":
             branch_name = self.build_info.subversion
         else:
             branch_name = re.sub(
-                r'(\-|\_)', ' ', self.build_info.branch).title()
+                r"(\-|\_)", " ", self.build_info.branch).title()
 
         self.subversionLabel = QLabel(
             self.build_info.subversion.split(" ", 1)[0])
@@ -113,7 +112,7 @@ class DownloadWidget(BaseBuildWidget):
         if self.build_info.branch in "stable lts":
             self.menu.addAction(self.showReleaseNotesAction)
         else:
-            regexp = re.compile(r'D\d{5}')
+            regexp = re.compile(r"D\d{5}")
 
             if regexp.search(self.build_info.branch):
                 self.showReleaseNotesAction.setText("Show Patch Details")
@@ -154,13 +153,13 @@ class DownloadWidget(BaseBuildWidget):
         self.cancelButton.setEnabled(False)
         library_folder = Path(get_library_folder())
 
-        if (self.build_info.branch == 'stable') or \
-                (self.build_info.branch == 'lts'):
-            dist = library_folder / 'stable'
-        elif self.build_info.branch == 'daily':
-            dist = library_folder / 'daily'
+        if (self.build_info.branch == "stable") or \
+                (self.build_info.branch == "lts"):
+            dist = library_folder / "stable"
+        elif self.build_info.branch == "daily":
+            dist = library_folder / "daily"
         else:
-            dist = library_folder / 'experimental'
+            dist = library_folder / "experimental"
 
         self.extractor = Extractor(self.parent.manager, source, dist)
         self.extractor.progress_changed.connect(self.progressBar.set_progress)
@@ -201,9 +200,9 @@ class DownloadWidget(BaseBuildWidget):
 
     def download_get_info(self):
         self.state = DownloadState.READING
-        if self.parent.platform == 'Linux':
-            archive_name = Path(self.build_info.link).with_suffix('').stem
-        elif self.parent.platform in {'Windows', 'macOS'}:
+        if self.parent.platform == "Linux":
+            archive_name = Path(self.build_info.link).with_suffix("").stem
+        elif self.parent.platform in {"Windows", "macOS"}:
             archive_name = Path(self.build_info.link).stem
 
         self.build_info_reader = BuildInfoReader(
@@ -213,11 +212,7 @@ class DownloadWidget(BaseBuildWidget):
 
     def download_rename(self, build_info):
         self.state = DownloadState.RENAMING
-        new_name = 'blender-{}+{}.{}'.format(
-            build_info.subversion,
-            build_info.branch,
-            build_info.build_hash
-        )
+        new_name = f"blender-{build_info.subversion}+{build_info.branch}.{build_info.build_hash}"
 
         self.build_renamer = Renamer(self.build_dir, new_name)
         self.build_renamer.finished.connect(self.download_finished)
@@ -232,12 +227,9 @@ class DownloadWidget(BaseBuildWidget):
         if path is not None:
             self.parent.draw_to_library(path, True)
             self.parent.clear_temp()
-            name = "{0} {1} {2}".format(
-                self.subversionLabel.text(),
-                self.branchLabel.text,
-                self.build_info.commit_time)
+            name = f"{self.subversionLabel.text()} {self.branchLabel.text} {self.build_info.commit_time}"
             self.parent.show_message(
-                "Blender {0} download finished!".format(name),
+                f"Blender {name} download finished!",
                 type=MessageType.DOWNLOADFINISHED)
             self.destroy()
 

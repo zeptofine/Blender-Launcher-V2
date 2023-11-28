@@ -1,10 +1,9 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import (QHBoxLayout, QLabel, QProgressBar, QVBoxLayout,
-                             QWidget)
+from PyQt5.QtWidgets import QHBoxLayout, QLabel, QProgressBar, QVBoxLayout, QWidget
 from widgets.base_progress_bar_widget import BaseProgressBarWidget
 
 
-class UpdateWindowUI(object):
+class UpdateWindowUI:
     def setupUi(self, UpdateWindow):
         UpdateWindow.setWindowModality(Qt.ApplicationModal)
         UpdateWindow.resize(256, 77)

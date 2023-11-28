@@ -1,7 +1,7 @@
 from PyQt5 import QtCore, QtWidgets
 
 
-class Ui_SettingsWindow(object):
+class Ui_SettingsWindow:
     def setupUi(self, SettingsWindow):
         SettingsWindow.setObjectName("SettingsWindow")
         SettingsWindow.setWindowModality(QtCore.Qt.ApplicationModal)

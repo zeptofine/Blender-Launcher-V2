@@ -2,13 +2,13 @@ from pathlib import Path
 from re import match
 from shutil import copytree
 
-from PyQt5.QtCore import QThread, pyqtSignal
 from modules.settings import get_library_folder
+from PyQt5.QtCore import QThread, pyqtSignal
 
 
 class TemplateInstaller(QThread):
     started = pyqtSignal()
-    progress_changed = pyqtSignal('PyQt_PyObject', 'PyQt_PyObject')
+    progress_changed = pyqtSignal("PyQt_PyObject", "PyQt_PyObject")
     finished = pyqtSignal()
 
     def __init__(self, manager, dist):
@@ -19,13 +19,13 @@ class TemplateInstaller(QThread):
     def run(self):
         self.progress_changed.emit(0, "Copying Data...")
         library_folder = Path(get_library_folder())
-        template = library_folder / 'template'
+        template = library_folder / "template"
 
         if not template.is_dir():
             template.mkdir()
 
         for dir in self.dist.iterdir():
-            if match(r'\d+\.\d+.*', dir.name) is not None:
+            if match(r"\d+\.\d+.*", dir.name) is not None:
                 source = template.as_posix()
                 dist = dir.as_posix()
                 copytree(source, dist, dirs_exist_ok=True)

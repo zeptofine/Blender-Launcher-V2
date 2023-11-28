@@ -8,8 +8,8 @@ from PyQt5.QtCore import QThread, pyqtSignal
 class Downloader(QThread):
     started = pyqtSignal()
     progress_changed = pyqtSignal(
-        'PyQt_PyObject', 'PyQt_PyObject', 'PyQt_PyObject')
-    finished = pyqtSignal('PyQt_PyObject')
+        "PyQt_PyObject", "PyQt_PyObject", "PyQt_PyObject")
+    finished = pyqtSignal("PyQt_PyObject")
 
     def __init__(self, manager, link):
         QThread.__init__(self)
@@ -29,19 +29,18 @@ class Downloader(QThread):
 
         dist = temp_folder / Path(self.link).name
 
-        with self.manager.request('GET',
+        with self.manager.request("GET",
                                   self.link,
                                   preload_content=False) as r:
-            self.size = int(r.headers['Content-Length'])
+            self.size = int(r.headers["Content-Length"])
 
-            with open(dist, 'wb') as f:
+            with open(dist, "wb") as f:
                 copyfileobj(r, f, self.set_progress)
 
         r.release_conn()
         r.close()
 
         self.finished.emit(dist)
-        return
 
     def set_progress(self, obtained):
         self.progress_changed.emit(obtained, self.size, "Downloading")

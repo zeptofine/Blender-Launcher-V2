@@ -6,11 +6,15 @@ from pathlib import Path
 from items.base_list_widget_item import BaseListWidgetItem
 from modules._platform import _call, _popen, get_platform
 from modules.build_info import BuildInfoReader
-from modules.settings import (get_bash_arguments,
-                              get_blender_startup_arguments, get_favorite_path,
-                              get_launch_blender_no_console,
-                              get_library_folder, get_mark_as_favorite,
-                              set_favorite_path)
+from modules.settings import (
+    get_bash_arguments,
+    get_blender_startup_arguments,
+    get_favorite_path,
+    get_launch_blender_no_console,
+    get_library_folder,
+    get_mark_as_favorite,
+    set_favorite_path,
+)
 from modules.shortcut import create_shortcut
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
@@ -19,8 +23,6 @@ from threads.observer import Observer
 from threads.register import Register
 from threads.remover import Remover
 from threads.template_installer import TemplateInstaller
-from windows.dialog_window import DialogWindow
-
 from widgets.base_build_widget import BaseBuildWidget
 from widgets.base_line_edit import BaseLineEdit
 from widgets.base_menu_widget import BaseMenuWidget
@@ -28,6 +30,7 @@ from widgets.build_state_widget import BuildStateWidget
 from widgets.datetime_widget import DateTimeWidget
 from widgets.elided_text_label import ElidedTextLabel
 from widgets.left_icon_button_widget import LeftIconButtonWidget
+from windows.dialog_window import DialogWindow
 
 
 class LibraryWidget(BaseBuildWidget):
@@ -79,7 +82,7 @@ class LibraryWidget(BaseBuildWidget):
 
             if build_info is None:
                 self.infoLabel.setText(
-                    ("Build *{0}* is damaged!").format(Path(self.link).name))
+                    f"Build *{Path(self.link).name}* is damaged!")
                 self.launchButton.setText("Delete")
                 self.launchButton.clicked.connect(self.ask_remove_from_drive)
                 self.setEnabled(True)
@@ -97,15 +100,15 @@ class LibraryWidget(BaseBuildWidget):
         self.launchButton.setFixedWidth(85)
         self.launchButton.setProperty("LaunchButton", True)
 
-        if self.branch == 'lts':
+        if self.branch == "lts":
             branch_name = "LTS"
         elif (self.parent_widget is not None) and self.build_info.custom_name:
             branch_name = self.build_info.custom_name
-        elif self.branch == 'daily':
+        elif self.branch == "daily":
             branch_name = self.build_info.subversion.split(" ", 1)[1]
         else:
             branch_name = re.sub(
-                r'(\-|\_)', ' ', self.build_info.branch).title()
+                r"(\-|\_)", " ", self.build_info.branch).title()
 
         sub = self.build_info.subversion.split(" ", 1)
         self.subversionLabel = QLabel(sub[0])
@@ -215,7 +218,7 @@ class LibraryWidget(BaseBuildWidget):
 
         self.menu.addSeparator()
 
-        if get_platform() == 'Windows':
+        if get_platform() == "Windows":
             self.menu.addAction(self.registerExtentionAction)
 
         self.menu.addAction(self.createShortcutAction)
@@ -226,7 +229,7 @@ class LibraryWidget(BaseBuildWidget):
         if self.branch in "stable lts":
             self.menu.addAction(self.showReleaseNotesAction)
         else:
-            regexp = re.compile(r'D\d{5}')
+            regexp = re.compile(r"D\d{5}")
 
             if regexp.search(self.branch):
                 self.showReleaseNotesAction.setText("Show Patch Details")
@@ -329,10 +332,10 @@ class LibraryWidget(BaseBuildWidget):
         library_folder = Path(get_library_folder())
         blender_args = get_blender_startup_arguments()
 
-        if platform == 'Windows':
+        if platform == "Windows":
             if exe is not None:
                 b3d_exe = library_folder / self.link / exe
-                proc = _popen(['cmd /C', b3d_exe.as_posix()])
+                proc = _popen(["cmd /C", b3d_exe.as_posix()])
             else:
                 if get_launch_blender_no_console():
                     if Path.exists(library_folder / self.link / "blender-launcher.exe"):
@@ -346,19 +349,18 @@ class LibraryWidget(BaseBuildWidget):
                     proc = _popen(b3d_exe.as_posix())
                 else:
                     args = [b3d_exe.as_posix()]
-                    args.extend(blender_args.split(' '))
+                    args.extend(blender_args.split(" "))
                     proc = _popen(args)
-        elif platform == 'Linux':
+        elif platform == "Linux":
             bash_args = get_bash_arguments()
 
-            if bash_args != '':
+            if bash_args != "":
                 bash_args = bash_args + " nohup"
             else:
                 bash_args = "nohup"
 
             b3d_exe = library_folder / self.link / "blender"
-            proc = _popen('{0} "{1}" {2}'.format(
-                bash_args, b3d_exe.as_posix(), blender_args))
+            proc = _popen(f'{bash_args} "{b3d_exe.as_posix()}" {blender_args}')
 
         if self.observer is None:
             self.observer = Observer(self)
@@ -568,8 +570,8 @@ class LibraryWidget(BaseBuildWidget):
     @QtCore.pyqtSlot()
     def create_shortcut(self):
         name = "Blender {0} {1}".format(
-            self.build_info.subversion.replace('(', '').replace(')', ''),
-            self.build_info.branch.replace('-', ' ').title())
+            self.build_info.subversion.replace("(", "").replace(")", ""),
+            self.build_info.branch.replace("-", " ").title())
 
         create_shortcut(self.link, name)
 
@@ -579,14 +581,14 @@ class LibraryWidget(BaseBuildWidget):
         link = (Path(get_library_folder()) / "bl_symlink").as_posix()
         platform = get_platform()
 
-        if platform == 'Windows':
+        if platform == "Windows":
             try:
                 os.rmdir(link)
             except Exception:
                 pass
 
-            _call('mklink /J "{0}" "{1}"'.format(link, target))
-        elif platform == 'Linux':
+            _call(f'mklink /J "{link}" "{target}"')
+        elif platform == "Linux":
             if os.path.exists(link):
                 if os.path.islink(link):
                     os.unlink(link)
@@ -599,9 +601,9 @@ class LibraryWidget(BaseBuildWidget):
         library_folder = Path(get_library_folder())
         folder = library_folder / self.link
 
-        if platform == 'Windows':
+        if platform == "Windows":
             os.startfile(folder.as_posix())
-        elif platform == 'Linux':
+        elif platform == "Linux":
             subprocess.call(["xdg-open", folder.as_posix()])
 
     def list_widget_deleted(self):

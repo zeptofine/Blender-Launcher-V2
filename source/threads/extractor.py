@@ -9,8 +9,8 @@ from PyQt5.QtCore import QThread, pyqtSignal
 class Extractor(QThread):
     started = pyqtSignal()
     progress_changed = pyqtSignal(
-        'PyQt_PyObject', 'PyQt_PyObject', 'PyQt_PyObject')
-    finished = pyqtSignal('PyQt_PyObject')
+        "PyQt_PyObject", "PyQt_PyObject", "PyQt_PyObject")
+    finished = pyqtSignal("PyQt_PyObject")
 
     def __init__(self, manager, source, dist):
         QThread.__init__(self)
@@ -26,8 +26,8 @@ class Extractor(QThread):
 
         if suffixes[-1] == ".zip":
             zf = zipfile.ZipFile(self.source)
-            folder = zf.infolist()[0].filename.split('/')[0]
-            uncompress_size = sum((file.file_size for file in zf.infolist()))
+            folder = zf.infolist()[0].filename.split("/")[0]
+            uncompress_size = sum(file.file_size for file in zf.infolist())
             extracted_size = 0
 
             for file in zf.infolist():
@@ -38,10 +38,10 @@ class Extractor(QThread):
 
             zf.close()
             self.finished.emit(self.dist / folder)
-        elif suffixes[-2] == '.tar':
+        elif suffixes[-2] == ".tar":
             tar = tarfile.open(self.source)
-            folder = tar.getnames()[0].split('/')[0]
-            uncompress_size = sum((member.size for member in tar.getmembers()))
+            folder = tar.getnames()[0].split("/")[0]
+            uncompress_size = sum(member.size for member in tar.getmembers())
             extracted_size = 0
 
             for member in tar.getmembers():
@@ -52,7 +52,7 @@ class Extractor(QThread):
 
             tar.close()
             self.finished.emit(self.dist / folder)
-        elif suffixes[-1] == '.dmg':
+        elif suffixes[-1] == ".dmg":
             _check_call(["hdiutil", "mount", self.source.as_posix()])
             dist = self.dist / self.source.stem
 
@@ -64,4 +64,3 @@ class Extractor(QThread):
 
             self.finished.emit(dist)
 
-        return

@@ -10,29 +10,43 @@ from time import localtime, strftime
 
 import resources_rc
 from items.base_list_widget_item import BaseListWidgetItem
-from modules._platform import (_popen, get_cwd, get_platform, is_frozen,
-                               set_locale)
+from modules._platform import _popen, get_cwd, get_platform, is_frozen, set_locale
 from modules.connection_manager import ConnectionManager
 from modules.enums import MessageType
-from modules.settings import (create_library_folders,
-                              get_check_for_new_builds_automatically,
-                              get_default_downloads_page,
-                              get_default_library_page, get_default_tab,
-                              get_enable_download_notifications,
-                              get_enable_new_builds_notifications,
-                              get_enable_quick_launch_key_seq,
-                              get_launch_minimized_to_tray, get_library_folder,
-                              get_new_builds_check_frequency, get_proxy_type,
-                              get_quick_launch_key_seq, get_show_tray_icon,
-                              get_sync_library_and_downloads_pages,
-                              is_library_folder_valid, set_library_folder)
+from modules.settings import (
+    create_library_folders,
+    get_check_for_new_builds_automatically,
+    get_default_downloads_page,
+    get_default_library_page,
+    get_default_tab,
+    get_enable_download_notifications,
+    get_enable_new_builds_notifications,
+    get_enable_quick_launch_key_seq,
+    get_launch_minimized_to_tray,
+    get_library_folder,
+    get_new_builds_check_frequency,
+    get_proxy_type,
+    get_quick_launch_key_seq,
+    get_show_tray_icon,
+    get_sync_library_and_downloads_pages,
+    is_library_folder_valid,
+    set_library_folder,
+)
 from pynput import keyboard
 from PyQt5.QtCore import QSize, Qt, pyqtSignal
 from PyQt5.QtGui import QIcon
 from PyQt5.QtNetwork import QLocalServer
-from PyQt5.QtWidgets import (QAction, QHBoxLayout, QLabel, QMainWindow,
-                             QPushButton, QSystemTrayIcon, QTabWidget,
-                             QVBoxLayout, QWidget)
+from PyQt5.QtWidgets import (
+    QAction,
+    QHBoxLayout,
+    QLabel,
+    QMainWindow,
+    QPushButton,
+    QSystemTrayIcon,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
+)
 from threads.library_drawer import LibraryDrawer
 from threads.remover import Remover
 from threads.scraper import Scraper
@@ -42,13 +56,12 @@ from widgets.base_page_widget import BasePageWidget
 from widgets.base_tool_box_widget import BaseToolBoxWidget
 from widgets.download_widget import DownloadState, DownloadWidget
 from widgets.library_widget import LibraryWidget
-
 from windows.base_window import BaseWindow
 from windows.dialog_window import DialogIcon, DialogWindow
 from windows.file_dialog_window import FileDialogWindow
 from windows.settings_window import SettingsWindow
 
-if get_platform() == 'Windows':
+if get_platform() == "Windows":
     from PyQt5.QtWinExtras import QWinThumbnailToolBar, QWinThumbnailToolButton
 
 
@@ -202,7 +215,7 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
 
         # Tab layout
         self.TabWidget = QTabWidget()
-        self.TabWidget.setProperty('North', True)
+        self.TabWidget.setProperty("North", True)
         self.CentralLayout.addWidget(self.TabWidget)
 
         self.LibraryTab = QWidget()
@@ -399,11 +412,11 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
             self.listener.stop()
 
         key_seq = get_quick_launch_key_seq()
-        keys = key_seq.split('+')
+        keys = key_seq.split("+")
 
         for key in keys:
             if len(key) > 1:
-                key_seq = key_seq.replace(key, '<' + key + '>')
+                key_seq = key_seq.replace(key, "<" + key + ">")
 
         try:
             self.listener = keyboard.GlobalHotKeys({
@@ -423,8 +436,7 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
             self.quick_launch()
 
     def show_changelog(self):
-        url = "https://github.com/Victor-IX/Blender-Launcher/releases/tag/v{0}".format(
-            self.version)
+        url = f"https://github.com/Victor-IX/Blender-Launcher/releases/tag/v{self.version}"
         webbrowser.open(url)
 
     def toggle_sync_library_and_downloads_pages(self, is_sync):
@@ -434,10 +446,10 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
             self.DownloadsToolBox.tab_changed.connect(
                 lambda i: self.LibraryToolBox.setCurrentIndex(i))
         else:
-            if self.isSignalConnected(self.LibraryToolBox, 'tab_changed()'):
+            if self.isSignalConnected(self.LibraryToolBox, "tab_changed()"):
                 self.LibraryToolBox.tab_changed.disconnect()
 
-            if self.isSignalConnected(self.DownloadsToolBox, 'tab_changed()'):
+            if self.isSignalConnected(self.DownloadsToolBox, "tab_changed()"):
                 self.DownloadsToolBox.tab_changed.disconnect()
 
     def isSignalConnected(self, obj, name):
@@ -476,10 +488,10 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
 
         # Create copy if 'Blender Launcher.exe' file
         # to act as an updater program
-        if self.platform == 'Windows':
+        if self.platform == "Windows":
             bl_exe = "Blender Launcher.exe"
             blu_exe = "Blender Launcher Updater.exe"
-        elif self.platform == 'Linux':
+        elif self.platform == "Linux":
             bl_exe = "Blender Launcher"
             blu_exe = "Blender Launcher Updater"
 
@@ -487,17 +499,16 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
         source = cwd / bl_exe
         dist = cwd / blu_exe
 
-        with open(source.as_posix(), 'rb') as f1, \
-                open(dist.as_posix(), 'wb') as f2:
+        with open(source.as_posix(), "rb") as f1, \
+                open(dist.as_posix(), "wb") as f2:
             copyfileobj(f1, f2)
 
         # Run 'Blender Launcher Updater.exe' with '-update' flag
-        if self.platform == 'Windows':
-            _popen([dist.as_posix(), '-update', self.latest_tag])
-        elif self.platform == 'Linux':
+        if self.platform == "Windows":
+            _popen([dist.as_posix(), "-update", self.latest_tag])
+        elif self.platform == "Linux":
             os.chmod(dist.as_posix(), 0o744)
-            _popen('nohup "{0}" -update {1}'.format(dist.as_posix(),
-                                                    self.latest_tag))
+            _popen(f'nohup "{dist.as_posix()}" -update {self.latest_tag}')
 
         # Destroy currently running Blender Launcher instance
         self.server.close()
@@ -520,7 +531,7 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
         self.show_signal.emit()
 
         # Add custom toolbar icons
-        if self.platform == 'Windows':
+        if self.platform == "Windows":
             self.thumbnail_toolbar = QWinThumbnailToolBar(self)
             self.thumbnail_toolbar.setWindow(self.windowHandle())
 
@@ -639,7 +650,7 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
 
     def reload_custom_builds(self):
         self.UserCustomListWidget._clear()
-        self.library_drawer = LibraryDrawer(folders=['custom'])
+        self.library_drawer = LibraryDrawer(folders=["custom"])
         self.library_drawer.build_found.connect(self.draw_to_library)
         self.library_drawer.start()
 
@@ -662,7 +673,7 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
     def connection_error(self):
         print("connection_error")
         set_locale()
-        utcnow = strftime(('%H:%M'), localtime())
+        utcnow = strftime(("%H:%M"), localtime())
         self.set_status("Error: connection failed at " + utcnow)
         self.app_state = AppState.IDLE
 
@@ -683,7 +694,7 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
                     widget.destroy()
 
         set_locale()
-        utcnow = strftime(('%H:%M'), localtime())
+        utcnow = strftime(("%H:%M"), localtime())
         self.app_state = AppState.IDLE
 
         for page in self.DownloadsToolBox.pages:
@@ -713,10 +724,10 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
 
         branch = build_info.branch
 
-        if (branch == 'stable') or (branch == 'lts'):
+        if (branch == "stable") or (branch == "lts"):
             downloads_list_widget = self.DownloadsStableListWidget
             library_list_widget = self.LibraryStableListWidget
-        elif branch == 'daily':
+        elif branch == "daily":
             downloads_list_widget = self.DownloadsDailyListWidget
             library_list_widget = self.LibraryDailyListWidget
         else:
@@ -735,13 +746,13 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
     def draw_to_library(self, path, show_new=False):
         branch = Path(path).parent.name
 
-        if (branch == 'stable') or (branch == 'lts'):
+        if (branch == "stable") or (branch == "lts"):
             list_widget = self.LibraryStableListWidget
-        elif branch == 'daily':
+        elif branch == "daily":
             list_widget = self.LibraryDailyListWidget
-        elif branch == 'experimental':
+        elif branch == "experimental":
             list_widget = self.LibraryExperimentalListWidget
-        elif branch == 'custom':
+        elif branch == "custom":
             list_widget = self.UserCustomListWidget
         else:
             return
@@ -765,14 +776,14 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
         if "dev" in self.version:
             return
 
-        latest_ver = re.sub(r'\D', '', latest_tag)
-        current_ver = re.sub(r'\D', '', self.version)
+        latest_ver = re.sub(r"\D", "", latest_tag)
+        current_ver = re.sub(r"\D", "", self.version)
 
         if int(latest_ver) > int(current_ver):
             if latest_tag not in self.notification_pool:
                 self.NewVersionButton.setText(
                     "Update to version {0}".
-                    format(latest_tag.replace('v', '')))
+                    format(latest_tag.replace("v", "")))
                 self.NewVersionButton.show()
                 self.show_message(
                     "New version of Blender Launcher is available!",
@@ -804,7 +815,7 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
     def read_socket_data(self):
         data = self.socket.readAll()
 
-        if str(data, encoding='ascii') != self.version:
+        if str(data, encoding="ascii") != self.version:
             self.dlg = DialogWindow(
                 parent=self, title="Warning",
                 text="An attempt to launch a different version<br>\
@@ -814,7 +825,7 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
                 accept_text="OK", cancel_text=None, icon=DialogIcon.WARNING)
 
     def dragEnterEvent(self, e):
-        if e.mimeData().hasFormat('text/plain'):
+        if e.mimeData().hasFormat("text/plain"):
             e.accept()
         else:
             e.ignore()
@@ -823,13 +834,13 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
         print(e.mimeData().text())
 
     def restart_app(self):
-        ''' Launch 'Blender Launcher.exe' and exit '''
+        """ Launch 'Blender Launcher.exe' and exit """
         cwd = get_cwd()
 
-        if self.platform == 'Windows':
+        if self.platform == "Windows":
             exe = (cwd / "Blender Launcher.exe").as_posix()
-            _popen([exe, '-instanced'])
-        elif self.platform == 'Linux':
+            _popen([exe, "-instanced"])
+        elif self.platform == "Linux":
             exe = (cwd / "Blender Launcher").as_posix()
             os.chmod(exe, 0o744)
             _popen('nohup "' + exe + '" -instanced')
