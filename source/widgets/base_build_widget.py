@@ -5,7 +5,6 @@ import webbrowser
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QAction, QWidget
-
 from widgets.base_menu_widget import BaseMenuWidget
 
 
@@ -33,19 +32,19 @@ class BaseBuildWidget(QWidget):
         if self.build_info.branch == "stable":
             # TODO Check format for Blender 3 release
             # Extract X.X format version
-            ver = re.search(r'\d.\d+', self.build_info.subversion).group(0)
+            ver = re.search(r"\d.\d+", self.build_info.subversion).group(0)
 
             webbrowser.open(
-                "https://wiki.blender.org/wiki/Reference/Release_Notes/{}".format(ver))
+                f"https://wiki.blender.org/wiki/Reference/Release_Notes/{ver}")
         elif self.build_info.branch == "lts":
             # Raw numbers from version
-            ver = re.sub(r'\D', '', self.build_info.subversion)
+            ver = re.sub(r"\D", "", self.build_info.subversion)
 
             webbrowser.open(
-                "https://www.blender.org/download/lts/#lts-release-{}".format(ver))
+                f"https://www.blender.org/download/lts/#lts-release-{ver}")
         else:  # Open for builds with D12345 name pattern
             # Extract only D12345 substring
-            m = re.search(r'D\d{5}', self.build_info.branch)
+            m = re.search(r"D\d{5}", self.build_info.branch)
 
             webbrowser.open(
-                "https://developer.blender.org/{}".format(m.group(0)))
+                f"https://developer.blender.org/{m.group(0)}")

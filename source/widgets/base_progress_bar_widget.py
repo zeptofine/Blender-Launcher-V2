@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import QProgressBar
 
 
 class BaseProgressBarWidget(QProgressBar):
-    progress_updated = pyqtSignal('PyQt_PyObject', 'PyQt_PyObject')
+    progress_updated = pyqtSignal("PyQt_PyObject", "PyQt_PyObject")
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -24,5 +24,5 @@ class BaseProgressBarWidget(QProgressBar):
         # Repaint and call signal
         self.repaint()
         self.setFormat(
-            "{}: {:.1f} of {:.1f} MB".format(title, obtained, total))
+            f"{title}: {obtained:.1f} of {total:.1f} MB")
         self.progress_updated.emit(obtained, total)

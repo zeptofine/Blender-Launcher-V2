@@ -3,17 +3,16 @@ import platform
 import sys
 from locale import LC_ALL, setlocale
 from pathlib import Path
-from subprocess import (DEVNULL, PIPE, STDOUT, Popen, call, check_call,
-                        check_output)
+from subprocess import DEVNULL, PIPE, STDOUT, Popen, call, check_call, check_output
 
 
 def get_platform():
     platforms = {
-        'linux': 'Linux',
-        'linux1': 'Linux',
-        'linux2': 'Linux',
-        'darwin': 'macOS',
-        'win32': 'Windows'
+        "linux": "Linux",
+        "linux1": "Linux",
+        "linux2": "Linux",
+        "darwin": "macOS",
+        "win32": "Windows"
     }
 
     if sys.platform not in platforms:
@@ -23,24 +22,24 @@ def get_platform():
 
 
 def get_platform_full():
-    return ("{0} {1} {2}").format(get_platform(), os.name, platform.release())
+    return (f"{get_platform()} {os.name} {platform.release()}")
 
 
 def set_locale():
     platform = get_platform()
 
-    if platform == 'Windows':
-        setlocale(LC_ALL, 'eng_usa')
-    elif platform in {'Linux', 'macOS'}:
-        setlocale(LC_ALL, 'en_US.UTF-8')
+    if platform == "Windows":
+        setlocale(LC_ALL, "eng_usa")
+    elif platform in {"Linux", "macOS"}:
+        setlocale(LC_ALL, "en_US.UTF-8")
 
 
 def get_environment():
     # Make a copy of the environment
     env = dict(os.environ)
     # For GNU/Linux and *BSD
-    lp_key = 'LD_LIBRARY_PATH'
-    lp_orig = env.get(lp_key + '_ORIG')
+    lp_key = "LD_LIBRARY_PATH"
+    lp_orig = env.get(lp_key + "_ORIG")
 
     if lp_orig is not None:
         # Restore the original, unmodified value
@@ -56,12 +55,12 @@ def get_environment():
 def _popen(args):
     platform = get_platform()
 
-    if platform == 'Windows':
+    if platform == "Windows":
         DETACHED_PROCESS = 0x00000008
         proc = Popen(args, shell=True, stdin=None, stdout=None, stderr=None,
                      close_fds=True, creationflags=DETACHED_PROCESS,
                      start_new_session=True)
-    elif platform == 'Linux':
+    elif platform == "Linux":
         proc = Popen(args, shell=True, stdout=None, stderr=None,
                      close_fds=True,  preexec_fn=os.setpgrp,
                      env=get_environment())
@@ -72,12 +71,12 @@ def _popen(args):
 def _check_call(args):
     platform = get_platform()
 
-    if platform == 'Windows':
+    if platform == "Windows":
         from subprocess import CREATE_NO_WINDOW
 
         returncode = check_call(args, creationflags=CREATE_NO_WINDOW,
                                 shell=True, stderr=DEVNULL, stdin=DEVNULL)
-    elif platform in {'Linux', 'macOS'}:
+    elif platform in {"Linux", "macOS"}:
         returncode = check_call(
             args, shell=False, stderr=DEVNULL, stdin=DEVNULL)
 
@@ -87,31 +86,31 @@ def _check_call(args):
 def _call(args):
     platform = get_platform()
 
-    if platform == 'Windows':
+    if platform == "Windows":
         from subprocess import CREATE_NO_WINDOW
 
         call(args, creationflags=CREATE_NO_WINDOW,
              shell=True, stdout=PIPE, stderr=STDOUT, stdin=DEVNULL)
-    elif platform == 'Linux':
+    elif platform == "Linux":
         pass
 
 
 def _check_output(args):
     platform = get_platform()
 
-    if platform == 'Windows':
+    if platform == "Windows":
         from subprocess import CREATE_NO_WINDOW
 
         output = check_output(args, creationflags=CREATE_NO_WINDOW,
                               shell=True, stderr=DEVNULL, stdin=DEVNULL)
-    elif platform in {'Linux', 'macOS'}:
+    elif platform in {"Linux", "macOS"}:
         output = check_output(args, shell=False, stderr=DEVNULL, stdin=DEVNULL)
 
     return output
 
 
 def is_frozen():
-    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
         return True
     else:
         return False

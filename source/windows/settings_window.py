@@ -1,19 +1,22 @@
-from modules.settings import (get_check_for_new_builds_automatically,
-                              get_enable_high_dpi_scaling,
-                              get_enable_quick_launch_key_seq,
-                              get_new_builds_check_frequency, get_proxy_host,
-                              get_proxy_password, get_proxy_port,
-                              get_proxy_type, get_proxy_user,
-                              get_quick_launch_key_seq,
-                              get_use_custom_tls_certificates, proxy_types)
+from modules.settings import (
+    get_check_for_new_builds_automatically,
+    get_enable_high_dpi_scaling,
+    get_enable_quick_launch_key_seq,
+    get_new_builds_check_frequency,
+    get_proxy_host,
+    get_proxy_password,
+    get_proxy_port,
+    get_proxy_type,
+    get_proxy_user,
+    get_quick_launch_key_seq,
+    get_use_custom_tls_certificates,
+    proxy_types,
+)
 from PyQt5.QtCore import QSize, Qt
-from PyQt5.QtWidgets import (QHBoxLayout, QLabel, QMainWindow, QPushButton,
-                             QTabWidget)
+from PyQt5.QtWidgets import QHBoxLayout, QLabel, QMainWindow, QPushButton, QTabWidget
 from ui.settings_window_ui import Ui_SettingsWindow
-from widgets.settings_window import (appearance_tab, blender_builds_tab,
-                                     connection_tab, general_tab)
+from widgets.settings_window import appearance_tab, blender_builds_tab, connection_tab, general_tab
 from widgets.tab_widget import TabWidget
-
 from windows.base_window import BaseWindow
 from windows.dialog_window import DialogWindow
 
@@ -61,7 +64,7 @@ class SettingsWindow(QMainWindow, BaseWindow, Ui_SettingsWindow):
 
         # Tab Layout
         self.TabWidget = QTabWidget()
-        self.TabWidget.setProperty('Center', True)
+        self.TabWidget.setProperty("Center", True)
         self.CentralLayout.addWidget(self.TabWidget)
 
         self.GeneralTab = TabWidget(self.TabWidget, "General")
@@ -128,16 +131,13 @@ class SettingsWindow(QMainWindow, BaseWindow, Ui_SettingsWindow):
                 r_proxy_types[self.old_proxy_type], r_proxy_types[proxy_type]))
 
         if self.old_proxy_host != proxy_host:
-            self.pending_to_restart.append("Proxy Host: {}🠆{}".format(
-                self.old_proxy_host, proxy_host))
+            self.pending_to_restart.append(f"Proxy Host: {self.old_proxy_host}🠆{proxy_host}")
 
         if self.old_proxy_port != proxy_port:
-            self.pending_to_restart.append("Proxy Port: {}🠆{}".format(
-                self.old_proxy_port, proxy_port))
+            self.pending_to_restart.append(f"Proxy Port: {self.old_proxy_port}🠆{proxy_port}")
 
         if self.old_proxy_user != proxy_user:
-            self.pending_to_restart.append("Proxy User: {}🠆{}".format(
-                self.old_proxy_user, proxy_user))
+            self.pending_to_restart.append(f"Proxy User: {self.old_proxy_user}🠆{proxy_user}")
 
         if self.old_proxy_password != proxy_password:
             self.pending_to_restart.append("Proxy Password")
@@ -176,9 +176,8 @@ class SettingsWindow(QMainWindow, BaseWindow, Ui_SettingsWindow):
 
         self.dlg = DialogWindow(
             parent=self.parent, title="Warning",
-            text="Restart Blender Launcher in<br> \
-                  order to apply following settings:{}".
-            format(pending_to_restart),
+            text=f"Restart Blender Launcher in<br> \
+                  order to apply following settings:{pending_to_restart}",
             accept_text="Restart Now", cancel_text="Ignore")
         self.dlg.accepted.connect(self.restart_app)
         self.dlg.cancelled.connect(self._destroy)

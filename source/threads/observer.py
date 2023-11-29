@@ -4,8 +4,8 @@ from PyQt5.QtCore import QThread, pyqtSignal
 class Observer(QThread):
     started = pyqtSignal()
     finished = pyqtSignal()
-    count_changed = pyqtSignal('PyQt_PyObject')
-    append_proc = pyqtSignal('PyQt_PyObject')
+    count_changed = pyqtSignal("PyQt_PyObject")
+    append_proc = pyqtSignal("PyQt_PyObject")
 
     def __init__(self, parent):
         QThread.__init__(self)

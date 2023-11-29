@@ -1,20 +1,22 @@
-from modules.settings import (get_check_for_new_builds_automatically,
-                              get_enable_high_dpi_scaling,
-                              get_launch_minimized_to_tray,
-                              get_launch_when_system_starts,
-                              get_library_folder,
-                              get_new_builds_check_frequency, get_platform,
-                              get_show_tray_icon,
-                              set_check_for_new_builds_automatically,
-                              set_enable_high_dpi_scaling,
-                              set_launch_minimized_to_tray,
-                              set_launch_when_system_starts,
-                              set_library_folder,
-                              set_new_builds_check_frequency,
-                              set_show_tray_icon)
+from modules.settings import (
+    get_check_for_new_builds_automatically,
+    get_enable_high_dpi_scaling,
+    get_launch_minimized_to_tray,
+    get_launch_when_system_starts,
+    get_library_folder,
+    get_new_builds_check_frequency,
+    get_platform,
+    get_show_tray_icon,
+    set_check_for_new_builds_automatically,
+    set_enable_high_dpi_scaling,
+    set_launch_minimized_to_tray,
+    set_launch_when_system_starts,
+    set_library_folder,
+    set_new_builds_check_frequency,
+    set_show_tray_icon,
+)
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import (QCheckBox, QHBoxLayout, QLineEdit, QPushButton,
-                             QSpinBox, QWidget)
+from PyQt5.QtWidgets import QCheckBox, QHBoxLayout, QLineEdit, QPushButton, QSpinBox, QWidget
 from widgets.settings_form_widget import SettingsFormWidget
 from windows.dialog_window import DialogWindow
 from windows.file_dialog_window import FileDialogWindow
@@ -74,7 +76,7 @@ class GeneralTabWidget(SettingsFormWidget):
         self.NewBuildsCheckFrequency.setContextMenuPolicy(
             Qt.NoContextMenu)
         self.NewBuildsCheckFrequency.setToolTip(
-            'Time in minutes between new builds check')
+            "Time in minutes between new builds check")
         self.NewBuildsCheckFrequency.setMaximum(24 * 60)
         self.NewBuildsCheckFrequency.setMinimum(120)
         self.NewBuildsCheckFrequency.setValue(
@@ -93,7 +95,7 @@ class GeneralTabWidget(SettingsFormWidget):
         self._addRow("Library Folder",
                      self.LibraryFolderWidget, new_line=True)
 
-        if get_platform() == 'Windows':
+        if get_platform() == "Windows":
             self._addRow("Launch When System Starts",
                          self.LaunchWhenSystemStartsCheckBox)
 

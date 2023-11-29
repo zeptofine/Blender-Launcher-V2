@@ -1,7 +1,7 @@
 from PyQt5 import QtCore, QtWidgets
 
 
-class Ui_DialogWindow(object):
+class Ui_DialogWindow:
     def setupUi(self, DialogWindow):
         DialogWindow.setObjectName("DialogWindow")
         DialogWindow.setWindowModality(QtCore.Qt.ApplicationModal)

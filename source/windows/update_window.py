@@ -5,7 +5,6 @@ from PyQt5.QtWidgets import QMainWindow
 from threads.downloader import Downloader
 from threads.extractor import Extractor
 from ui.update_window_ui import UpdateWindowUI
-
 from windows.base_window import BaseWindow
 
 link = "https://github.com/Victor-IX/Blender-Launcher/releases/download/{0}/Blender_Launcher_{0}_{1}_x64.zip"
@@ -40,9 +39,9 @@ class BlenderLauncherUpdater(QMainWindow, BaseWindow, UpdateWindowUI):
 
     def finish(self, dist):
         # Launch 'Blender Launcher.exe' and exit
-        if self.platform == 'Windows':
+        if self.platform == "Windows":
             _popen([dist])
-        elif self.platform == 'Linux':
+        elif self.platform == "Linux":
             os.chmod(dist, 0o744)
             _popen('nohup "' + dist + '"')
 

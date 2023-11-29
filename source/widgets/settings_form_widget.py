@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QFormLayout, QLabel, QWidget
 
 
-class SettingsFormWidgetRow():
+class SettingsFormWidgetRow:
     def __init__(self, label, widget):
         super().__init__()
         self.label = label

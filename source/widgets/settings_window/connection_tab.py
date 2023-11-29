@@ -1,13 +1,21 @@
-from modules.settings import (get_proxy_host, get_proxy_password,
-                              get_proxy_port, get_proxy_type, get_proxy_user,
-                              get_use_custom_tls_certificates, proxy_types,
-                              set_proxy_host, set_proxy_password,
-                              set_proxy_port, set_proxy_type, set_proxy_user,
-                              set_use_custom_tls_certificates)
+from modules.settings import (
+    get_proxy_host,
+    get_proxy_password,
+    get_proxy_port,
+    get_proxy_type,
+    get_proxy_user,
+    get_use_custom_tls_certificates,
+    proxy_types,
+    set_proxy_host,
+    set_proxy_password,
+    set_proxy_port,
+    set_proxy_type,
+    set_proxy_user,
+    set_use_custom_tls_certificates,
+)
 from PyQt5 import QtGui
 from PyQt5.QtCore import QRegExp, Qt
-from PyQt5.QtWidgets import (QCheckBox, QComboBox, QHBoxLayout, QLabel,
-                             QLineEdit)
+from PyQt5.QtWidgets import QCheckBox, QComboBox, QHBoxLayout, QLabel, QLineEdit
 from widgets.settings_form_widget import SettingsFormWidget
 
 

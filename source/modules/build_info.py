@@ -4,15 +4,14 @@ import time
 from enum import Enum
 from pathlib import Path
 
-from PyQt5.QtCore import QThread, pyqtSignal
-
 from modules._platform import _check_output, get_platform, set_locale
+from PyQt5.QtCore import QThread, pyqtSignal
 
 
 class BuildInfo:
     file_version = "1.2"
     # https://www.blender.org/download/lts/
-    lts_tags = ('2.83', '2.93', '3.3', '3.7')
+    lts_tags = ("2.83", "2.93", "3.3", "3.7")
 
     def __init__(self, link, subversion,
                  build_hash, commit_time, branch,
@@ -20,16 +19,16 @@ class BuildInfo:
         self.link = link
 
         if any(w in subversion.lower()
-               for w in ['release', 'rc']):
+               for w in ["release", "rc"]):
             subversion = re.sub(
-                '[a-zA-Z ]+', " Candidate ", subversion).rstrip()
+                "[a-zA-Z ]+", " Candidate ", subversion).rstrip()
 
         self.subversion = subversion
         self.build_hash = build_hash
         self.commit_time = commit_time
 
-        if branch == 'stable' and subversion.startswith(self.lts_tags):
-            branch = 'lts'
+        if branch == "stable" and subversion.startswith(self.lts_tags):
+            branch = "lts"
 
         self.branch = branch
         self.custom_name = custom_name
@@ -47,8 +46,8 @@ class BuildInfo:
 
 
 class BuildInfoReader(QThread):
-    Mode = Enum('Mode', 'READ WRITE', start=1)
-    finished = pyqtSignal('PyQt_PyObject')
+    Mode = Enum("Mode", "READ WRITE", start=1)
+    finished = pyqtSignal("PyQt_PyObject")
 
     def __init__(self, path, build_info=None,
                  archive_name=None, mode=Mode.READ):
@@ -73,25 +72,24 @@ class BuildInfoReader(QThread):
             except Exception:
                 self.finished.emit(None)
 
-        return
 
     def read_blender_version(self, old_build_info=None):
         set_locale()
 
-        if self.platform == 'Windows':
+        if self.platform == "Windows":
             blender_exe = "blender.exe"
-        elif self.platform == 'Linux':
+        elif self.platform == "Linux":
             blender_exe = "blender"
-        elif self.platform == 'macOS':
+        elif self.platform == "macOS":
             blender_exe = "Blender/Blender.app/Contents/MacOS/Blender"
 
         exe_path = self.path / blender_exe
         version = _check_output([exe_path.as_posix(), "-v"])
-        version = version.decode('UTF-8')
+        version = version.decode("UTF-8")
 
         ctime = re.search("build commit time: " + "(.*)", version)[1].rstrip()
         cdate = re.search("build commit date: " + "(.*)", version)[1].rstrip()
-        strptime = time.strptime(cdate + ' ' + ctime, "%Y-%m-%d %H:%M")
+        strptime = time.strptime(cdate + " " + ctime, "%Y-%m-%d %H:%M")
         commit_time = time.strftime("%d-%b-%y-%H:%M", strptime)
         build_hash = re.search("build hash: " + "(.*)", version)[1].rstrip()
         subversion = re.search("Blender " + "(.*)", version)[1].rstrip()
@@ -103,17 +101,17 @@ class BuildInfoReader(QThread):
         else:
             name = self.archive_name
 
-        if subfolder == 'daily':
+        if subfolder == "daily":
             branch = "daily"
 
             # If branch from console is empty, it is probably stable release
-            if len(subversion.split(' ')) == 1:
+            if len(subversion.split(" ")) == 1:
                 subversion += " Stable"
-        elif subfolder == 'custom':
+        elif subfolder == "custom":
             branch = name
-        elif subfolder == 'experimental':
+        elif subfolder == "experimental":
             # Sensitive data! Requires proper folder naming!
-            match = re.search(r'\+(.+?)\.', name)
+            match = re.search(r"\+(.+?)\.", name)
 
             # Fix for naming conventions changes after 1.12.0 release
             if match is None:
@@ -121,7 +119,7 @@ class BuildInfoReader(QThread):
                     branch = old_build_info.branch
             else:
                 branch = match.group(1)
-        elif subfolder == 'stable':
+        elif subfolder == "stable":
             branch = "stable"
 
         # Recover user defined favorites builds information
@@ -147,38 +145,38 @@ class BuildInfoReader(QThread):
     def write_build_info(self, build_info):
         data = {}
 
-        data['file_version'] = BuildInfo.file_version
-        data['blinfo'] = []
+        data["file_version"] = BuildInfo.file_version
+        data["blinfo"] = []
 
-        data['blinfo'].append({
-            'branch': build_info.branch,
-            'subversion': build_info.subversion,
-            'build_hash': build_info.build_hash,
-            'commit_time': build_info.commit_time,
-            'custom_name': build_info.custom_name,
-            'is_favorite': build_info.is_favorite,
+        data["blinfo"].append({
+            "branch": build_info.branch,
+            "subversion": build_info.subversion,
+            "build_hash": build_info.build_hash,
+            "commit_time": build_info.commit_time,
+            "custom_name": build_info.custom_name,
+            "is_favorite": build_info.is_favorite,
         })
 
-        path = self.path / '.blinfo'
+        path = self.path / ".blinfo"
 
-        with open(path, 'w', encoding='utf-8') as file:
+        with open(path, "w", encoding="utf-8") as file:
             json.dump(data, file)
 
         return data
 
     def read_build_info(self):
-        path = self.path / '.blinfo'
+        path = self.path / ".blinfo"
 
         # Check if build information is already present
         if path.is_file():
-            with open(path, 'r', encoding='utf-8') as file:
+            with open(path, encoding="utf-8") as file:
                 data = json.load(file)
 
-            build_info = self.build_info_from_json(data['blinfo'][0])
+            build_info = self.build_info_from_json(data["blinfo"][0])
 
             # Check if file version changed
-            if ('file_version' not in data) or \
-                    (data['file_version'] != BuildInfo.file_version):
+            if ("file_version" not in data) or \
+                    (data["file_version"] != BuildInfo.file_version):
                 new_build_info = self.read_blender_version(build_info)
                 self.write_build_info(new_build_info)
                 return new_build_info
@@ -193,12 +191,12 @@ class BuildInfoReader(QThread):
     def build_info_from_json(self, blinfo):
         build_info = BuildInfo(
             self.path.as_posix(),
-            blinfo['subversion'],
-            blinfo['build_hash'],
-            blinfo['commit_time'],
-            blinfo['branch'],
-            blinfo['custom_name'],
-            blinfo['is_favorite']
+            blinfo["subversion"],
+            blinfo["build_hash"],
+            blinfo["commit_time"],
+            blinfo["branch"],
+            blinfo["custom_name"],
+            blinfo["is_favorite"]
         )
 
         return build_info

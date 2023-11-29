@@ -6,11 +6,11 @@ from PyQt5.QtCore import QThread, pyqtSignal
 
 
 class LibraryDrawer(QThread):
-    build_found = pyqtSignal('PyQt_PyObject')
+    build_found = pyqtSignal("PyQt_PyObject")
     finished = pyqtSignal()
     build_released = pyqtSignal()
 
-    def __init__(self, folders=['stable', 'daily', 'experimental', 'custom']):
+    def __init__(self, folders=["stable", "daily", "experimental", "custom"]):
         QThread.__init__(self)
         self.folders = folders
         self.builds_count = 0
@@ -20,11 +20,11 @@ class LibraryDrawer(QThread):
         library_folder = Path(get_library_folder())
         platform = get_platform()
 
-        if platform == 'Windows':
+        if platform == "Windows":
             blender_exe = "blender.exe"
-        elif platform == 'Linux':
+        elif platform == "Linux":
             blender_exe = "blender"
-        elif platform == 'macOS':
+        elif platform == "macOS":
             blender_exe = "Blender/Blender.app/Contents/MacOS/Blender"
 
         for folder in self.folders:
@@ -45,7 +45,6 @@ class LibraryDrawer(QThread):
             QThread.msleep(250)
 
         self.finished.emit()
-        return
 
     def handle_build_released(self):
         self.builds_count = self.builds_count - 1

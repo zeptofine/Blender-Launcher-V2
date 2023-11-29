@@ -1,13 +1,20 @@
-from modules.settings import (downloads_pages, get_default_downloads_page,
-                              get_default_library_page, get_default_tab,
-                              get_enable_download_notifications,
-                              get_enable_new_builds_notifications,
-                              get_sync_library_and_downloads_pages,
-                              library_pages, set_default_downloads_page,
-                              set_default_library_page, set_default_tab,
-                              set_enable_download_notifications,
-                              set_enable_new_builds_notifications,
-                              set_sync_library_and_downloads_pages, tabs)
+from modules.settings import (
+    downloads_pages,
+    get_default_downloads_page,
+    get_default_library_page,
+    get_default_tab,
+    get_enable_download_notifications,
+    get_enable_new_builds_notifications,
+    get_sync_library_and_downloads_pages,
+    library_pages,
+    set_default_downloads_page,
+    set_default_library_page,
+    set_default_tab,
+    set_enable_download_notifications,
+    set_enable_new_builds_notifications,
+    set_sync_library_and_downloads_pages,
+    tabs,
+)
 from PyQt5.QtWidgets import QCheckBox, QComboBox
 from widgets.settings_form_widget import SettingsFormWidget
 

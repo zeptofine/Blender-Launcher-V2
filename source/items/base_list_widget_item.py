@@ -13,9 +13,9 @@ class BaseListWidgetItem(QListWidgetItem):
     def __lt__(self, other):
         soring_type = self.listWidget().parent.sorting_type
 
-        if soring_type.name == 'DATETIME':
+        if soring_type.name == "DATETIME":
             return self.compare_datetime(other)
-        elif soring_type.name == 'VERSION':
+        elif soring_type.name == "VERSION":
             return self.compare_version(other)
 
     def compare_datetime(self, other):
@@ -40,9 +40,9 @@ class BaseListWidgetItem(QListWidgetItem):
             return False
         else:
             this_match = re.search(
-                r'\d+\.\d+', this_widget.build_info.subversion)
+                r"\d+\.\d+", this_widget.build_info.subversion)
             other_match = re.search(
-                r'\d+\.\d+', other_widget.build_info.subversion)
+                r"\d+\.\d+", other_widget.build_info.subversion)
 
             this_version = float(this_match.group(0))
             other_version = float(other_match.group(0))
