@@ -86,7 +86,7 @@ class Scraper(QThread):
 
             data = json.loads(r.data)
             for build in data:
-                if build['platform'] == self.json_platform:
+                if build["platform"] == self.json_platform and self.b3d_link.match(build["file_name"]):
                     new_build = self.new_build_from_dict(build, branch_type)
                     self.links.emit(new_build)
 
