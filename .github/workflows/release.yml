@@ -14,7 +14,7 @@ jobs:
       - name: Build
         run: |
           python3 -m venv .venv
-          source ./my_venv/bin/activate
+          source ./.venv/bin/activate
           pip install -e
           sh ./build_linux.sh
       - name: Release
