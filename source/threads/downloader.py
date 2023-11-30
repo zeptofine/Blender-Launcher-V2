@@ -6,7 +6,6 @@ from PyQt5.QtCore import QThread, pyqtSignal
 
 
 class Downloader(QThread):
-    started = pyqtSignal()
     progress_changed = pyqtSignal(
         "PyQt_PyObject", "PyQt_PyObject", "PyQt_PyObject")
     finished = pyqtSignal("PyQt_PyObject")
@@ -19,7 +18,6 @@ class Downloader(QThread):
 
     def run(self):
         self.progress_changed.emit(0, 0, "Downloading")
-        self.started.emit()
 
         temp_folder = Path(get_library_folder()) / ".temp"
 

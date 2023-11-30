@@ -7,9 +7,8 @@ from PyQt5.QtCore import QThread, pyqtSignal
 
 
 class TemplateInstaller(QThread):
-    started = pyqtSignal()
     progress_changed = pyqtSignal("PyQt_PyObject", "PyQt_PyObject")
-    finished = pyqtSignal()
+
 
     def __init__(self, manager, dist):
         QThread.__init__(self)
@@ -29,8 +28,6 @@ class TemplateInstaller(QThread):
                 source = template.as_posix()
                 dist = dir.as_posix()
                 copytree(source, dist, dirs_exist_ok=True)
-                self.finished.emit()
                 return
 
-        self.finished.emit()
         return

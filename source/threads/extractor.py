@@ -7,7 +7,6 @@ from PyQt5.QtCore import QThread, pyqtSignal
 
 
 class Extractor(QThread):
-    started = pyqtSignal()
     progress_changed = pyqtSignal(
         "PyQt_PyObject", "PyQt_PyObject", "PyQt_PyObject")
     finished = pyqtSignal("PyQt_PyObject")
@@ -20,7 +19,6 @@ class Extractor(QThread):
 
     def run(self):
         self.progress_changed.emit(0, 0, "Extracting")
-        self.started.emit()
 
         suffixes = self.source.suffixes
 

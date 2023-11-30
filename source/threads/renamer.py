@@ -4,7 +4,6 @@ from PyQt5.QtCore import QThread, pyqtSignal
 
 
 class Renamer(QThread):
-    started = pyqtSignal()
     finished = pyqtSignal("PyQt_PyObject")
 
     def __init__(self, src_path, dst_name, parent=None):
@@ -14,7 +13,6 @@ class Renamer(QThread):
         self.parent = parent
 
     def run(self):
-        self.started.emit()
 
         if self.parent is not None:
             while self.parent.renamer_count > 0:

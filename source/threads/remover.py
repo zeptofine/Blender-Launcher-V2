@@ -4,7 +4,6 @@ from PyQt5.QtCore import QThread, pyqtSignal
 
 
 class Remover(QThread):
-    started = pyqtSignal()
     finished = pyqtSignal("PyQt_PyObject")
 
     def __init__(self, path, parent=None):
@@ -13,7 +12,6 @@ class Remover(QThread):
         self.parent = parent
 
     def run(self):
-        self.started.emit()
 
         if self.parent is not None:
             while self.parent.remover_count > 0:

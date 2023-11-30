@@ -20,7 +20,6 @@ class Scraper(QThread):
     links = pyqtSignal("PyQt_PyObject")
     new_bl_version = pyqtSignal("PyQt_PyObject")
     error = pyqtSignal()
-    finished = pyqtSignal()
 
     def __init__(self, parent, man):
         QThread.__init__(self)
@@ -50,7 +49,6 @@ class Scraper(QThread):
         if latest_tag is not None:
             self.new_bl_version.emit(self.get_latest_tag())
         self.manager.manager.clear()
-        self.finished.emit()
 
     def get_latest_tag(self):
         r = self.manager._request(
