@@ -23,7 +23,7 @@ jobs:
         run: |
           echo "Zipping to Blender_Launcher_${{ env.RELEASE_VERSION }}_Ubuntu_x64.zip"
           cd ./dist/release/
-          zip Blender_Launcher_${{ env.RELEASE_VERSION }}_Ubuntu_x64.zip "./dist/release/Blender Launcher"
+          zip Blender_Launcher_${{ env.RELEASE_VERSION }}_Ubuntu_x64.zip "./Blender Launcher"
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
