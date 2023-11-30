@@ -19,10 +19,13 @@ jobs:
           source ./.venv/bin/activate
           pip install -e ./
           sh ./build_linux.sh
-          echo "Zipping to Blender_Launcher_${{ env.RELEASE_VERSION }}_Linux_x64.zip"
-          zip Blender_Launcher_${{ env.RELEASE_VERSION }}_Linux_x64.zip "./dist/release/Blender Launcher"
+      - name: Zipping
+        run: |
+          echo "Zipping to Blender_Launcher_${{ env.RELEASE_VERSION }}_Ubuntu_x64.zip"
+          cd ./dist/release/
+          zip Blender_Launcher_${{ env.RELEASE_VERSION }}_Ubuntu_x64.zip "./dist/release/Blender Launcher"
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: ./Blender_Launcher_${{ env.RELEASE_VERSION }}_Linux_x64.zip
+          files: ./dist/release/Blender_Launcher_${{ env.RELEASE_VERSION }}_Ubuntu_x64.zip
