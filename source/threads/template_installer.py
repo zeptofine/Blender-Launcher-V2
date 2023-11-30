@@ -7,12 +7,11 @@ from PyQt5.QtCore import QThread, pyqtSignal
 
 
 class TemplateInstaller(QThread):
-    progress_changed = pyqtSignal("PyQt_PyObject", "PyQt_PyObject")
+    progress_changed = pyqtSignal(int, object)
 
 
-    def __init__(self, manager, dist):
+    def __init__(self, dist: Path):
         QThread.__init__(self)
-        self.manager = manager
         self.dist = dist
 
     def run(self):
@@ -23,10 +22,10 @@ class TemplateInstaller(QThread):
         if not template.is_dir():
             template.mkdir()
 
-        for dir in self.dist.iterdir():
-            if match(r"\d+\.\d+.*", dir.name) is not None:
+        for directory in self.dist.iterdir():
+            if match(r"\d+\.\d+.*", directory.name) is not None:
                 source = template.as_posix()
-                dist = dir.as_posix()
+                dist = directory.as_posix()
                 copytree(source, dist, dirs_exist_ok=True)
                 return
 

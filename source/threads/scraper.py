@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import logging
 import re
@@ -6,19 +8,22 @@ import time
 import traceback
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import TYPE_CHECKING
 from urllib.parse import urljoin
 
 import lxml
 from bs4 import BeautifulSoup, SoupStrainer
 from modules._platform import get_platform, set_locale
 from modules.build_info import BuildInfo
-from modules.connection_manager import ConnectionManager
 from PyQt5.QtCore import QThread, pyqtSignal
+
+if TYPE_CHECKING:
+    from modules.connection_manager import ConnectionManager
 
 
 class Scraper(QThread):
-    links = pyqtSignal("PyQt_PyObject")
-    new_bl_version = pyqtSignal("PyQt_PyObject")
+    links = pyqtSignal(BuildInfo)
+    new_bl_version = pyqtSignal(str)
     error = pyqtSignal()
 
     def __init__(self, parent, man):
@@ -50,7 +55,7 @@ class Scraper(QThread):
             self.new_bl_version.emit(self.get_latest_tag())
         self.manager.manager.clear()
 
-    def get_latest_tag(self):
+    def get_latest_tag(self) -> str | None:
         r = self.manager._request(
             "GET", "https://github.com/Victor-IX/Blender-Launcher/releases/latest")
 

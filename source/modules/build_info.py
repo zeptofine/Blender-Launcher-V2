@@ -47,7 +47,9 @@ class BuildInfo:
 
 class BuildInfoReader(QThread):
     Mode = Enum("Mode", "READ WRITE", start=1)
-    finished = pyqtSignal("PyQt_PyObject")
+    read = pyqtSignal(BuildInfo) # past-tense >:[
+    written = pyqtSignal()
+    error = pyqtSignal()
 
     def __init__(self, path, build_info=None,
                  archive_name=None, mode=Mode.READ):
@@ -62,15 +64,15 @@ class BuildInfoReader(QThread):
         if self.mode == self.Mode.READ:
             try:
                 build_info = self.read_build_info()
-                self.finished.emit(build_info)
+                self.read.emit(build_info)
             except Exception:
-                self.finished.emit(None)
+                self.error.emit()
         elif self.mode == self.Mode.WRITE:
             try:
                 self.write_build_info(self.build_info)
-                self.finished.emit(0)
+                self.written.emit()
             except Exception:
-                self.finished.emit(None)
+                self.error.emit()
 
 
     def read_blender_version(self, old_build_info=None):
@@ -146,16 +148,14 @@ class BuildInfoReader(QThread):
         data = {}
 
         data["file_version"] = BuildInfo.file_version
-        data["blinfo"] = []
-
-        data["blinfo"].append({
+        data["blinfo"] = [{
             "branch": build_info.branch,
             "subversion": build_info.subversion,
             "build_hash": build_info.build_hash,
             "commit_time": build_info.commit_time,
             "custom_name": build_info.custom_name,
             "is_favorite": build_info.is_favorite,
-        })
+        }]
 
         path = self.path / ".blinfo"
 

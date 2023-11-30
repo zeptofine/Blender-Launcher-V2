@@ -7,9 +7,8 @@ from PyQt5.QtCore import QThread, pyqtSignal
 
 
 class Extractor(QThread):
-    progress_changed = pyqtSignal(
-        "PyQt_PyObject", "PyQt_PyObject", "PyQt_PyObject")
-    finished = pyqtSignal("PyQt_PyObject")
+    progress_changed = pyqtSignal(int, int)
+    finished = pyqtSignal(Path)
 
     def __init__(self, manager, source, dist):
         QThread.__init__(self)
@@ -18,7 +17,7 @@ class Extractor(QThread):
         self.dist = Path(dist)
 
     def run(self):
-        self.progress_changed.emit(0, 0, "Extracting")
+        self.progress_changed.emit(0, 0)
 
         suffixes = self.source.suffixes
 
@@ -31,8 +30,7 @@ class Extractor(QThread):
             for file in zf.infolist():
                 zf.extract(file, self.dist)
                 extracted_size += file.file_size
-                self.progress_changed.emit(
-                    extracted_size, uncompress_size, "Extracting")
+                self.progress_changed.emit(extracted_size, uncompress_size)
 
             zf.close()
             self.finished.emit(self.dist / folder)
@@ -45,8 +43,7 @@ class Extractor(QThread):
             for member in tar.getmembers():
                 tar.extract(member, path=self.dist)
                 extracted_size += member.size
-                self.progress_changed.emit(
-                    extracted_size, uncompress_size, "Extracting")
+                self.progress_changed.emit(extracted_size, uncompress_size)
 
             tar.close()
             self.finished.emit(self.dist / folder)
@@ -61,4 +58,3 @@ class Extractor(QThread):
             _check_call(["hdiutil", "unmount", "/Volumes/Blender"])
 
             self.finished.emit(dist)
-

@@ -6,7 +6,7 @@ from PyQt5.QtCore import QThread, pyqtSignal
 
 
 class LibraryDrawer(QThread):
-    build_found = pyqtSignal("PyQt_PyObject")
+    build_found = pyqtSignal(Path)
     build_released = pyqtSignal()
 
     def __init__(self, folders=["stable", "daily", "experimental", "custom"]):
