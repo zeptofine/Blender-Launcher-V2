@@ -8,7 +8,7 @@ from modules.settings import get_library_folder
 
 if get_platform() == "Windows":
     import win32com.client
-    from win32com.shell import shell, shellcon
+    from win32comext.shell import shell, shellcon
 
 
 def create_shortcut(folder, name):
