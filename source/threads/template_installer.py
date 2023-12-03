@@ -15,7 +15,7 @@ class TemplateInstaller(QThread):
         self.dist = dist
 
     def run(self):
-        self.progress_changed.emit(0, "Copying Data...")
+        self.progress_changed.emit(0, 0)
         library_folder = Path(get_library_folder())
         template = library_folder / "template"
 

@@ -173,6 +173,7 @@ class DownloadWidget(BaseBuildWidget):
         self.build_dir = dist
 
         if get_install_template():
+            self.progressBar.set_title("Copying data...")
             self.template_installer = TemplateInstaller(self.build_dir)
             self.template_installer.progress_changed.connect(
                 self.progressBar.set_progress)
