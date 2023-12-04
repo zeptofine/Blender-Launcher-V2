@@ -24,10 +24,10 @@ class TemplateInstaller(QThread):
         if not template.is_dir():
             template.mkdir()
 
-        for dir in self.dist.iterdir():
-            if match(r"\d+\.\d+.*", dir.name) is not None:
+        for directory in self.dist.iterdir():
+            if match(r"\d+\.\d+.*", directory.name) is not None:
                 source = template.as_posix()
-                dist = dir.as_posix()
+                dist = directory.as_posix()
                 copytree(source, dist, dirs_exist_ok=True)
                 self.finished.emit()
                 return

@@ -23,7 +23,7 @@ from windows.dialog_window import DialogWindow
 
 class SettingsWindow(QMainWindow, BaseWindow, Ui_SettingsWindow):
     def __init__(self, parent):
-        super(SettingsWindow, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.setupUi(self)
         self.setWindowTitle("Settings")
 
@@ -105,9 +105,8 @@ class SettingsWindow(QMainWindow, BaseWindow, Ui_SettingsWindow):
             elif self.parent.listener is not None:
                 self.parent.listener.stop()
         # Only key sequence was changed
-        elif self.old_quick_launch_key_seq != quick_launch_key_seq:
-            # Restart hotkeys listener
-            if enable_quick_launch_key_seq is True:
+        # Restart hotkeys listener
+        elif self.old_quick_launch_key_seq != quick_launch_key_seq and enable_quick_launch_key_seq:
                 self.parent.setup_global_hotkeys_listener()
 
         """Update connection"""
@@ -171,8 +170,8 @@ class SettingsWindow(QMainWindow, BaseWindow, Ui_SettingsWindow):
     def show_dlg_restart_bl(self):
         pending_to_restart = ""
 
-        for str in self.pending_to_restart:
-            pending_to_restart += "<br>- " + str
+        for s in self.pending_to_restart:
+            pending_to_restart += "<br>- " + s
 
         self.dlg = DialogWindow(
             parent=self.parent, title="Warning",

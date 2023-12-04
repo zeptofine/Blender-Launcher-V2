@@ -15,18 +15,19 @@ class BaseListWidgetItem(QListWidgetItem):
 
         if soring_type.name == "DATETIME":
             return self.compare_datetime(other)
-        elif soring_type.name == "VERSION":
+        if soring_type.name == "VERSION":
             return self.compare_version(other)
+        return False
 
     def compare_datetime(self, other):
         if (self.date is None) or (other.date is None):
             return False
-        else:
-            set_locale()
-            this_datetime = strptime(self.date, "%d-%b-%y-%H:%M")
-            other_datetime = strptime(other.date, "%d-%b-%y-%H:%M")
 
-            return this_datetime > other_datetime
+        set_locale()
+        this_datetime = strptime(self.date, "%d-%b-%y-%H:%M")
+        other_datetime = strptime(other.date, "%d-%b-%y-%H:%M")
+
+        return this_datetime > other_datetime
 
     def compare_version(self, other):
         list_widget = self.listWidget()
@@ -34,20 +35,21 @@ class BaseListWidgetItem(QListWidgetItem):
         this_widget = list_widget.itemWidget(self)
         other_widget = list_widget.itemWidget(other)
 
-        if (this_widget is None) or (other_widget is None):
+        if (
+            this_widget is None
+            or other_widget is None
+            or this_widget.build_info is None
+            or other_widget.build_info is None
+        ):
             return False
-        elif (this_widget.build_info is None) or (other_widget.build_info is None):
-            return False
-        else:
-            this_match = re.search(
-                r"\d+\.\d+", this_widget.build_info.subversion)
-            other_match = re.search(
-                r"\d+\.\d+", other_widget.build_info.subversion)
 
-            this_version = float(this_match.group(0))
-            other_version = float(other_match.group(0))
+        this_match = re.search(r"\d+\.\d+", this_widget.build_info.subversion)
+        other_match = re.search(r"\d+\.\d+", other_widget.build_info.subversion)
 
-            if this_version == other_version:
-                return self.compare_datetime(other)
-            else:
-                return this_version > other_version
+        this_version = float(this_match.group(0))
+        other_version = float(other_match.group(0))
+
+        if this_version == other_version:
+            return self.compare_datetime(other)
+
+        return this_version > other_version

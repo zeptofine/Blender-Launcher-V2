@@ -1,3 +1,4 @@
+import contextlib
 import sys
 from pathlib import Path
 
@@ -80,8 +81,8 @@ def is_library_folder_valid(library_folder=None):
             return False
 
         return True
-    else:
-        return False
+
+    return False
 
 
 def set_library_folder(new_library_folder):
@@ -116,21 +117,14 @@ def get_launch_when_system_starts():
         _, count, _ = winreg.QueryInfoKey(key)
 
         for i in range(count):
-            try:
+            with contextlib.suppress(OSError):
                 name, value, _ = winreg.EnumValue(key, i)
 
                 if name == "Blender Launcher":
-                    if value == path:
-                        return True
-                    else:
-                        return False
-            except OSError:
-                pass
+                    return value == path
 
         key.Close()
-        return False
-    else:
-        return False
+    return False
 
 
 def set_launch_when_system_starts(is_checked):
@@ -144,10 +138,8 @@ def set_launch_when_system_starts(is_checked):
             winreg.SetValueEx(key, "Blender Launcher",
                               0, winreg.REG_SZ, path)
         else:
-            try:
+            with contextlib.suppress(Exception):
                 winreg.DeleteValue(key, "Blender Launcher")
-            except Exception:
-                pass
 
         key.Close()
 
@@ -161,38 +153,21 @@ def set_launch_minimized_to_tray(is_checked):
 
 
 def get_enable_high_dpi_scaling():
-    settings = get_settings()
-
-    if settings.contains("enable_high_dpi_scaling"):
-        return settings.value("enable_high_dpi_scaling", type=bool)
-    else:
-        return True
-
+    return get_settings().value("enable_high_dpi_scaling", defaultValue=True, type=bool)
 
 def set_enable_high_dpi_scaling(is_checked):
     get_settings().setValue("enable_high_dpi_scaling", is_checked)
 
 
 def get_sync_library_and_downloads_pages():
-    settings = get_settings()
-
-    if settings.contains("sync_library_and_downloads_pages"):
-        return settings.value("sync_library_and_downloads_pages", type=bool)
-    else:
-        return True
-
+    return get_settings().value("sync_library_and_downloads_pages", defaultValue=True, type=bool)
 
 def set_sync_library_and_downloads_pages(is_checked):
     get_settings().setValue("sync_library_and_downloads_pages", is_checked)
 
 
 def get_default_library_page():
-    settings = get_settings()
-
-    if settings.contains("default_library_page"):
-        return settings.value("default_library_page", type=int)
-    else:
-        return 0
+    return get_settings().value("default_library_page", defaultValue=0, type=int)
 
 
 def set_default_library_page(page):
@@ -200,25 +175,14 @@ def set_default_library_page(page):
 
 
 def get_mark_as_favorite():
-    settings = get_settings()
-
-    if settings.contains("mark_as_favorite"):
-        return settings.value("mark_as_favorite", type=int)
-    else:
-        return 0
-
+    return get_settings().value("mark_as_favorite", defaultValue=0, type=int)
 
 def set_mark_as_favorite(page):
     get_settings().setValue("mark_as_favorite", favorite_pages[page])
 
 
 def get_default_downloads_page():
-    settings = get_settings()
-
-    if settings.contains("default_downloads_page"):
-        return settings.value("default_downloads_page", type=int)
-    else:
-        return 0
+    return get_settings().value("default_downloads_page", defaultValue=0, type=int)
 
 
 def set_default_downloads_page(page):
@@ -226,54 +190,28 @@ def set_default_downloads_page(page):
 
 
 def get_default_tab():
-    settings = get_settings()
-
-    if settings.contains("default_tab"):
-        return settings.value("default_tab", type=int)
-    else:
-        return 0
-
+    return get_settings().value("default_tab", defaultValue=0, type=int)
 
 def set_default_tab(tab):
     get_settings().setValue("default_tab", tabs[tab])
 
 
 def get_list_sorting_type(list_name):
-    settings = get_settings()
-
-    if settings.contains(f"Internal/{list_name}_sorting_type"):
-        return settings.value(f"Internal/{list_name}_sorting_type", type=int)
-    else:
-        return 1
-
+    return get_settings().value(f"Internal/{list_name}_sorting_type", defaultValue=1, type=int)
 
 def set_list_sorting_type(list_name, sorting_type):
-    get_settings().setValue(
-        f"Internal/{list_name}_sorting_type", sorting_type.value)
+    get_settings().setValue(f"Internal/{list_name}_sorting_type", sorting_type.value)
 
 
 def get_enable_new_builds_notifications():
-    settings = get_settings()
-
-    if settings.contains("enable_new_builds_notifications"):
-        return settings.value(
-            "enable_new_builds_notifications", type=bool)
-    else:
-        return True
-
+    return get_settings().value("enable_new_builds_notifications", defaultValue=True, type=bool)
 
 def set_enable_new_builds_notifications(is_checked):
     get_settings().setValue("enable_new_builds_notifications", is_checked)
 
 
 def get_enable_download_notifications():
-    settings = get_settings()
-
-    if settings.contains("enable_download_notifications"):
-        return settings.value("enable_download_notifications", type=bool)
-    else:
-        return True
-
+    return get_settings().value("enable_download_notifications", defaultValue=True, type=bool)
 
 def set_enable_download_notifications(is_checked):
     get_settings().setValue("enable_download_notifications", is_checked)
@@ -284,8 +222,7 @@ def get_blender_startup_arguments():
 
     if args is None:
         return ""
-    else:
-        return args.strip()
+    return args.strip()
 
 
 def set_blender_startup_arguments(args):
@@ -293,12 +230,8 @@ def set_blender_startup_arguments(args):
 
 
 def get_bash_arguments():
-    args = get_settings().value("bash_arguments")
+    return get_settings().value("bash_arguments", defaultValue="", type=str).strip()
 
-    if args is None:
-        return ""
-    else:
-        return args.strip()
 
 
 def set_bash_arguments(args):
@@ -314,13 +247,7 @@ def set_install_template(is_checked):
 
 
 def get_show_tray_icon():
-    settings = get_settings()
-
-    if settings.contains("show_tray_icon"):
-        return settings.value("show_tray_icon", type=bool)
-    else:
-        return True
-
+    return get_settings().value("show_tray_icon", defaultValue=True, type=bool)
 
 def set_show_tray_icon(is_checked):
     get_settings().setValue("show_tray_icon", is_checked)
@@ -335,12 +262,7 @@ def set_launch_blender_no_console(is_checked):
 
 
 def get_quick_launch_key_seq():
-    key_seq = get_settings().value("quick_launch_key_seq")
-
-    if key_seq is None:
-        return "alt+f11"
-    else:
-        return key_seq.strip()
+    return get_settings().value("quick_launch_key_seq", defaultValue="alt+f11", type=str).strip()
 
 
 def set_quick_launch_key_seq(key_seq):
@@ -348,12 +270,7 @@ def set_quick_launch_key_seq(key_seq):
 
 
 def get_enable_quick_launch_key_seq():
-    settings = get_settings()
-
-    if settings.contains("enable_quick_launch_key_seq"):
-        return settings.value("enable_quick_launch_key_seq", type=bool)
-    else:
-        return False
+    return get_settings().value("enable_quick_launch_key_seq", defaultValue=False, type=bool)
 
 
 def set_enable_quick_launch_key_seq(is_checked):
@@ -361,16 +278,10 @@ def set_enable_quick_launch_key_seq(is_checked):
 
 
 def get_proxy_type():
-    settings = get_settings()
+    return get_settings().value("proxy/type", defaultValue=0, type=int)
 
-    if settings.contains("proxy/type"):
-        return settings.value("proxy/type", type=int)
-    else:
-        return 0
-
-
-def set_proxy_type(type):
-    get_settings().setValue("proxy/type", proxy_types[type])
+def set_proxy_type(proxy_type):
+    get_settings().setValue("proxy/type", proxy_types[proxy_type])
 
 
 def get_proxy_host():
@@ -378,8 +289,7 @@ def get_proxy_host():
 
     if host is None:
         return "255.255.255.255"
-    else:
-        return host.strip()
+    return host.strip()
 
 
 def set_proxy_host(args):
@@ -391,8 +301,7 @@ def get_proxy_port():
 
     if port is None:
         return "99999"
-    else:
-        return port.strip()
+    return port.strip()
 
 
 def set_proxy_port(args):
@@ -404,8 +313,7 @@ def get_proxy_user():
 
     if user is None:
         return ""
-    else:
-        return user.strip()
+    return user.strip()
 
 
 def set_proxy_user(args):
@@ -417,8 +325,7 @@ def get_proxy_password():
 
     if password is None:
         return ""
-    else:
-        return password.strip()
+    return password.strip()
 
 
 def set_proxy_password(args):
@@ -426,13 +333,7 @@ def set_proxy_password(args):
 
 
 def get_use_custom_tls_certificates():
-    settings = get_settings()
-
-    if settings.contains("use_custom_tls_certificates"):
-        return settings.value("use_custom_tls_certificates", type=bool)
-    else:
-        return True
-
+    return get_settings().value("use_custom_tls_certificates", defaultValue=True, type=bool)
 
 def set_use_custom_tls_certificates(is_checked):
     get_settings().setValue("use_custom_tls_certificates", is_checked)
@@ -443,8 +344,7 @@ def get_check_for_new_builds_automatically():
 
     if settings.contains("check_for_new_builds_automatically"):
         return settings.value("check_for_new_builds_automatically", type=bool)
-    else:
-        return False
+    return False
 
 
 def set_check_for_new_builds_automatically(is_checked):
@@ -458,8 +358,7 @@ def get_new_builds_check_frequency():
 
     if settings.contains("new_builds_check_frequency"):
         return settings.value("new_builds_check_frequency", type=int)
-    else:
-        return 600
+    return 600
 
 
 def set_new_builds_check_frequency(frequency):

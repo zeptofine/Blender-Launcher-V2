@@ -12,7 +12,7 @@ link = "https://github.com/Victor-IX/Blender-Launcher/releases/download/{0}/Blen
 
 class BlenderLauncherUpdater(QMainWindow, BaseWindow, UpdateWindowUI):
     def __init__(self, app, version, release_tag):
-        super(BlenderLauncherUpdater, self).__init__(app=app, version=version)
+        super().__init__(app=app, version=version)
         self.setupUi(self)
 
         self.release_tag = release_tag

@@ -39,10 +39,9 @@ class BuildInfo:
     def __eq__(self, other):
         if (self is None) or (other is None):
             return False
-        elif (self.build_hash is not None) and (other.build_hash is not None):
+        if (self.build_hash is not None) and (other.build_hash is not None):
             return self.build_hash == other.build_hash
-        else:
-            return self.subversion == other.subversion
+        return self.subversion == other.subversion
 
 
 class BuildInfoReader(QThread):
@@ -96,10 +95,7 @@ class BuildInfoReader(QThread):
 
         subfolder = self.path.parent.name
 
-        if self.archive_name is None:
-            name = self.path.name
-        else:
-            name = self.archive_name
+        name = self.archive_name or self.path.name
 
         if subfolder == "daily":
             branch = "daily"
@@ -130,7 +126,7 @@ class BuildInfoReader(QThread):
             custom_name = old_build_info.custom_name
             is_favorite = old_build_info.is_favorite
 
-        build_info = BuildInfo(
+        return BuildInfo(
             self.path.as_posix(),
             subversion,
             build_hash,
@@ -140,7 +136,6 @@ class BuildInfoReader(QThread):
             is_favorite
         )
 
-        return build_info
 
     def write_build_info(self, build_info):
         data = {}
@@ -180,16 +175,15 @@ class BuildInfoReader(QThread):
                 new_build_info = self.read_blender_version(build_info)
                 self.write_build_info(new_build_info)
                 return new_build_info
-            else:
-                return build_info
-        # Generating new build information
-        else:
-            build_info = self.read_blender_version()
-            self.write_build_info(build_info)
             return build_info
 
+        # Generating new build information
+        build_info = self.read_blender_version()
+        self.write_build_info(build_info)
+        return build_info
+
     def build_info_from_json(self, blinfo):
-        build_info = BuildInfo(
+        return BuildInfo(
             self.path.as_posix(),
             blinfo["subversion"],
             blinfo["build_hash"],
@@ -199,4 +193,3 @@ class BuildInfoReader(QThread):
             blinfo["is_favorite"]
         )
 
-        return build_info

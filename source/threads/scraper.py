@@ -6,14 +6,17 @@ import time
 import traceback
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import TYPE_CHECKING
 from urllib.parse import urljoin
 
 import lxml
 from bs4 import BeautifulSoup, SoupStrainer
 from modules._platform import get_platform, set_locale
 from modules.build_info import BuildInfo
-from modules.connection_manager import ConnectionManager
 from PyQt5.QtCore import QThread, pyqtSignal
+
+if TYPE_CHECKING:
+    from modules.connection_manager import ConnectionManager
 
 
 class Scraper(QThread):
@@ -34,13 +37,13 @@ class Scraper(QThread):
         }.get(self.platform, self.platform)
 
         if self.platform == "Windows":
-            filter = r"blender-.+win.+64.+zip$"
+            regex_filter = r"blender-.+win.+64.+zip$"
         elif self.platform == "Linux":
-            filter = r"blender-.+lin.+64.+tar+(?!.*sha256).*"
+            regex_filter = r"blender-.+lin.+64.+tar+(?!.*sha256).*"
         elif self.platform == "macOS":
-            filter = r"blender-.+(macOS|darwin).+dmg$"
+            regex_filter = r"blender-.+(macOS|darwin).+dmg$"
 
-        self.b3d_link = re.compile(filter, re.IGNORECASE)
+        self.b3d_link = re.compile(regex_filter, re.IGNORECASE)
         self.hash = re.compile(r"\w{12}")
         self.subversion = re.compile(r"-\d\.[a-zA-Z0-9.]+-")
 
@@ -53,7 +56,7 @@ class Scraper(QThread):
         self.finished.emit()
 
     def get_latest_tag(self):
-        r = self.manager._request(
+        r = self.manager.request(
             "GET", "https://github.com/Victor-IX/Blender-Launcher/releases/latest")
 
         if r is None:
@@ -78,7 +81,7 @@ class Scraper(QThread):
         base_fmt = "https://builder.blender.org/download/{}/?format=json&v=1"
         for branch_type in ("daily", "experimental", "patch"):
             url = base_fmt.format(branch_type)
-            r = self.manager._request("GET", url)
+            r = self.manager.request("GET", url)
 
             if r is None:
                 continue
@@ -104,7 +107,7 @@ class Scraper(QThread):
 
 
     def scrap_download_links(self, url, branch_type, _limit=None, stable=False):
-        r = self.manager._request("GET", url)
+        r = self.manager.request("GET", url)
 
         if r is None:
             return
@@ -125,7 +128,7 @@ class Scraper(QThread):
 
     def new_blender_build(self, tag, url, branch_type):
         link = urljoin(url, tag["href"]).rstrip("/")
-        r = self.manager._request("HEAD", link)
+        r = self.manager.request("HEAD", link)
 
         if r is None:
             return None
@@ -159,9 +162,9 @@ class Scraper(QThread):
 
             if self.platform == "macOS":
                 if "arm64" in link:
-                    build_var = "{0} │ {1}".format(build_var, "Arm")
+                    build_var = "{} │ {}".format(build_var, "Arm")
                 elif "x86_64" in link:
-                    build_var = "{0} │ {1}".format(build_var, "Intel")
+                    build_var = "{} │ {}".format(build_var, "Intel")
 
             if branch_type == "experimental":
                 branch = build_var
@@ -182,7 +185,7 @@ class Scraper(QThread):
 
     def scrap_stable_releases(self):
         url = "https://download.blender.org/release/"
-        r = self.manager._request("GET", url)
+        r = self.manager.request("GET", url)
 
         if r is None:
             return

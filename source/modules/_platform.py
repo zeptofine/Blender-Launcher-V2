@@ -12,7 +12,7 @@ def get_platform():
         "linux1": "Linux",
         "linux2": "Linux",
         "darwin": "macOS",
-        "win32": "Windows"
+        "win32": "Windows",
     }
 
     if sys.platform not in platforms:
@@ -22,7 +22,7 @@ def get_platform():
 
 
 def get_platform_full():
-    return (f"{get_platform()} {os.name} {platform.release()}")
+    return f"{get_platform()} {os.name} {platform.release()}"
 
 
 def set_locale():
@@ -57,13 +57,26 @@ def _popen(args):
 
     if platform == "Windows":
         DETACHED_PROCESS = 0x00000008
-        proc = Popen(args, shell=True, stdin=None, stdout=None, stderr=None,
-                     close_fds=True, creationflags=DETACHED_PROCESS,
-                     start_new_session=True)
+        proc = Popen(
+            args,
+            shell=True,
+            stdin=None,
+            stdout=None,
+            stderr=None,
+            close_fds=True,
+            creationflags=DETACHED_PROCESS,
+            start_new_session=True,
+        )
     elif platform == "Linux":
-        proc = Popen(args, shell=True, stdout=None, stderr=None,
-                     close_fds=True,  preexec_fn=os.setpgrp,
-                     env=get_environment())
+        proc = Popen(
+            args,
+            shell=True,
+            stdout=None,
+            stderr=None,
+            close_fds=True,
+            preexec_fn=os.setpgrp,
+            env=get_environment(),
+        )
 
     return proc
 
@@ -74,11 +87,9 @@ def _check_call(args):
     if platform == "Windows":
         from subprocess import CREATE_NO_WINDOW
 
-        returncode = check_call(args, creationflags=CREATE_NO_WINDOW,
-                                shell=True, stderr=DEVNULL, stdin=DEVNULL)
+        returncode = check_call(args, creationflags=CREATE_NO_WINDOW, shell=True, stderr=DEVNULL, stdin=DEVNULL)
     elif platform in {"Linux", "macOS"}:
-        returncode = check_call(
-            args, shell=False, stderr=DEVNULL, stdin=DEVNULL)
+        returncode = check_call(args, shell=False, stderr=DEVNULL, stdin=DEVNULL)
 
     return returncode
 
@@ -89,8 +100,7 @@ def _call(args):
     if platform == "Windows":
         from subprocess import CREATE_NO_WINDOW
 
-        call(args, creationflags=CREATE_NO_WINDOW,
-             shell=True, stdout=PIPE, stderr=STDOUT, stdin=DEVNULL)
+        call(args, creationflags=CREATE_NO_WINDOW, shell=True, stdout=PIPE, stderr=STDOUT, stdin=DEVNULL)
     elif platform == "Linux":
         pass
 
@@ -101,8 +111,7 @@ def _check_output(args):
     if platform == "Windows":
         from subprocess import CREATE_NO_WINDOW
 
-        output = check_output(args, creationflags=CREATE_NO_WINDOW,
-                              shell=True, stderr=DEVNULL, stdin=DEVNULL)
+        output = check_output(args, creationflags=CREATE_NO_WINDOW, shell=True, stderr=DEVNULL, stdin=DEVNULL)
     elif platform in {"Linux", "macOS"}:
         output = check_output(args, shell=False, stderr=DEVNULL, stdin=DEVNULL)
 
@@ -110,14 +119,11 @@ def _check_output(args):
 
 
 def is_frozen():
-    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
-        return True
-    else:
-        return False
+    return bool(getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"))
 
 
 def get_cwd():
     if is_frozen():
         return Path(os.path.dirname(sys.executable))
-    else:
-        return Path.cwd()
+
+    return Path.cwd()

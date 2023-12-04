@@ -10,7 +10,7 @@ class BaseLineEdit(QLineEdit):
         super().__init__()
 
     def keyPressEvent(self, event):
-        super(BaseLineEdit, self).keyPressEvent(event)
+        super().keyPressEvent(event)
 
         if event.key() == Qt.Key_Return:
             self.returnPressed.emit()
@@ -18,7 +18,7 @@ class BaseLineEdit(QLineEdit):
             self.escapePressed.emit()
 
     def focusOutEvent(self, event):
-        super(BaseLineEdit, self).focusOutEvent(event)
+        super().focusOutEvent(event)
 
         if event.reason() == Qt.MouseFocusReason:
             self.escapePressed.emit()

@@ -29,7 +29,7 @@ class DownloadState(Enum):
 class DownloadWidget(BaseBuildWidget):
     def __init__(self, parent, list_widget, item, build_info,
                  show_new=False):
-        super(DownloadWidget, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.parent = parent
         self.list_widget = list_widget
         self.item = item
@@ -119,7 +119,7 @@ class DownloadWidget(BaseBuildWidget):
                 self.menu.addAction(self.showReleaseNotesAction)
 
     def context_menu(self):
-        self.menu._show()
+        self.menu.trigger()
 
     def mouseDoubleClickEvent(self, event):
         if self.state != DownloadState.DOWNLOADING:
@@ -153,8 +153,7 @@ class DownloadWidget(BaseBuildWidget):
         self.cancelButton.setEnabled(False)
         library_folder = Path(get_library_folder())
 
-        if (self.build_info.branch == "stable") or \
-                (self.build_info.branch == "lts"):
+        if self.build_info.branch in ("stable", "lts"):
             dist = library_folder / "stable"
         elif self.build_info.branch == "daily":
             dist = library_folder / "daily"

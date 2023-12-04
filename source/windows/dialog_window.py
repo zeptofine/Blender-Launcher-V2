@@ -19,7 +19,7 @@ class DialogWindow(QMainWindow, BaseWindow, Ui_DialogWindow):
     def __init__(self, parent, title="Warning", text="Dialog Window",
                  accept_text="Accept", cancel_text="Cancel",
                  icon=DialogIcon.WARNING):
-        super(DialogWindow, self).__init__(parent=parent)
+        super().__init__(parent=parent)
 
         self.setupUi(self)
         self.setWindowTitle(title)

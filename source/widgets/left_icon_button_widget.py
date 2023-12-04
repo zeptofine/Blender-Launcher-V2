@@ -20,5 +20,5 @@ class LeftIconButtonWidget(QPushButton):
 
         self.layout().addWidget(self.label)
 
-    def _setText(self, text):
+    def set_text(self, text):
         self.label.setText(text)
