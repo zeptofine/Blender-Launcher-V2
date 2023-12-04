@@ -215,7 +215,7 @@ class DownloadWidget(BaseBuildWidget):
         new_name = f"blender-{build_info.subversion}+{build_info.branch}.{build_info.build_hash}"
 
         self.build_renamer = Renamer(self.build_dir, new_name)
-        self.build_renamer.finished.connect(self.download_finished)
+        self.build_renamer.completed.connect(self.download_finished)
         self.build_renamer.start()
 
     def download_finished(self, path):
