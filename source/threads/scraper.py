@@ -6,6 +6,7 @@ import time
 import traceback
 from datetime import datetime, timezone
 from pathlib import Path
+from pprint import pprint
 from urllib.parse import urljoin
 
 import lxml
@@ -86,20 +87,36 @@ class Scraper(QThread):
             data = json.loads(r.data)
             for build in data:
                 if build["platform"] == self.json_platform and self.b3d_link.match(build["file_name"]):
-
                     new_build = self.new_build_from_dict(build, branch_type)
                     self.links.emit(new_build)
 
 
     def new_build_from_dict(self, build, branch_type):
+        pprint(build)
         self.strptime = datetime.fromtimestamp(build["file_mtime"], tz=timezone.utc)
         commit_time = self.strptime.strftime("%d-%b-%y-%H:%M")
+        subversion = build["version"]
+        branch = branch_type
+        build_var = ""
+        if build["patch"] is not None and branch_type != "daily":
+            build_var = build["patch"]
+
+        if build["branch"] is not None:
+            build_var = build["branch"]
+            branch = build["branch"]
+        if build_var:
+            subversion = f"{subversion} {build_var}"
+
+        pprint(subversion)
+        pprint(branch)
+
+
         return BuildInfo(
             build["url"],
-            build["version"],
+            subversion,
             build["hash"],
             commit_time,
-            branch_type,
+            branch,
         )
 
 
