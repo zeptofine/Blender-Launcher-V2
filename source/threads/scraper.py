@@ -6,7 +6,6 @@ import time
 import traceback
 from datetime import datetime, timezone
 from pathlib import Path
-from pprint import pprint
 from urllib.parse import urljoin
 
 import lxml
@@ -54,8 +53,7 @@ class Scraper(QThread):
         self.finished.emit()
 
     def get_latest_tag(self):
-        r = self.manager._request(
-            "GET", "https://github.com/Victor-IX/Blender-Launcher/releases/latest")
+        r = self.manager._request("GET", "https://github.com/Victor-IX/Blender-Launcher/releases/latest")
 
         if r is None:
             return None
@@ -90,9 +88,7 @@ class Scraper(QThread):
                     new_build = self.new_build_from_dict(build, branch_type)
                     self.links.emit(new_build)
 
-
     def new_build_from_dict(self, build, branch_type):
-        pprint(build)
         self.strptime = datetime.fromtimestamp(build["file_mtime"], tz=timezone.utc)
         commit_time = self.strptime.strftime("%d-%b-%y-%H:%M")
         subversion = build["version"]
@@ -101,24 +97,22 @@ class Scraper(QThread):
         if build["patch"] is not None and branch_type != "daily":
             build_var = build["patch"]
 
-        if build["branch"] is not None:
-            build_var = build["branch"]
+        if build["release_cycle"] is not None and branch_type == "daily":
+            build_var = build["release_cycle"]
             branch = build["branch"]
+
+        if build["branch"] and branch_type == "experimental":
+            build_var = build["branch"]
         if build_var:
             subversion = f"{subversion} {build_var}"
-
-        pprint(subversion)
-        pprint(branch)
-
 
         return BuildInfo(
             build["url"],
             subversion,
             build["hash"],
             commit_time,
-            branch,
+            branch_type,
         )
-
 
     def scrap_download_links(self, url, branch_type, _limit=None, stable=False):
         r = self.manager._request("GET", url)
@@ -188,14 +182,12 @@ class Scraper(QThread):
 
         if commit_time is None:
             set_locale()
-            self.strptime = time.strptime(
-                info["last-modified"], "%a, %d %b %Y %H:%M:%S %Z")
+            self.strptime = time.strptime(info["last-modified"], "%a, %d %b %Y %H:%M:%S %Z")
             commit_time = time.strftime("%d-%b-%y-%H:%M", self.strptime)
 
         r.release_conn()
         r.close()
-        return BuildInfo(link, subversion,
-                         build_hash, commit_time, branch)
+        return BuildInfo(link, subversion, build_hash, commit_time, branch)
 
     def scrap_stable_releases(self):
         url = "https://download.blender.org/release/"
@@ -218,9 +210,8 @@ class Scraper(QThread):
             href = release["href"]
             match = re.search(subversion, href)
 
-            if (float(match.group(0)) >= 3.0):
-                self.scrap_download_links(
-                    urljoin(url, href), "stable", stable=True)
+            if float(match.group(0)) >= 3.0:
+                self.scrap_download_links(urljoin(url, href), "stable", stable=True)
 
         r.release_conn()
         r.close()
