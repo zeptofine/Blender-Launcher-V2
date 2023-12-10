@@ -530,8 +530,8 @@ class LibraryWidget(BaseBuildWidget):
         widget = LibraryWidget(self.parent, item, self.link,
                                self.parent.UserFavoritesListWidget,
                                parent_widget=self)
-
-        self.parent.UserFavoritesListWidget.insert_item(item, widget)
+        if not self.parent.UserFavoritesListWidget.contains_build_info(self.build_info):
+            self.parent.UserFavoritesListWidget.insert_item(item, widget)
         self.child_widget = widget
 
         self.removeFromFavoritesAction.setVisible(True)
