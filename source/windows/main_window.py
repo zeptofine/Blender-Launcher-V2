@@ -77,7 +77,7 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
     quick_launch_fail_signal = pyqtSignal()
 
     def __init__(self, app, version, logger, argv):
-        super(BlenderLauncher, self).__init__(
+        super().__init__(
             app=app, version=version)
         self.setupUi(self)
         self.setAcceptDrops(True)
@@ -162,7 +162,7 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
 
     def set_library_folder(self):
         library_folder = get_cwd().as_posix()
-        new_library_folder = FileDialogWindow()._getExistingDirectory(
+        new_library_folder = FileDialogWindow().getExistingDirectory(
             self, "Select Library Folder", library_folder)
 
         if (new_library_folder):
@@ -356,7 +356,7 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
 
         # Setup tray icon context Menu
         quit_action = QAction("Quit", self)
-        quit_action.triggered.connect(self.quit)
+        quit_action.triggered.connect(self.quit_)
         hide_action = QAction("Hide", self)
         hide_action.triggered.connect(self.close)
         show_action = QAction("Show", self)
@@ -470,11 +470,7 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
         download_widgets.extend(self.DownloadsDailyListWidget.items())
         download_widgets.extend(self.DownloadsExperimentalListWidget.items())
 
-        for widget in download_widgets:
-            if widget.state != DownloadState.IDLE:
-                return False
-
-        return True
+        return all(widget.state == DownloadState.IDLE for widget in download_widgets)
 
     def show_update_window(self):
         if not self.is_downloading_idle():
@@ -546,14 +542,14 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
                 self.thumbnail_toolbar)
             self.toolbar_quit_btn.setIcon(self.icon_close)
             self.toolbar_quit_btn.setToolTip("Quit")
-            self.toolbar_quit_btn.clicked.connect(self.quit)
+            self.toolbar_quit_btn.clicked.connect(self.quit_)
             self.thumbnail_toolbar.addButton(self.toolbar_quit_btn)
 
-    def show_message(self, message, value=None, type=None):
-        if (type == MessageType.DOWNLOADFINISHED and
+    def show_message(self, message, value=None, message_type=None):
+        if (message_type == MessageType.DOWNLOADFINISHED and
                 get_enable_download_notifications() is False):
             return
-        elif (type == MessageType.NEWBUILDS and
+        if (message_type == MessageType.NEWBUILDS and
               get_enable_new_builds_notifications() is False):
             return
 
@@ -587,12 +583,12 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
         elif reason == QSystemTrayIcon.MiddleClick:
             self.quick_launch()
         elif reason == QSystemTrayIcon.Context:
-            self.tray_menu._show()
+            self.tray_menu.trigger()
 
     def _aboutToQuit(self):
-        self.quit()
+        self.quit_()
 
-    def quit(self):
+    def quit_(self):
         if not self.is_downloading_idle():
             self.dlg = DialogWindow(
                 parent=self, title="Warning",
@@ -628,17 +624,17 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
                 self.timer.cancel()
 
             self.scraper.quit()
-            self.DownloadsStableListWidget._clear()
-            self.DownloadsDailyListWidget._clear()
-            self.DownloadsExperimentalListWidget._clear()
+            self.DownloadsStableListWidget.clear_()
+            self.DownloadsDailyListWidget.clear_()
+            self.DownloadsExperimentalListWidget.clear_()
             self.started = True
 
         self.favorite = None
 
-        self.LibraryStableListWidget._clear()
-        self.LibraryDailyListWidget._clear()
-        self.LibraryExperimentalListWidget._clear()
-        self.UserCustomListWidget._clear()
+        self.LibraryStableListWidget.clear_()
+        self.LibraryDailyListWidget.clear_()
+        self.LibraryExperimentalListWidget.clear_()
+        self.UserCustomListWidget.clear_()
 
         self.library_drawer = LibraryDrawer()
         self.library_drawer.build_found.connect(self.draw_to_library)
@@ -649,7 +645,7 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
         self.library_drawer.start()
 
     def reload_custom_builds(self):
-        self.UserCustomListWidget._clear()
+        self.UserCustomListWidget.clear_()
         self.library_drawer = LibraryDrawer(folders=["custom"])
         self.library_drawer.build_found.connect(self.draw_to_library)
         self.library_drawer.start()
@@ -686,7 +682,7 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
         if self.new_downloads and not self.started:
             self.show_message(
                 "New builds of Blender are available!",
-                type=MessageType.NEWBUILDS)
+                message_type=MessageType.NEWBUILDS)
 
         for list_widget in self.DownloadsToolBox.list_widgets:
             for widget in list_widget.widgets.copy():
@@ -724,7 +720,7 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
 
         branch = build_info.branch
 
-        if (branch == "stable") or (branch == "lts"):
+        if branch in ("stable", "lts"):
             downloads_list_widget = self.DownloadsStableListWidget
             library_list_widget = self.LibraryStableListWidget
         elif branch == "daily":
@@ -746,7 +742,7 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
     def draw_to_library(self, path, show_new=False):
         branch = Path(path).parent.name
 
-        if (branch == "stable") or (branch == "lts"):
+        if branch in ("stable", "lts"):
             list_widget = self.LibraryStableListWidget
         elif branch == "daily":
             list_widget = self.LibraryDailyListWidget
@@ -781,9 +777,7 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
 
         if int(latest_ver) > int(current_ver):
             if latest_tag not in self.notification_pool:
-                self.NewVersionButton.setText(
-                    "Update to version {0}".
-                    format(latest_tag.replace("v", "")))
+                self.NewVersionButton.setText(f"Update to version {latest_tag.replace('v', '')}")
                 self.NewVersionButton.show()
                 self.show_message(
                     "New version of Blender Launcher is available!",

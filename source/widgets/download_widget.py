@@ -34,7 +34,7 @@ class DownloadWidget(BaseBuildWidget):
     def __init__(self, parent: "BlenderLauncher", list_widget, item, build_info,
                  show_new=False):
         super().__init__(parent=parent)
-        self.parent: "BlenderLauncher" = parent
+        self.parent = parent
         self.list_widget = list_widget
         self.item = item
         self.build_info = build_info
@@ -79,10 +79,11 @@ class DownloadWidget(BaseBuildWidget):
         if self.build_info.branch == "lts":
             branch_name = "LTS"
         elif self.build_info.branch == "daily":
-            branch_name = self.build_info.subversion
+            branch_name = self.build_info.subversion.split(" ", 1)[1].title()
         else:
-            branch_name = re.sub(
-                r"(\-|\_)", " ", self.build_info.branch).title()
+            branch_name = self.build_info.subversion.split(" ", 1)[1]
+            # branch_name = re.sub(
+            #     r"(\-|\_)", " ", self.build_info.branch).title()
 
         self.subversionLabel = QLabel(
             self.build_info.subversion.split(" ", 1)[0])
@@ -122,7 +123,7 @@ class DownloadWidget(BaseBuildWidget):
                 self.menu.addAction(self.showReleaseNotesAction)
 
     def context_menu(self):
-        self.menu._show()
+        self.menu.trigger()
 
     def mouseDoubleClickEvent(self, event):
         if self.state != DownloadState.DOWNLOADING:

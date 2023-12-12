@@ -37,10 +37,4 @@ class FolderObserver(QThread):
 
 
     def get_subfolders(self):
-        subfolders = []
-
-        for sub in self.folder.iterdir():
-            if sub.is_dir():
-                subfolders.append(sub.name)
-
-        return subfolders
+        return [sub.name for sub in self.folder.iterdir() if sub.is_dir()]

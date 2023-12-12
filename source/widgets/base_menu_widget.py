@@ -13,7 +13,7 @@ class BaseMenuWidget(QMenu):
         self.screen_size = QDesktopWidget().screenGeometry()
         self.setToolTipsVisible(True)
 
-    def _show(self):
+    def trigger(self):
         actions = self.actions()
         actions_count = sum((a.isVisible() and not a.isSeparator())
                             for a in actions)

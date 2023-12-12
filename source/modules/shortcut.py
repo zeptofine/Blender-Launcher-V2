@@ -8,7 +8,7 @@ from modules.settings import get_library_folder
 
 if get_platform() == "Windows":
     import win32com.client
-    from win32com.shell import shell, shellcon
+    from win32comext.shell import shell, shellcon
 
 
 def create_shortcut(folder, name):
@@ -22,10 +22,9 @@ def create_shortcut(folder, name):
         dist = Path(desktop) / (name + ".lnk")
 
         if getattr(sys, "frozen", False):
-            icon = sys._MEIPASS + "/files/winblender.ico"
+            icon = sys._MEIPASS + "/files/winblender.ico"  # noqa: SLF001
         else:
-            icon = Path(
-                "./resources/icons/winblender.ico").resolve().as_posix()
+            icon = Path("./resources/icons/winblender.ico").resolve().as_posix()
 
         icon_location = library_folder / folder / "winblender.ico"
         copyfile(icon, icon_location.as_posix())
@@ -44,18 +43,27 @@ def create_shortcut(folder, name):
         filename = name.replace(" ", "-")
         dist = desktop / (filename + ".desktop")
 
-        desktop_entry = \
-            "[Desktop Entry]\n" + \
-            f"Name={name}\n" + \
-            "Comment=3D modeling, animation, rendering and post-production\n" + \
-            "Keywords=3d;cg;modeling;animation;painting;sculpting;texturing;video editing;video tracking;rendering;render engine;cycles;game engine;python;\n" + \
-            "Icon={0}\n".format(icon.as_posix().replace(" ", r"\ ")) + \
-            "Terminal=false\n" + \
-            "Type=Application\n" + \
-            "Categories=Graphics;3DGraphics;\n" + \
-            "MimeType=application/x-blender;\n" + \
-            "Exec={0} %f".format(_exec.as_posix().replace(" ", r"\ "))
+        kws = (
+            "3d;cg;modeling;animation;painting;"
+            "sculpting;texturing;video editing;"
+            "video tracking;rendering;render engine;"
+            "cycles;game engine;python;"
+        )
 
+        desktop_entry = "\n".join(
+            [
+                "[Desktop Entry]",
+                f"Name={name}",
+                "Comment=3D modeling, animation, rendering and post-production",
+                f"Keywords={kws}",
+                "Icon={}".format(icon.as_posix().replace(" ", r"\ ")),
+                "Terminal=false",
+                "Type=Application",
+                "Categories=Graphics;3DGraphics;",
+                "MimeType=application/x-blender;",
+                "Exec={} %f".format(_exec.as_posix().replace(" ", r"\ ")),
+            ]
+        )
         with open(dist, "w", encoding="utf-8") as file:
             file.write(desktop_entry)
 

@@ -9,7 +9,7 @@ class LibraryDrawer(QThread):
     build_found = pyqtSignal(Path)
     build_released = pyqtSignal()
 
-    def __init__(self, folders=["stable", "daily", "experimental", "custom"]):
+    def __init__(self, folders=("stable", "daily", "experimental", "custom")):
         QThread.__init__(self)
         self.folders = folders
         self.builds_count = 0
