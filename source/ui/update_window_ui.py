@@ -5,7 +5,7 @@ from widgets.base_progress_bar_widget import BaseProgressBarWidget
 
 class UpdateWindowUI:
     def setupUi(self, UpdateWindow):
-        UpdateWindow.setWindowModality(Qt.ApplicationModal)
+        UpdateWindow.setWindowModality(Qt.WindowModality.ApplicationModal)
         UpdateWindow.resize(256, 77)
         self.setWindowTitle("Updating Blender Launcher")
 
@@ -20,7 +20,7 @@ class UpdateWindowUI:
         self.HeaderLayout.setSpacing(0)
 
         self.HeaderLabel = QLabel("Updating Blender Launcher")
-        self.HeaderLabel.setAlignment(Qt.AlignCenter)
+        self.HeaderLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.ProgressBar = BaseProgressBarWidget()
         self.ProgressBar.setFixedHeight(36)

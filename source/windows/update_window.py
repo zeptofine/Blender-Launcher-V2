@@ -1,7 +1,6 @@
 import os
 
 from modules._platform import _popen, get_cwd, get_platform
-from PyQt5.QtWidgets import QMainWindow
 from threads.downloader import Downloader
 from threads.extractor import Extractor
 from ui.update_window_ui import UpdateWindowUI
@@ -10,7 +9,7 @@ from windows.base_window import BaseWindow
 link = "https://github.com/Victor-IX/Blender-Launcher/releases/download/{0}/Blender_Launcher_{0}_{1}_x64.zip"
 
 
-class BlenderLauncherUpdater(QMainWindow, BaseWindow, UpdateWindowUI):
+class BlenderLauncherUpdater(BaseWindow, UpdateWindowUI):
     def __init__(self, app, version, release_tag):
         super().__init__(app=app, version=version)
         self.setupUi(self)

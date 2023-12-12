@@ -1,20 +1,26 @@
+from __future__ import annotations
+
 from modules.connection_manager import ConnectionManager
+from modules.icons import get_icons
 from modules.settings import get_enable_high_dpi_scaling
 from PyQt5.QtCore import QFile, QPoint, Qt, QTextStream
 from PyQt5.QtGui import QFont, QFontDatabase
-from PyQt5.QtWidgets import QApplication, QWidget
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget
 
 if get_enable_high_dpi_scaling():
     QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
 
-class BaseWindow(QWidget):
-    def __init__(self, parent=None, app=None, version=None):
+class BaseWindow(QMainWindow):
+    def __init__(self, parent=None, app: QApplication | None = None, version=None):
         super().__init__()
         self.parent = parent
 
-        if parent is None:
+        # Setup icons
+        self.icons = get_icons()
+
+        if parent is None and app is not None:
             self.app = app
             self.version = version
 
@@ -24,8 +30,7 @@ class BaseWindow(QWidget):
             self.manager = self.cm.manager
 
             # Setup font
-            QFontDatabase.addApplicationFont(
-                ":/resources/fonts/OpenSans-SemiBold.ttf")
+            QFontDatabase.addApplicationFont(":resources/fonts/OpenSans-SemiBold.ttf")
             self.font_10 = QFont("Open Sans SemiBold", 10)
             self.font_10.setHintingPreference(QFont.PreferNoHinting)
             self.font_8 = QFont("Open Sans SemiBold", 8)
@@ -33,7 +38,7 @@ class BaseWindow(QWidget):
             self.app.setFont(self.font_10)
 
             # Setup style
-            file = QFile(":/resources/styles/global.qss")
+            file = QFile(":resources/styles/global.qss")
             file.open(QFile.ReadOnly | QFile.Text)
             self.style_sheet = QTextStream(file).readAll()
             self.app.setStyleSheet(self.style_sheet)

@@ -34,7 +34,7 @@ class GeneralTabWidget(SettingsFormWidget):
         self.LibraryFolderLineEdit.setReadOnly(True)
         self.LibraryFolderLineEdit.setCursorPosition(0)
 
-        self.SetLibraryFolderButton = QPushButton(self.parent.icon_folder, "")
+        self.SetLibraryFolderButton = QPushButton(self.parent.icons.folder, "")
         self.SetLibraryFolderButton.clicked.connect(self.set_library_folder)
 
         self.LibraryFolderWidget = QWidget()

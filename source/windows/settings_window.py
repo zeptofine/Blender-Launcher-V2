@@ -12,16 +12,16 @@ from modules.settings import (
     get_use_custom_tls_certificates,
     proxy_types,
 )
-from PyQt5.QtCore import QSize, Qt
-from PyQt5.QtWidgets import QHBoxLayout, QLabel, QMainWindow, QPushButton, QTabWidget
+from PyQt5.QtWidgets import QTabWidget
 from ui.settings_window_ui import Ui_SettingsWindow
+from widgets.header import WindowHeader
 from widgets.settings_window import appearance_tab, blender_builds_tab, connection_tab, general_tab
 from widgets.tab_widget import TabWidget
 from windows.base_window import BaseWindow
 from windows.dialog_window import DialogWindow
 
 
-class SettingsWindow(QMainWindow, BaseWindow, Ui_SettingsWindow):
+class SettingsWindow(BaseWindow, Ui_SettingsWindow):
     def __init__(self, parent):
         super().__init__(parent=parent)
         self.setupUi(self)
@@ -45,22 +45,9 @@ class SettingsWindow(QMainWindow, BaseWindow, Ui_SettingsWindow):
         self.old_enable_high_dpi_scaling = get_enable_high_dpi_scaling()
 
         # Header layout
-        self.HeaderLayout = QHBoxLayout()
-        self.HeaderLayout.setContentsMargins(36, 0, 0, 0)
-        self.HeaderLayout.setSpacing(0)
-        self.CentralLayout.addLayout(self.HeaderLayout)
-
-        self.CloseButton = QPushButton(self.parent.icon_close, "")
-        self.CloseButton.setIconSize(QSize(20, 20))
-        self.CloseButton.setFixedSize(36, 32)
-        self.CloseButton.setProperty("HeaderButton", True)
-        self.CloseButton.setProperty("CloseButton", True)
-        self.CloseButton.clicked.connect(self._close)
-        self.HeaderLabel = QLabel("Settings")
-        self.HeaderLabel.setAlignment(Qt.AlignCenter)
-
-        self.HeaderLayout.addWidget(self.HeaderLabel, 1)
-        self.HeaderLayout.addWidget(self.CloseButton, 0, Qt.AlignRight)
+        self.header = WindowHeader(self, "Settings", use_minimize=False)
+        self.header.close_signal.connect(self._close)
+        self.CentralLayout.addWidget(self.header)
 
         # Tab Layout
         self.TabWidget = QTabWidget()

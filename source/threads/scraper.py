@@ -56,8 +56,7 @@ class Scraper(QThread):
         self.finished.emit()
 
     def get_latest_tag(self):
-        r = self.manager.request(
-            "GET", "https://github.com/Victor-IX/Blender-Launcher/releases/latest")
+        r = self.manager.request("GET", "https://github.com/Victor-IX/Blender-Launcher/releases/latest")
 
         if r is None:
             return None
@@ -96,14 +95,12 @@ class Scraper(QThread):
         self.strptime = datetime.fromtimestamp(build["file_mtime"], tz=timezone.utc)
         commit_time = self.strptime.strftime("%d-%b-%y-%H:%M")
         subversion = build["version"]
-        branch = branch_type
         build_var = ""
         if build["patch"] is not None and branch_type != "daily":
             build_var = build["patch"]
 
         if build["release_cycle"] is not None and branch_type == "daily":
             build_var = build["release_cycle"]
-            branch = build["branch"]
 
         if build["branch"] and branch_type == "experimental":
             build_var = build["branch"]

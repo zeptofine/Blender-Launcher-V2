@@ -148,19 +148,19 @@ class LibraryWidget(BaseBuildWidget):
         self.menu_extended.setFont(self.parent.font_10)
 
         self.deleteAction = QAction("Delete From Drive", self)
-        self.deleteAction.setIcon(self.parent.icon_delete)
+        self.deleteAction.setIcon(self.parent.icons.delete)
         self.deleteAction.triggered.connect(self.ask_remove_from_drive)
 
         self.addToQuickLaunchAction = QAction("Add To Quick Launch", self)
-        self.addToQuickLaunchAction.setIcon(self.parent.icon_quick_launch)
+        self.addToQuickLaunchAction.setIcon(self.parent.icons.quick_launch)
         self.addToQuickLaunchAction.triggered.connect(self.add_to_quick_launch)
 
         self.addToFavoritesAction = QAction("Add To Favorites", self)
-        self.addToFavoritesAction.setIcon(self.parent.icon_favorite)
+        self.addToFavoritesAction.setIcon(self.parent.icons.favorite)
         self.addToFavoritesAction.triggered.connect(self.add_to_favorites)
 
         self.removeFromFavoritesAction = QAction("Remove From Favorites", self)
-        self.removeFromFavoritesAction.setIcon(self.parent.icon_favorite)
+        self.removeFromFavoritesAction.setIcon(self.parent.icons.favorite)
         self.removeFromFavoritesAction.triggered.connect(
             self.remove_from_favorites)
 
@@ -493,32 +493,32 @@ class LibraryWidget(BaseBuildWidget):
         set_favorite_path(self.link.as_posix())
         self.parent.favorite = self
 
-        self.launchButton.setIcon(self.parent.icon_quick_launch)
+        self.launchButton.setIcon(self.parent.icons.quick_launch)
         self.addToQuickLaunchAction.setEnabled(False)
 
         # TODO Make more optimal and simpler synchronization
         if self.parent_widget is not None:
             self.parent_widget.launchButton.setIcon(
-                self.parent.icon_quick_launch)
+                self.parent.icons.quick_launch)
             self.parent_widget.addToQuickLaunchAction.setEnabled(False)
 
         if self.child_widget is not None:
             self.child_widget.launchButton.setIcon(
-                self.parent.icon_quick_launch)
+                self.parent.icons.quick_launch)
             self.child_widget.addToQuickLaunchAction.setEnabled(False)
 
     @QtCore.pyqtSlot()
     def remove_from_quick_launch(self):
-        self.launchButton.setIcon(self.parent.icon_fake)
+        self.launchButton.setIcon(self.parent.icons.fake)
         self.addToQuickLaunchAction.setEnabled(True)
 
         # TODO Make more optimal and simpler synchronization
         if self.parent_widget is not None:
-            self.parent_widget.launchButton.setIcon(self.parent.icon_fake)
+            self.parent_widget.launchButton.setIcon(self.parent.icons.fake)
             self.parent_widget.addToQuickLaunchAction.setEnabled(True)
 
         if self.child_widget is not None:
-            self.child_widget.launchButton.setIcon(self.parent.icon_fake)
+            self.child_widget.launchButton.setIcon(self.parent.icons.fake)
             self.child_widget.addToQuickLaunchAction.setEnabled(True)
 
     @QtCore.pyqtSlot()

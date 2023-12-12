@@ -33,15 +33,16 @@ from modules.settings import (
     set_library_folder,
 )
 from pynput import keyboard
-from PyQt5.QtCore import QSize, Qt, pyqtSignal
+from PyQt5.QtCore import QSize, Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QIcon
 from PyQt5.QtNetwork import QLocalServer
 from PyQt5.QtWidgets import (
     QAction,
+    QApplication,
     QHBoxLayout,
     QLabel,
-    QMainWindow,
     QPushButton,
+    QStatusBar,
     QSystemTrayIcon,
     QTabWidget,
     QVBoxLayout,
@@ -50,11 +51,11 @@ from PyQt5.QtWidgets import (
 from threads.library_drawer import LibraryDrawer
 from threads.remover import Remover
 from threads.scraper import Scraper
-from ui.main_window_ui import Ui_MainWindow
 from widgets.base_menu_widget import BaseMenuWidget
 from widgets.base_page_widget import BasePageWidget
 from widgets.base_tool_box_widget import BaseToolBoxWidget
 from widgets.download_widget import DownloadState, DownloadWidget
+from widgets.header import WindowHeader
 from widgets.library_widget import LibraryWidget
 from windows.base_window import BaseWindow
 from windows.dialog_window import DialogIcon, DialogWindow
@@ -70,16 +71,21 @@ class AppState(Enum):
     CHECKINGBUILDS = 2
 
 
-class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
+class BlenderLauncher(BaseWindow):
     show_signal = pyqtSignal()
     close_signal = pyqtSignal()
     quit_signal = pyqtSignal()
     quick_launch_fail_signal = pyqtSignal()
 
-    def __init__(self, app, version, logger, argv):
-        super().__init__(
-            app=app, version=version)
-        self.setupUi(self)
+    def __init__(self, app: QApplication, version, logger, argv):
+        super().__init__(app=app, version=version)
+        self.resize(640, 480)
+        self.setMinimumSize(QSize(640, 480))
+        self.setMaximumSize(QSize(1024, 768))
+        self.CentralWidget = QWidget(self)
+        self.CentralLayout = QVBoxLayout(self.CentralWidget)
+        self.CentralLayout.setContentsMargins(1, 1, 1, 1)
+        self.setCentralWidget(self.CentralWidget)
         self.setAcceptDrops(True)
 
         # Server
@@ -113,24 +119,10 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
         if self.platform == "macOS":
             self.app.aboutToQuit.connect(self._aboutToQuit)
 
-        # Icon cache
-        self.icon_settings = QIcon(":resources/icons/settings.svg")
-        self.icon_wiki = QIcon(":resources/icons/wiki.svg")
-        self.icon_minimize = QIcon(":resources/icons/minimize.svg")
-        self.icon_close = QIcon(":resources/icons/close.svg")
-        self.icon_folder = QIcon(":resources/icons/folder.svg")
-        self.icon_favorite = QIcon(":resources/icons/favorite.svg")
-        self.icon_fake = QIcon(":resources/icons/fake.svg")
-        self.icon_delete = QIcon(":resources/icons/delete.svg")
-        self.filled_circle = QIcon(":resources/icons/filled_circle.svg")
-        self.icon_quick_launch = QIcon(":resources/icons/quick_launch.svg")
-        self.icon_download = QIcon(":resources/icons/download.svg")
-        self.icon_file = QIcon(":resources/icons/file.svg")
-        self.icon_taskbar = QIcon(":resources/icons/bl/bl.ico")
 
         # Setup window
         self.setWindowTitle("Blender Launcher")
-        self.app.setWindowIcon(self.icon_taskbar)
+        self.app.setWindowIcon(self.icons.taskbar)
 
         # Set library folder from command line arguments
         if "-set-library-folder" in self.argv:
@@ -179,39 +171,29 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
             self.app.quit()
 
     def draw(self, polish=False):
-        self.HeaderLayout = QHBoxLayout()
-        self.HeaderLayout.setContentsMargins(0, 0, 0, 0)
-        self.HeaderLayout.setSpacing(0)
-        self.CentralLayout.addLayout(self.HeaderLayout)
-
-        self.SettingsButton = QPushButton(self.icon_settings, "")
+        # Header
+        self.SettingsButton = QPushButton(self.icons.settings, "")
         self.SettingsButton.setIconSize(QSize(20, 20))
         self.SettingsButton.setFixedSize(36, 32)
         self.SettingsButton.setToolTip("Show settings window")
-        self.DocsButton = QPushButton(self.icon_wiki, "")
+        self.SettingsButton.clicked.connect(self.show_settings_window)
+        self.DocsButton = QPushButton(self.icons.wiki, "")
         self.DocsButton.setIconSize(QSize(20, 20))
         self.DocsButton.setFixedSize(36, 32)
         self.DocsButton.setToolTip("Open documentation")
-        self.MinimizeButton = QPushButton(self.icon_minimize, "")
-        self.MinimizeButton.setIconSize(QSize(20, 20))
-        self.MinimizeButton.setFixedSize(36, 32)
-        self.CloseButton = QPushButton(self.icon_close, "")
-        self.CloseButton.setIconSize(QSize(20, 20))
-        self.CloseButton.setFixedSize(36, 32)
-        self.HeaderLabel = QLabel("Blender Launcher")
-        self.HeaderLabel.setAlignment(Qt.AlignCenter)
-
-        self.HeaderLayout.addWidget(self.SettingsButton, 0, Qt.AlignLeft)
-        self.HeaderLayout.addWidget(self.DocsButton, 0, Qt.AlignLeft)
-        self.HeaderLayout.addWidget(self.HeaderLabel, 1)
-        self.HeaderLayout.addWidget(self.MinimizeButton, 0, Qt.AlignRight)
-        self.HeaderLayout.addWidget(self.CloseButton, 0, Qt.AlignRight)
+        self.DocsButton.clicked.connect(lambda: webbrowser.open("https://Victor-IX.github.io/Blender-Launcher"))
 
         self.SettingsButton.setProperty("HeaderButton", True)
         self.DocsButton.setProperty("HeaderButton", True)
-        self.MinimizeButton.setProperty("HeaderButton", True)
-        self.CloseButton.setProperty("HeaderButton", True)
-        self.CloseButton.setProperty("CloseButton", True)
+
+        self.header = WindowHeader(
+            self,
+            "Blender Launcher",
+            (self.SettingsButton, self.DocsButton,),
+        )
+        self.header.close_signal.connect(self.attempt_close)
+        self.header.minimize_signal.connect(self.showMinimized)
+        self.CentralLayout.addWidget(self.header)
 
         # Tab layout
         self.TabWidget = QTabWidget()
@@ -322,16 +304,11 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
         self.LibraryToolBox.setCurrentIndex(get_default_library_page())
         self.DownloadsToolBox.setCurrentIndex(get_default_downloads_page())
 
-        # Connect buttons
-        self.SettingsButton.clicked.connect(self.show_settings_window)
-        self.DocsButton.clicked.connect(lambda: webbrowser.open(
-            "https://Victor-IX.github.io/Blender-Launcher"))
-        self.MinimizeButton.clicked.connect(self.showMinimized)
-        self.CloseButton.clicked.connect(self.close)
-
         # Status bar
-        self.StatusBar.setContentsMargins(0, 0, 0, 2)
-        self.StatusBar.setFont(self.font_10)
+        self.status_bar = QStatusBar(self)
+        self.setStatusBar(self.status_bar)
+        self.status_bar.setContentsMargins(0, 0, 0, 2)
+        self.status_bar.setFont(self.font_10)
         self.statusbarLabel = QLabel()
         self.ForceCheckNewBuilds = QPushButton("Check")
         self.ForceCheckNewBuilds.setEnabled(False)
@@ -344,12 +321,12 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
         self.statusbarVersion.setToolTip(
             "The version of Blender Launcher that is currently run. "
             "Press to check changelog.")
-        self.StatusBar.addPermanentWidget(self.ForceCheckNewBuilds)
-        self.StatusBar.addPermanentWidget(QLabel("│"))
-        self.StatusBar.addPermanentWidget(self.statusbarLabel)
-        self.StatusBar.addPermanentWidget(QLabel(""), 1)
-        self.StatusBar.addPermanentWidget(self.NewVersionButton)
-        self.StatusBar.addPermanentWidget(self.statusbarVersion)
+        self.status_bar.addPermanentWidget(self.ForceCheckNewBuilds)
+        self.status_bar.addPermanentWidget(QLabel("│"))
+        self.status_bar.addPermanentWidget(self.statusbarLabel)
+        self.status_bar.addPermanentWidget(QLabel(""), 1)
+        self.status_bar.addPermanentWidget(self.NewVersionButton)
+        self.status_bar.addPermanentWidget(self.statusbarVersion)
 
         # Draw library
         self.draw_library()
@@ -358,25 +335,27 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
         quit_action = QAction("Quit", self)
         quit_action.triggered.connect(self.quit_)
         hide_action = QAction("Hide", self)
-        hide_action.triggered.connect(self.close)
+        hide_action.triggered.connect(self.attempt_close)
         show_action = QAction("Show", self)
         show_action.triggered.connect(self._show)
-        show_favorites_action = QAction(self.icon_favorite, "Favorites", self)
+        show_favorites_action = QAction(self.icons.favorite, "Favorites", self)
         show_favorites_action.triggered.connect(self.show_favorites)
-        quick_launch_action = QAction(self.icon_quick_launch, "Blender", self)
+        quick_launch_action = QAction(self.icons.quick_launch, "Blender", self)
         quick_launch_action.triggered.connect(self.quick_launch)
 
         self.tray_menu = BaseMenuWidget()
         self.tray_menu.setFont(self.font_10)
-        self.tray_menu.addAction(quick_launch_action)
-        self.tray_menu.addAction(show_favorites_action)
-        self.tray_menu.addAction(show_action)
-        self.tray_menu.addAction(hide_action)
-        self.tray_menu.addAction(quit_action)
+        self.tray_menu.addActions([
+            quick_launch_action,
+            show_favorites_action,
+            show_action,
+            hide_action,
+            quit_action,
+        ])
 
         # Setup tray icon
         self.tray_icon = QSystemTrayIcon(self)
-        self.tray_icon.setIcon(self.icon_taskbar)
+        self.tray_icon.setIcon(self.icons.taskbar)
         self.tray_icon.setToolTip("Blender Launcher")
         self.tray_icon.activated.connect(self.tray_icon_activated)
         self.tray_icon.messageClicked.connect(self._show)
@@ -388,8 +367,10 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
 
         # Force style update
         if polish is True:
-            self.style().unpolish(self.app)
-            self.style().polish(self.app)
+            style = self.style()
+            assert style is not None
+            style.unpolish(self.app)
+            style.polish(self.app)
 
         # Show window
         if is_frozen():
@@ -399,6 +380,7 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
                 if get_launch_minimized_to_tray() is False:
                     self._show()
             else:
+                self.tray_icon.hide()
                 self._show()
         else:
             self.tray_icon.show()
@@ -533,32 +515,29 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
 
             self.toolbar_quick_launch_btn = QWinThumbnailToolButton(
                 self.thumbnail_toolbar)
-            self.toolbar_quick_launch_btn.setIcon(self.icon_quick_launch)
+            self.toolbar_quick_launch_btn.setIcon(self.icons.quick_launch)
             self.toolbar_quick_launch_btn.setToolTip("Quick Launch")
             self.toolbar_quick_launch_btn.clicked.connect(self.quick_launch)
             self.thumbnail_toolbar.addButton(self.toolbar_quick_launch_btn)
 
             self.toolbar_quit_btn = QWinThumbnailToolButton(
                 self.thumbnail_toolbar)
-            self.toolbar_quit_btn.setIcon(self.icon_close)
+            self.toolbar_quit_btn.setIcon(self.icons.close)
             self.toolbar_quit_btn.setToolTip("Quit")
             self.toolbar_quit_btn.clicked.connect(self.quit_)
             self.thumbnail_toolbar.addButton(self.toolbar_quit_btn)
 
-    def show_message(self, message, value=None, message_type=None):
-        if (message_type == MessageType.DOWNLOADFINISHED and
-                get_enable_download_notifications() is False):
-            return
-        if (message_type == MessageType.NEWBUILDS and
-              get_enable_new_builds_notifications() is False):
+    def show_message(self, message, value=None, type=None):
+        if (
+            (type == MessageType.DOWNLOADFINISHED and not get_enable_download_notifications())
+            or (type == MessageType.NEWBUILDS and not get_enable_new_builds_notifications())
+        ):
             return
 
         if value not in self.notification_pool:
             if value is not None:
                 self.notification_pool.append(value)
-            self.tray_icon.showMessage(
-                "Blender Launcher", message,
-                self.icon_taskbar, 10000)
+            self.tray_icon.showMessage("Blender Launcher", message, self.icons.taskbar, 10000)
 
     def show_favorites(self):
         self.TabWidget.setCurrentWidget(self.UserTab)
@@ -578,11 +557,12 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
             accept_text="OK", cancel_text=None, icon=DialogIcon.INFO)
 
     def tray_icon_activated(self, reason):
-        if reason == QSystemTrayIcon.Trigger:
+        if reason == QSystemTrayIcon.ActivationReason.Trigger:
             self._show()
-        elif reason == QSystemTrayIcon.MiddleClick:
+        elif reason == QSystemTrayIcon.ActivationReason.MiddleClick:
             self.quick_launch()
-        elif reason == QSystemTrayIcon.Context:
+
+        elif reason == QSystemTrayIcon.ActivationReason.Context:
             self.tray_menu.trigger()
 
     def _aboutToQuit(self):
@@ -792,6 +772,10 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
         temp_folder = Path(get_library_folder()) / ".temp"
         self.remover = Remover(temp_folder, self.parent)
         self.remover.start()
+
+    @pyqtSlot()
+    def attempt_close(self):
+        self.close()
 
     def closeEvent(self, event):
         if get_show_tray_icon():

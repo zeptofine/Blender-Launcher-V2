@@ -18,13 +18,13 @@ class BuildStateWidget(QWidget):
         self.countIcon = self.IconButton(text="0", prop="Count")
         self.countIcon.hide()
 
-        self.newBuildIcon = self.IconButton(self.parent.filled_circle)
+        self.newBuildIcon = self.IconButton(self.parent.icons.filled_circle)
         self.newBuildIcon.hide()
 
-        self.downloadIcon = self.IconButton(self.parent.icon_download)
+        self.downloadIcon = self.IconButton(self.parent.icons.download)
         self.downloadIcon.hide()
 
-        self.extractIcon = self.IconButton(self.parent.icon_file)
+        self.extractIcon = self.IconButton(self.parent.icons.file)
         self.extractIcon.hide()
 
         self.layout.addWidget(self.fakeIcon)
