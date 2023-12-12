@@ -89,22 +89,34 @@ class Scraper(QThread):
             data = json.loads(r.data)
             for build in data:
                 if build["platform"] == self.json_platform and self.b3d_link.match(build["file_name"]):
-
                     new_build = self.new_build_from_dict(build, branch_type)
                     self.links.emit(new_build)
-
 
     def new_build_from_dict(self, build, branch_type):
         self.strptime = datetime.fromtimestamp(build["file_mtime"], tz=timezone.utc)
         commit_time = self.strptime.strftime("%d-%b-%y-%H:%M")
+        subversion = build["version"]
+        branch = branch_type
+        build_var = ""
+        if build["patch"] is not None and branch_type != "daily":
+            build_var = build["patch"]
+
+        if build["release_cycle"] is not None and branch_type == "daily":
+            build_var = build["release_cycle"]
+            branch = build["branch"]
+
+        if build["branch"] and branch_type == "experimental":
+            build_var = build["branch"]
+        if build_var:
+            subversion = f"{subversion} {build_var}"
+
         return BuildInfo(
             build["url"],
-            build["version"],
+            subversion,
             build["hash"],
             commit_time,
             branch_type,
         )
-
 
     def scrap_download_links(self, url, branch_type, _limit=None, stable=False):
         r = self.manager.request("GET", url)
@@ -174,14 +186,12 @@ class Scraper(QThread):
 
         if commit_time is None:
             set_locale()
-            self.strptime = time.strptime(
-                info["last-modified"], "%a, %d %b %Y %H:%M:%S %Z")
+            self.strptime = time.strptime(info["last-modified"], "%a, %d %b %Y %H:%M:%S %Z")
             commit_time = time.strftime("%d-%b-%y-%H:%M", self.strptime)
 
         r.release_conn()
         r.close()
-        return BuildInfo(link, subversion,
-                         build_hash, commit_time, branch)
+        return BuildInfo(link, subversion, build_hash, commit_time, branch)
 
     def scrap_stable_releases(self):
         url = "https://download.blender.org/release/"
@@ -204,9 +214,8 @@ class Scraper(QThread):
             href = release["href"]
             match = re.search(subversion, href)
 
-            if (float(match.group(0)) >= 3.0):
-                self.scrap_download_links(
-                    urljoin(url, href), "stable", stable=True)
+            if float(match.group(0)) >= 3.0:
+                self.scrap_download_links(urljoin(url, href), "stable", stable=True)
 
         r.release_conn()
         r.close()
