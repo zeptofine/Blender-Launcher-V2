@@ -38,7 +38,7 @@ dev = [
 ]
 
 [tool.ruff]
-extend-ignore = ["F401", "E501", "B905"]
+extend-ignore = ["F401", "E501", "B905", "SIM114"]
 extend-select = [
   "A", # flake8-builtins
   "ASYNC", # flake8-async

@@ -29,9 +29,11 @@ proxy_types_chemes = {
 class ConnectionManager(QObject):
     error = pyqtSignal()
 
-    def __init__(self, version, proxy_type=get_proxy_type()) -> None:
-        super(ConnectionManager, self).__init__()
+    def __init__(self, version, proxy_type=None) -> None:
+        super().__init__()
         self.version = version
+        if proxy_type is None:
+            proxy_type = get_proxy_type()
         self.proxy_type = proxy_type
         self.manager = None
 
@@ -41,7 +43,7 @@ class ConnectionManager(QObject):
 
         # Get custom certificates file path
         if is_frozen() is True:
-            self.cacert = sys._MEIPASS + "/files/custom.pem"
+            self.cacert = sys._MEIPASS + "/files/custom.pem"  # noqa: SLF001
         else:
             self.cacert = (
                 get_cwd() / "source/resources/certificates/custom.pem").as_posix()
@@ -98,7 +100,7 @@ class ConnectionManager(QObject):
                         num_pools=50, maxsize=10,
                         headers=self._headers, proxy_headers=auth_headers)
 
-    def _request(self, _method, _url):
+    def request(self, _method, _url):
         try:
             return self.manager.request(_method, _url)
         except Exception:

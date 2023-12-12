@@ -35,7 +35,7 @@ sys.excepthook = handle_exception
 
 
 # List of available line arguments
-help = \
+cli_help = \
     """
     Command line arguments sheet:
 
@@ -58,7 +58,7 @@ def main():
 
     # Show list of available line arguments and exit
     if "-help" in sys.argv:
-        print(help)
+        print(cli_help)
         sys.exit()
 
     # Set logging level, default is 'WARNING'

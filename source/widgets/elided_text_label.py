@@ -9,7 +9,7 @@ class ElidedTextLabel(QLabel):
         self.text = text
         self.metrics = QFontMetrics(self.font())
 
-    def _setText(self, text):
+    def set_text(self, text):
         self.text = text
 
     def setElidedText(self):

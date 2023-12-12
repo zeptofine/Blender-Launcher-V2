@@ -1,3 +1,4 @@
+import contextlib
 import os
 import re
 import subprocess
@@ -36,7 +37,7 @@ from windows.dialog_window import DialogWindow
 class LibraryWidget(BaseBuildWidget):
     def __init__(self, parent, item, link, list_widget,
                  show_new=False, parent_widget=None):
-        super(LibraryWidget, self).__init__(parent=parent)
+        super().__init__(parent=parent)
 
         self.parent = parent
         self.item = item
@@ -265,19 +266,17 @@ class LibraryWidget(BaseBuildWidget):
             return
 
         if len(self.list_widget.selectedItems()) > 1:
-            self.menu_extended._show()
+            self.menu_extended.trigger()
             return
 
         self.createSymlinkAction.setEnabled(True)
         link_path = Path(get_library_folder()) / "bl_symlink"
         link = link_path.as_posix()
 
-        if os.path.exists(link):
-            if (os.path.isdir(link) or os.path.islink(link)):
-                if link_path.resolve() == self.link:
-                    self.createSymlinkAction.setEnabled(False)
+        if os.path.exists(link) and (os.path.isdir(link) or os.path.islink(link)) and link_path.resolve() == self.link:
+                self.createSymlinkAction.setEnabled(False)
 
-        self.menu._show()
+        self.menu.trigger()
 
     def mouseDoubleClickEvent(self, event):
         if self.build_info is not None:
@@ -290,7 +289,7 @@ class LibraryWidget(BaseBuildWidget):
                 self.show_new = False
 
             mod = QApplication.keyboardModifiers()
-            if not (mod == Qt.ShiftModifier or mod == Qt.ControlModifier):
+            if mod not in (Qt.ShiftModifier, Qt.ControlModifier):
                 self.list_widget.clearSelection()
                 self.item.setSelected(True)
 
@@ -299,7 +298,7 @@ class LibraryWidget(BaseBuildWidget):
         event.ignore()
 
     def install_template(self):
-        self.launchButton._setText("Updating")
+        self.launchButton.set_text("Updating")
         self.launchButton.setEnabled(False)
         self.deleteAction.setEnabled(False)
         self.installTemplateAction.setEnabled(False)
@@ -310,7 +309,7 @@ class LibraryWidget(BaseBuildWidget):
         self.tempalte_installer.start()
 
     def install_template_finished(self):
-        self.launchButton._setText("Launch")
+        self.launchButton.set_text("Launch")
         self.launchButton.setEnabled(True)
         self.deleteAction.setEnabled(True)
         self.installTemplateAction.setEnabled(True)
@@ -355,9 +354,8 @@ class LibraryWidget(BaseBuildWidget):
             bash_args = get_bash_arguments()
 
             if bash_args != "":
-                bash_args = bash_args + " nohup"
-            else:
-                bash_args = "nohup"
+                bash_args += " "
+            bash_args += "nohup"
 
             b3d_exe = library_folder / self.link / "blender"
             proc = _popen(f'{bash_args} "{b3d_exe.as_posix()}" {blender_args}')
@@ -407,7 +405,7 @@ class LibraryWidget(BaseBuildWidget):
         name = self.lineEdit.text().strip()
 
         if name:
-            self.branchLabel._setText(name)
+            self.branchLabel.set_text(name)
             self.build_info.custom_name = name
             self.write_build_info()
 
@@ -463,7 +461,7 @@ class LibraryWidget(BaseBuildWidget):
 
     # TODO Clear icon if build in quick launch
     def remover_started(self):
-        self.launchButton._setText("Deleting")
+        self.launchButton.set_text("Deleting")
         self.setEnabled(False)
         self.item.setFlags(self.item.flags() & ~Qt.ItemIsSelectable)
 
@@ -482,10 +480,9 @@ class LibraryWidget(BaseBuildWidget):
 
             return
         # TODO Child synchronization and reverting selection flags
-        else:
-            self.launchButton._setText("Launch")
-            self.setEnabled(True)
-            return
+        self.launchButton.set_text("Launch")
+        self.setEnabled(True)
+        return
 
     @QtCore.pyqtSlot()
     def add_to_quick_launch(self):
@@ -543,10 +540,7 @@ class LibraryWidget(BaseBuildWidget):
 
     @QtCore.pyqtSlot()
     def remove_from_favorites(self):
-        if self.parent_widget is None:
-            widget = self
-        else:
-            widget = self.parent_widget
+        widget = self.parent_widget or self
 
         self.parent.UserFavoritesListWidget.remove_item(
             widget.child_widget.item)
@@ -569,7 +563,8 @@ class LibraryWidget(BaseBuildWidget):
 
     @QtCore.pyqtSlot()
     def create_shortcut(self):
-        name = "Blender {0} {1}".format(
+        assert self.build_info is not None
+        name = "Blender {} {}".format(
             self.build_info.subversion.replace("(", "").replace(")", ""),
             self.build_info.branch.replace("-", " ").title())
 
@@ -582,16 +577,13 @@ class LibraryWidget(BaseBuildWidget):
         platform = get_platform()
 
         if platform == "Windows":
-            try:
+            with contextlib.suppress(Exception):
                 os.rmdir(link)
-            except Exception:
-                pass
 
             _call(f'mklink /J "{link}" "{target}"')
         elif platform == "Linux":
-            if os.path.exists(link):
-                if os.path.islink(link):
-                    os.unlink(link)
+            if os.path.exists(link) and os.path.islink(link):
+                os.unlink(link)
 
             os.symlink(target, link)
 

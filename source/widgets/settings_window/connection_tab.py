@@ -86,8 +86,8 @@ class ConnectionTabWidget(SettingsFormWidget):
     def toggle_use_custom_tls_certificates(self, is_checked):
         set_use_custom_tls_certificates(is_checked)
 
-    def change_proxy_type(self, type):
-        set_proxy_type(type)
+    def change_proxy_type(self, proxy_type):
+        set_proxy_type(proxy_type)
 
     def update_proxy_host(self):
         host = self.ProxyHostLineEdit.text()
