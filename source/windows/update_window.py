@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import os
 from typing import TypedDict
@@ -41,12 +43,17 @@ class BlenderLauncherUpdater(QMainWindow, BaseWindow, UpdateWindowUI):
         self.show()
         self.download()
 
-    def get_link(self) -> str:
+    def get_link(self, response: GitHubRelease | None = None) -> str:
         assert self.manager is not None
-        api_req = api_link.format(self.release_tag)
-        d = self.manager.request("GET", api_req, headers=self._headers)
-        assert d.data is not None
-        response: GitHubRelease = json.loads(d.data)
+        if response is None:
+            # api_req = api_link.format(self.release_tag)
+            # d = self.manager.request("GET", api_req, headers=self._headers)
+            # assert d.data is not None
+            # response: GitHubRelease = json.loads(d.data)
+            with open("update_test_responses.json") as f:
+                response = json.loads(f.read())
+
+        assert response is not None
 
         assets = response["assets"]
         asset_table = {}  # {"<Distro>": asset}
@@ -68,6 +75,11 @@ class BlenderLauncherUpdater(QMainWindow, BaseWindow, UpdateWindowUI):
             if key in asset_table:
                 release = asset_table[key]
                 break
+
+        from pprint import pprint
+
+        pprint(release)
+        exit()
 
         return release["browser_download_url"]
 
