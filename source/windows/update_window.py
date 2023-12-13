@@ -39,11 +39,12 @@ class BlenderLauncherUpdater(QMainWindow, BaseWindow, UpdateWindowUI):
 
     def finish(self, dist):
         # Launch 'Blender Launcher.exe' and exit
+        launcher = str(dist)
         if self.platform == "Windows":
-            _popen([dist])
+            _popen([launcher])
         elif self.platform == "Linux":
             os.chmod(dist, 0o744)
-            _popen('nohup "' + dist + '"')
+            _popen('nohup "' + launcher + '"')
 
         self.app.quit()
 
