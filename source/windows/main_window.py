@@ -673,10 +673,10 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
         self.set_status("Error: connection failed at " + utcnow)
         self.app_state = AppState.IDLE
 
-        if get_check_for_new_builds_automatically() is True:
-            self.timer = threading.Timer(
-                get_new_builds_check_frequency(), self.draw_downloads)
-            self.timer.start()
+        # if get_check_for_new_builds_automatically() is True:
+        #     self.timer = threading.Timer(
+        #         get_new_builds_check_frequency(), self.draw_downloads)
+        #     self.timer.start()
 
     def scraper_finished(self):
         if self.new_downloads and not self.started:
@@ -696,11 +696,11 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
         for page in self.DownloadsToolBox.pages:
             page.set_info_label_text("No new builds available")
 
-        if get_check_for_new_builds_automatically() is True:
-            self.timer = threading.Timer(
-                get_new_builds_check_frequency(), self.draw_downloads)
-            self.timer.start()
-            self.started = False
+        # if get_check_for_new_builds_automatically() is True:
+        #     self.timer = threading.Timer(
+        #         get_new_builds_check_frequency(), self.draw_downloads)
+        #     self.timer.start()
+        #     self.started = False
 
         self.set_status("Last check at " + utcnow, True)
 
