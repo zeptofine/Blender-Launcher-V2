@@ -18,7 +18,7 @@ from modules.settings import (
 )
 from modules.shortcut import create_shortcut
 from PyQt5 import QtCore
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtWidgets import QAction, QApplication, QHBoxLayout, QLabel
 from threads.observer import Observer
 from threads.register import Register
@@ -62,8 +62,9 @@ class LibraryWidget(BaseBuildWidget):
         if self.parent_widget is None:
             self.setEnabled(False)
             self.infoLabel = QLabel("Loading build information...")
+            self.infoLabel.setWordWrap(True)
 
-            self.launchButton = LeftIconButtonWidget("Launch")
+            self.launchButton = LeftIconButtonWidget("")
             self.launchButton.setFixedWidth(85)
             self.launchButton.setProperty("CancelButton", True)
 
@@ -71,24 +72,25 @@ class LibraryWidget(BaseBuildWidget):
             self.layout.addWidget(self.infoLabel, stretch=1)
 
             self.build_info_reader = BuildInfoReader(link)
-            self.build_info_reader.finished.connect(self.draw)
+            self.build_info_reader.read.connect(self.draw)
+            self.build_info_reader.error.connect(self.trigger_damaged)
             self.build_info_reader.start()
         else:
             self.draw(self.parent_widget.build_info)
+
+    @pyqtSlot()
+    def trigger_damaged(self):
+        self.infoLabel.setText(f"Build *{Path(self.link).name}* is damaged!")
+        self.launchButton._setText("Delete")
+        self.launchButton.clicked.connect(self.ask_remove_from_drive)
+        self.setEnabled(True)
+        self.is_damaged = True
+
 
     def draw(self, build_info):
         if self.parent_widget is None:
             if self.parent.library_drawer is not None:
                 self.parent.library_drawer.build_released.emit()
-
-            if build_info is None:
-                self.infoLabel.setText(
-                    f"Build *{Path(self.link).name}* is damaged!")
-                self.launchButton.setText("Delete")
-                self.launchButton.clicked.connect(self.ask_remove_from_drive)
-                self.setEnabled(True)
-                self.is_damaged = True
-                return
 
             for i in reversed(range(self.layout.count())):
                 self.layout.itemAt(i).widget().setParent(None)
@@ -302,8 +304,7 @@ class LibraryWidget(BaseBuildWidget):
         self.launchButton.setEnabled(False)
         self.deleteAction.setEnabled(False)
         self.installTemplateAction.setEnabled(False)
-        self.tempalte_installer = TemplateInstaller(
-            self.parent.manager, self.link)
+        self.tempalte_installer = TemplateInstaller(self.link)
         self.tempalte_installer.finished.connect(
             self.install_template_finished)
         self.tempalte_installer.start()
@@ -456,7 +457,7 @@ class LibraryWidget(BaseBuildWidget):
         path = Path(get_library_folder()) / self.link
         self.remover = Remover(path, self.parent)
         self.remover.started.connect(self.remover_started)
-        self.remover.finished.connect(self.remover_finished)
+        self.remover.completed_removal.connect(self.remover_completed)
         self.remover.start()
 
     # TODO Clear icon if build in quick launch
@@ -468,9 +469,9 @@ class LibraryWidget(BaseBuildWidget):
         if self.child_widget is not None:
             self.child_widget.remover_started()
 
-    def remover_finished(self, code):
+    def remover_completed(self, code):
         if self.child_widget is not None:
-            self.child_widget.remover_finished(code)
+            self.child_widget.remover_completed(code)
 
         if code == 0:
             self.list_widget.remove_item(self.item)

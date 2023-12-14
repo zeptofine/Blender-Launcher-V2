@@ -1,8 +1,9 @@
 import re
 from enum import Enum
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from modules.build_info import BuildInfoReader
+from modules.build_info import BuildInfo, BuildInfoReader
 from modules.enums import MessageType
 from modules.settings import get_install_template, get_library_folder
 from PyQt5.QtCore import Qt
@@ -17,6 +18,9 @@ from widgets.build_state_widget import BuildStateWidget
 from widgets.datetime_widget import DateTimeWidget
 from widgets.elided_text_label import ElidedTextLabel
 
+if TYPE_CHECKING:
+    from windows.main_window import BlenderLauncher
+
 
 class DownloadState(Enum):
     IDLE = 1
@@ -27,7 +31,7 @@ class DownloadState(Enum):
 
 
 class DownloadWidget(BaseBuildWidget):
-    def __init__(self, parent, list_widget, item, build_info,
+    def __init__(self, parent: "BlenderLauncher", list_widget, item, build_info,
                  show_new=False):
         super().__init__(parent=parent)
         self.parent = parent
@@ -88,8 +92,7 @@ class DownloadWidget(BaseBuildWidget):
         self.branchLabel = ElidedTextLabel(branch_name)
         self.commitTimeLabel = DateTimeWidget(
             self.build_info.commit_time, self.build_info.build_hash)
-        self.build_state_widget = BuildStateWidget(
-            self.parent, self.list_widget)
+        self.build_state_widget = BuildStateWidget(parent, self.list_widget)
 
         self.build_info_hl.addWidget(self.subversionLabel)
         self.build_info_hl.addWidget(self.branchLabel, stretch=1)
@@ -139,18 +142,17 @@ class DownloadWidget(BaseBuildWidget):
             self.show_new = False
 
         self.state = DownloadState.DOWNLOADING
+        self.progressBar.set_title("Downloading")
         self.downloader = Downloader(self.parent.manager, self.build_info.link)
         self.downloader.started.connect(self.download_started)
         self.downloader.progress_changed.connect(self.progressBar.set_progress)
         self.downloader.finished.connect(self.init_extractor)
-
-        self.progress_start = 0
-        self.progress_end = 0.5
-
         self.downloader.start()
 
     def init_extractor(self, source):
         self.state = DownloadState.EXTRACTING
+        self.progressBar.set_title("Extracting")
+
         self.cancelButton.setEnabled(False)
         library_folder = Path(get_library_folder())
 
@@ -172,12 +174,11 @@ class DownloadWidget(BaseBuildWidget):
         self.build_dir = dist
 
         if get_install_template():
-            self.template_installer = TemplateInstaller(
-                self.parent.manager, self.build_dir)
+            self.progressBar.set_title("Copying data...")
+            self.template_installer = TemplateInstaller(self.build_dir)
             self.template_installer.progress_changed.connect(
                 self.progressBar.set_progress)
-            self.template_installer.finished.connect(
-                lambda: self.download_get_info())
+            self.template_installer.finished.connect(self.download_get_info)
             self.template_installer.start()
         else:
             self.download_get_info()
@@ -207,15 +208,15 @@ class DownloadWidget(BaseBuildWidget):
 
         self.build_info_reader = BuildInfoReader(
             self.build_dir, archive_name=archive_name)
-        self.build_info_reader.finished.connect(self.download_rename)
+        self.build_info_reader.read.connect(self.download_rename)
         self.build_info_reader.start()
 
-    def download_rename(self, build_info):
+    def download_rename(self, build_info: BuildInfo):
         self.state = DownloadState.RENAMING
         new_name = f"blender-{build_info.subversion}+{build_info.branch}.{build_info.build_hash}"
 
         self.build_renamer = Renamer(self.build_dir, new_name)
-        self.build_renamer.finished.connect(self.download_finished)
+        self.build_renamer.completed.connect(self.download_finished)
         self.build_renamer.start()
 
     def download_finished(self, path):

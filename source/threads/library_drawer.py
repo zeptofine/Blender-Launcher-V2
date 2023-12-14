@@ -6,8 +6,7 @@ from PyQt5.QtCore import QThread, pyqtSignal
 
 
 class LibraryDrawer(QThread):
-    build_found = pyqtSignal("PyQt_PyObject")
-    finished = pyqtSignal()
+    build_found = pyqtSignal(Path)
     build_released = pyqtSignal()
 
     def __init__(self, folders=("stable", "daily", "experimental", "custom")):
@@ -44,7 +43,6 @@ class LibraryDrawer(QThread):
         while self.builds_count > 0:
             QThread.msleep(250)
 
-        self.finished.emit()
 
     def handle_build_released(self):
         self.builds_count = self.builds_count - 1

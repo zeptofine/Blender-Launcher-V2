@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import QTabWidget
 
 
 class BaseToolBoxWidget(QTabWidget):
-    tab_changed = pyqtSignal("PyQt_PyObject")
+    tab_changed = pyqtSignal(int)
 
     def __init__(self, parent=None):
         super().__init__()
@@ -12,9 +12,8 @@ class BaseToolBoxWidget(QTabWidget):
         self.list_widgets = set()
 
         self.setContentsMargins(0, 0, 0, 0)
-        self.setTabPosition(QTabWidget.West)
+        self.setTabPosition(QTabWidget.TabPosition.West)
         self.setProperty("West", True)
-
         self.currentChanged.connect(self.current_changed)
 
     def add_page_widget(self, page_widget, page_name):

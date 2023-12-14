@@ -7,17 +7,15 @@ from PyQt5.QtCore import QThread, pyqtSignal
 
 
 class TemplateInstaller(QThread):
-    started = pyqtSignal()
-    progress_changed = pyqtSignal("PyQt_PyObject", "PyQt_PyObject")
-    finished = pyqtSignal()
+    progress_changed = pyqtSignal(int, object)
 
-    def __init__(self, manager, dist):
+
+    def __init__(self, dist: Path):
         QThread.__init__(self)
-        self.manager = manager
         self.dist = dist
 
     def run(self):
-        self.progress_changed.emit(0, "Copying Data...")
+        self.progress_changed.emit(0, 0)
         library_folder = Path(get_library_folder())
         template = library_folder / "template"
 
@@ -29,8 +27,6 @@ class TemplateInstaller(QThread):
                 source = template.as_posix()
                 dist = directory.as_posix()
                 copytree(source, dist, dirs_exist_ok=True)
-                self.finished.emit()
                 return
 
-        self.finished.emit()
         return

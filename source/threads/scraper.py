@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import logging
 import re
@@ -20,10 +22,9 @@ if TYPE_CHECKING:
 
 
 class Scraper(QThread):
-    links = pyqtSignal("PyQt_PyObject")
-    new_bl_version = pyqtSignal("PyQt_PyObject")
+    links = pyqtSignal(BuildInfo)
+    new_bl_version = pyqtSignal(str)
     error = pyqtSignal()
-    finished = pyqtSignal()
 
     def __init__(self, parent, man):
         QThread.__init__(self)
@@ -53,9 +54,8 @@ class Scraper(QThread):
         if latest_tag is not None:
             self.new_bl_version.emit(self.get_latest_tag())
         self.manager.manager.clear()
-        self.finished.emit()
 
-    def get_latest_tag(self):
+    def get_latest_tag(self) -> str | None:
         r = self.manager.request("GET", "https://github.com/Victor-IX/Blender-Launcher/releases/latest")
 
         if r is None:

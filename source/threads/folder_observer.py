@@ -5,8 +5,6 @@ from PyQt5.QtCore import QThread, pyqtSignal
 
 
 class FolderObserver(QThread):
-    started = pyqtSignal()
-    finished = pyqtSignal()
 
     def __init__(self, parent, folder):
         QThread.__init__(self)
@@ -14,7 +12,6 @@ class FolderObserver(QThread):
         self.folder = Path(folder)
 
     def run(self):
-        self.started.emit()
         subfolders = self.get_subfolders()
 
         while self.parent:
