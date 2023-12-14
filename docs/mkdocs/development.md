@@ -26,7 +26,17 @@
 
 1. Install dependencies
 
+    === "Minimum set of packages for building executable"
+
+        ```
+        pip install -e .
+        ```
+
+    === "All set of packages including development tools"
+
+        ```
         pdm install
+        ```
 
 1. Enter the virtual environment
 
