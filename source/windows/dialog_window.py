@@ -24,7 +24,7 @@ class DialogWindow(BaseWindow, Ui_DialogWindow):
         title="Warning",
         text="Dialog Window",
         accept_text="Accept",
-        cancel_text="Cancel",
+        cancel_text: str | None = "Cancel",
         icon=DialogIcon.WARNING,
     ):
         super().__init__(parent=parent)

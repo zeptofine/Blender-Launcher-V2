@@ -34,7 +34,6 @@ from modules.settings import (
 )
 from pynput import keyboard
 from PyQt5.QtCore import QSize, Qt, pyqtSignal, pyqtSlot
-from PyQt5.QtGui import QIcon
 from PyQt5.QtNetwork import QLocalServer
 from PyQt5.QtWidgets import (
     QAction,
@@ -55,7 +54,7 @@ from widgets.base_menu_widget import BaseMenuWidget
 from widgets.base_page_widget import BasePageWidget
 from widgets.base_tool_box_widget import BaseToolBoxWidget
 from widgets.download_widget import DownloadState, DownloadWidget
-from widgets.header import WindowHeader
+from widgets.header import WHeaderButton, WindowHeader
 from widgets.library_widget import LibraryWidget
 from windows.base_window import BaseWindow
 from windows.dialog_window import DialogIcon, DialogWindow
@@ -172,19 +171,16 @@ class BlenderLauncher(BaseWindow):
 
     def draw(self, polish=False):
         # Header
-        self.SettingsButton = QPushButton(self.icons.settings, "")
-        self.SettingsButton.setIconSize(QSize(20, 20))
-        self.SettingsButton.setFixedSize(36, 32)
+        self.SettingsButton = WHeaderButton(self.icons.settings, "", self)
         self.SettingsButton.setToolTip("Show settings window")
         self.SettingsButton.clicked.connect(self.show_settings_window)
-        self.DocsButton = QPushButton(self.icons.wiki, "")
-        self.DocsButton.setIconSize(QSize(20, 20))
-        self.DocsButton.setFixedSize(36, 32)
+        self.DocsButton = WHeaderButton(self.icons.wiki, "", self)
         self.DocsButton.setToolTip("Open documentation")
         self.DocsButton.clicked.connect(lambda: webbrowser.open("https://Victor-IX.github.io/Blender-Launcher"))
 
         self.SettingsButton.setProperty("HeaderButton", True)
         self.DocsButton.setProperty("HeaderButton", True)
+
 
         self.header = WindowHeader(
             self,
@@ -225,9 +221,9 @@ class BlenderLauncher(BaseWindow):
         self.toggle_sync_library_and_downloads_pages(
             get_sync_library_and_downloads_pages())
 
-        self.LibraryTab.layout().addWidget(self.LibraryToolBox)
-        self.DownloadsTab.layout().addWidget(self.DownloadsToolBox)
-        self.UserTab.layout().addWidget(self.UserToolBox)
+        self.LibraryTabLayout.addWidget(self.LibraryToolBox)
+        self.DownloadsTabLayout.addWidget(self.DownloadsToolBox)
+        self.UserTabLayout.addWidget(self.UserToolBox)
 
         page = BasePageWidget(
             parent=self,
@@ -406,8 +402,7 @@ class BlenderLauncher(BaseWindow):
         except Exception:
             self.dlg = DialogWindow(
                 parent=self, title="Warning",
-                text="Global hotkey sequence was not recognized!<br> \
-                      Try to use another combination of keys",
+                text="Global hotkey sequence was not recognized!<br>Try to use another combination of keys",
                 accept_text="OK", cancel_text=None)
             return
 
