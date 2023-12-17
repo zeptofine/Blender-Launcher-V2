@@ -162,7 +162,7 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
 
     def set_library_folder(self):
         library_folder = get_cwd().as_posix()
-        new_library_folder = FileDialogWindow().getExistingDirectory(
+        new_library_folder = FileDialogWindow().get_directory(
             self, "Select Library Folder", library_folder)
 
         if (new_library_folder):
@@ -325,7 +325,7 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
         # Connect buttons
         self.SettingsButton.clicked.connect(self.show_settings_window)
         self.DocsButton.clicked.connect(lambda: webbrowser.open(
-            "https://Victor-IX.github.io/Blender-Launcher"))
+            "https://Victor-IX.github.io/Blender-Launcher-V2"))
         self.MinimizeButton.clicked.connect(self.showMinimized)
         self.CloseButton.clicked.connect(self.close)
 
@@ -436,7 +436,7 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
             self.quick_launch()
 
     def show_changelog(self):
-        url = f"https://github.com/Victor-IX/Blender-Launcher/releases/tag/v{self.version}"
+        url = f"https://github.com/Victor-IX/Blender-Launcher-V2/releases/tag/v{self.version}"
         webbrowser.open(url)
 
     def toggle_sync_library_and_downloads_pages(self, is_sync):

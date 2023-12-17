@@ -48,7 +48,7 @@ There is known issue related to Qt and some Linux distributions like Mint where 
 
 ### `.temp`
 
-:   **.temp** folder is used to store downloaded *.zip and *.tar files.
+:   **.temp** folder is used to store downloaded `*.zip` and `*.tar` files.
 
 ### `custom`
 
@@ -75,7 +75,7 @@ There is known issue related to Qt and some Linux distributions like Mint where 
 
 ### `experimental`
 
-:   **experimental** folder is used to store [experimental branches builds](https://builder.blender.org/download/branches/).
+:   **experimental** folder is used to store [experimental branches builds](https://builder.blender.org/download/experimental/).
 
 ### `stable`
 

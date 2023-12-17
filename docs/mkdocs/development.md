@@ -6,61 +6,47 @@
 
 - Linux or Windows x64
 - Python 3.9
-- Pipenv
+- pdm
 
 !!! warning
 
-    To use different Python version change requirements inside `Pipfile` and use following command to apply changes:
+    To use different Python version, run `pdm use` to select the correct python interpreter
 
-    ```
-    pipenv lock
-    ```
-
-## Using Pipenv
+## Using Pdm
 
 !!! info "Note"
 
-    All actions should be performed under repository root folder i.e. `/Blender-Launcher`!
+    All actions should be performed under repository root folder i.e. `/Blender-Launcher-V2`!
 
 ### Preparing virtual environment
 
-1. Install pipenv package
+1. Install pdm package
 
-    ```
-    pip install pipenv
-    ```
+        pip install pdm
 
 1. Install dependencies
 
     === "Minimum set of packages for building executable"
 
         ```
-        pipenv install
+        pip install -e .
         ```
 
     === "All set of packages including development tools"
 
         ```
-        pipenv install --dev
+        pdm install
         ```
 
 1. Enter the virtual environment
 
-    ```
-    pipenv shell
-    ```
-
-### Running Blender Launcher as Python script (i.e. executing `main.py`)
-
-```
-pipenv run start
-```
+        pdm venv activate
 
 ### Building Blender Launcher executable
 
 !!! warning
 
-    Executable for target platform must be built under this exclusive platform!
+    Executables made in Pyinstaller must be built inside the target platform! You cannot build for a different platform other than your own.
 
 === "Windows"
 
@@ -70,14 +56,14 @@ pipenv run start
         .\build_win.bat
         ```
 
-    1. Look for bundled app under `Blender-Launcher\dist\release` folder
+    1. Look for bundled app under `Blender-Launcher-V2\dist\release` folder
 
 === "Linux"
 
     1. Run shell script file
 
         ```
-        . build_linux.sh
+        sh build_linux.sh
         ```
 
-    1. Look for bundled app under `Blender-Launcher\dist\release` folder
+    1. Look for bundled app under `Blender-Launcher-V2\dist\release` folder

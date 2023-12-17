@@ -1,6 +1,6 @@
 [project]
 name = "Blender-Launcher-V2"
-version = "1.16.0"
+version = "1.16.1"
 description = ""
 authors = []
 dependencies = [
@@ -80,3 +80,6 @@ target-version = "py39"
 
 [tool.isort]
 profile = "black"
+
+[tool.setuptools]
+py-modules = ["source"]

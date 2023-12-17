@@ -12,7 +12,7 @@ from threads.extractor import Extractor
 from ui.update_window_ui import UpdateWindowUI
 from windows.base_window import BaseWindow
 
-release_link = "https://github.com/Victor-IX/Blender-Launcher/releases/download/{0}/Blender_Launcher_{0}_{1}_x64.zip"
+release_link = "https://github.com/Victor-IX/Blender-Launcher-V2/releases/download/{0}/Blender_Launcher_{0}_{1}_x64.zip"
 api_link = "https://api.github.com/repos/Victor-IX/Blender-Launcher-V2/releases/tags/{}"
 
 
