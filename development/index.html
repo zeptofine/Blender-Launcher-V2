@@ -160,7 +160,7 @@
     
     
       <div class="md-header__source">
-        <a href="https://github.com/Victor-IX/Blender-Launcher" title="Go to repository" class="md-source" data-md-component="source">
+        <a href="https://github.com/Victor-IX/Blender-Launcher-V2" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
@@ -205,7 +205,7 @@
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/Victor-IX/Blender-Launcher" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/Victor-IX/Blender-Launcher-V2" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
@@ -420,28 +420,19 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#using-pipenv" class="md-nav__link">
+  <a href="#using-pdm" class="md-nav__link">
     <span class="md-ellipsis">
-      Using Pipenv
+      Using Pdm
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Using Pipenv">
+    <nav class="md-nav" aria-label="Using Pdm">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#preparing-virtual-environment" class="md-nav__link">
     <span class="md-ellipsis">
       Preparing virtual environment
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#running-blender-launcher-as-python-script-ie-executing-mainpy" class="md-nav__link">
-    <span class="md-ellipsis">
-      Running Blender Launcher as Python script (i.e. executing main.py)
     </span>
   </a>
   
@@ -505,28 +496,19 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#using-pipenv" class="md-nav__link">
+  <a href="#using-pdm" class="md-nav__link">
     <span class="md-ellipsis">
-      Using Pipenv
+      Using Pdm
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Using Pipenv">
+    <nav class="md-nav" aria-label="Using Pdm">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#preparing-virtual-environment" class="md-nav__link">
     <span class="md-ellipsis">
       Preparing virtual environment
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#running-blender-launcher-as-python-script-ie-executing-mainpy" class="md-nav__link">
-    <span class="md-ellipsis">
-      Running Blender Launcher as Python script (i.e. executing main.py)
     </span>
   </a>
   
@@ -568,51 +550,46 @@
 <ul>
 <li>Linux or Windows x64</li>
 <li>Python 3.9</li>
-<li>Pipenv</li>
+<li>pdm</li>
 </ul>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>To use different Python version change requirements inside <code>Pipfile</code> and use following command to apply changes:</p>
-<div class="highlight"><pre><span></span><code>pipenv lock
-</code></pre></div>
+<p>To use different Python version, run <code>pdm use</code> to select the correct python interpreter</p>
 </div>
-<h2 id="using-pipenv">Using Pipenv<a class="headerlink" href="#using-pipenv" title="Permanent link">&para;</a></h2>
+<h2 id="using-pdm">Using Pdm<a class="headerlink" href="#using-pdm" title="Permanent link">&para;</a></h2>
 <div class="admonition info">
 <p class="admonition-title">Note</p>
-<p>All actions should be performed under repository root folder i.e. <code>/Blender-Launcher</code>!</p>
+<p>All actions should be performed under repository root folder i.e. <code>/Blender-Launcher-V2</code>!</p>
 </div>
 <h3 id="preparing-virtual-environment">Preparing virtual environment<a class="headerlink" href="#preparing-virtual-environment" title="Permanent link">&para;</a></h3>
 <ol>
 <li>
-<p>Install pipenv package</p>
-<div class="highlight"><pre><span></span><code>pip install pipenv
+<p>Install pdm package</p>
+<div class="highlight"><pre><span></span><code>pip install pdm
 </code></pre></div>
 </li>
 <li>
 <p>Install dependencies</p>
 <div class="tabbed-set" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Minimum set of packages for building executable</label><div class="tabbed-content">
-<div class="highlight"><pre><span></span><code>pipenv install
+<div class="highlight"><pre><span></span><code>pip install -e .
 </code></pre></div>
 </div>
 <input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">All set of packages including development tools</label><div class="tabbed-content">
-<div class="highlight"><pre><span></span><code>pipenv install --dev
+<div class="highlight"><pre><span></span><code>pdm install
 </code></pre></div>
 </div>
 </div>
 </li>
 <li>
 <p>Enter the virtual environment</p>
-<div class="highlight"><pre><span></span><code>pipenv shell
+<div class="highlight"><pre><span></span><code>pdm venv activate
 </code></pre></div>
 </li>
 </ol>
-<h3 id="running-blender-launcher-as-python-script-ie-executing-mainpy">Running Blender Launcher as Python script (i.e. executing <code>main.py</code>)<a class="headerlink" href="#running-blender-launcher-as-python-script-ie-executing-mainpy" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>pipenv run start
-</code></pre></div>
 <h3 id="building-blender-launcher-executable">Building Blender Launcher executable<a class="headerlink" href="#building-blender-launcher-executable" title="Permanent link">&para;</a></h3>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>Executable for target platform must be built under this exclusive platform!</p>
+<p>Executables made in Pyinstaller must be built inside the target platform! You cannot build for a different platform other than your own.</p>
 </div>
 <div class="tabbed-set" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><label for="__tabbed_2_1">Windows</label><div class="tabbed-content">
 <ol>
@@ -622,7 +599,7 @@
 </code></pre></div>
 </li>
 <li>
-<p>Look for bundled app under <code>Blender-Launcher\dist\release</code> folder</p>
+<p>Look for bundled app under <code>Blender-Launcher-V2\dist\release</code> folder</p>
 </li>
 </ol>
 </div>
@@ -630,11 +607,11 @@
 <ol>
 <li>
 <p>Run shell script file</p>
-<div class="highlight"><pre><span></span><code>. build_linux.sh
+<div class="highlight"><pre><span></span><code>sh build_linux.sh
 </code></pre></div>
 </li>
 <li>
-<p>Look for bundled app under <code>Blender-Launcher\dist\release</code> folder</p>
+<p>Look for bundled app under <code>Blender-Launcher-V2\dist\release</code> folder</p>
 </li>
 </ol>
 </div>
@@ -660,7 +637,7 @@
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      Copyright &copy; 2022 Victor Chedeville │ Blender Launcher GPL-3.0 License │ Version 1.16.0
+      Copyright &copy; 2022 Victor Chedeville │ Blender Launcher GPL-3.0 License │ Version 1.16.1
     </div>
   
   
