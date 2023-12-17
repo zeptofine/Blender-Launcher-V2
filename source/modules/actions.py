@@ -45,7 +45,7 @@ class ActionQueue(deque[Action]):
         for worker in ws:
             if not worker.isRunning():
                 self.workers.pop(worker)
-                print("Popped", worker)
+                logging.debug("Popped", worker)
 
     def thread_with_action(self, action: Action):
         for listener, a in self.workers.items():

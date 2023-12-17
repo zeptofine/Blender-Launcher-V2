@@ -217,7 +217,6 @@ class DownloadWidget(BaseBuildWidget):
     def download_rename(self, build_info: BuildInfo):
         self.state = DownloadState.RENAMING
         new_name = f"blender-{build_info.subversion}+{build_info.branch}.{build_info.build_hash}"
-        print("Renaming")
         assert self.build_dir is not None
         a = RenameAction(
             src=self.build_dir,

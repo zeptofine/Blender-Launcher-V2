@@ -132,7 +132,6 @@ def read_blender_version(path: Path, old_build_info: BuildInfo | None = None, ar
     # Recover user defined favorites builds information
     custom_name = ""
     is_favorite = False
-    print(old_build_info)
     if old_build_info is not None:
         custom_name = old_build_info.custom_name
         is_favorite = old_build_info.is_favorite

@@ -17,6 +17,7 @@ def extract(source: Path, destination: Path, progress_callback: Callable[[int, i
             infolist = zf.infolist()
             folder = infolist[0].filename.split("/")[0]
             uncompress_size = sum(member.file_size for member in infolist)
+            progress_callback(0, uncompress_size)
             extracted_size = 0
 
             for member in infolist:
@@ -32,6 +33,7 @@ def extract(source: Path, destination: Path, progress_callback: Callable[[int, i
             extracted_size = 0
 
             for member in tar.getmembers():
+                progress_callback(0, uncompress_size)
                 tar.extract(member, path=destination)
                 extracted_size += member.size
                 progress_callback(extracted_size, uncompress_size)
