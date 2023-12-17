@@ -44,17 +44,17 @@ class WindowHeader(QWidget):
     ):
         super().__init__(parent)
         layout = QHBoxLayout()
-        layout.setContentsMargins(8, 0, 0, 0)
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
         self.layout_ = layout
         self.setLayout(layout)
 
-        self.label = QLabel(label, self)
-        layout.addWidget(self.label, 1)
-        layout.addStretch(2)
-
         buttons = list(widgets)
+        self.label = QLabel(label, self)
+        self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        buttons.append(self.label)
+
         self.close_button = WHeaderButton(parent.icons.close, "")
         self.close_button.setProperty("HeaderButton", True)
         self.close_button.setProperty("CloseButton", True)
@@ -69,7 +69,9 @@ class WindowHeader(QWidget):
 
 
         for widget in buttons:
-            layout.addWidget(widget, 0, Qt.AlignmentFlag.AlignRight)
+            if widget is self.label:
+                layout.addWidget(widget, 2)
+            layout.addWidget(widget, 0)
 
         # make sure the label is centered despite the buttons surrounding the label
         # layout.setContentsMargins(max(int(margins * 36), 0), 0, 0, 0)

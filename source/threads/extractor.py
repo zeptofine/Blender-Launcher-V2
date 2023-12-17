@@ -1,9 +1,68 @@
 import tarfile
 import zipfile
+from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
 
 from modules._platform import _check_call
+from modules.action import Action
 from PyQt5.QtCore import QThread, pyqtSignal
+
+
+def extract(source: Path, destination: Path, progress_callback: Callable[[int, int], None]):
+    progress_callback(0, 0)
+    suffixes = source.suffixes
+    if suffixes[-1] == ".zip":
+        with zipfile.ZipFile(source) as zf:
+            infolist = zf.infolist()
+            folder = infolist[0].filename.split("/")[0]
+            uncompress_size = sum(member.file_size for member in infolist)
+            extracted_size = 0
+
+            for member in infolist:
+                zf.extract(member, destination)
+                extracted_size += member.file_size
+                progress_callback(extracted_size, uncompress_size)
+        return destination / folder
+
+    if suffixes[-2] == ".tar":
+        with tarfile.open(source) as tar:
+            folder = tar.getnames()[0].split("/")[0]
+            uncompress_size = sum(member.size for member in tar.getmembers())
+            extracted_size = 0
+
+            for member in tar.getmembers():
+                tar.extract(member, path=destination)
+                extracted_size += member.size
+                progress_callback(extracted_size, uncompress_size)
+        return destination / folder
+
+    if suffixes[-1] == ".dmg":
+        _check_call(["hdiutil", "mount", source.as_posix()])
+        dist = destination / source.stem
+
+        if not dist.is_dir():
+            dist.mkdir()
+
+        _check_call(["cp", "-R", "/Volumes/Blender", dist.as_posix()])
+        _check_call(["hdiutil", "unmount", "/Volumes/Blender"])
+
+        return dist
+    return None
+
+
+@dataclass(frozen=True)
+class ExtractAction(Action):
+    file: Path
+    destination: Path
+
+    progress = pyqtSignal(int, int)
+    finished = pyqtSignal(Path)
+
+    def run(self):
+        result = extract(self.file, self.destination, self.progress.emit)
+        if result is not None:
+            self.finished.emit(result)
 
 
 class Extractor(QThread):
@@ -17,44 +76,6 @@ class Extractor(QThread):
         self.dist = Path(dist)
 
     def run(self):
-        self.progress_changed.emit(0, 0)
-
-        suffixes = self.source.suffixes
-
-        if suffixes[-1] == ".zip":
-            zf = zipfile.ZipFile(self.source)
-            folder = zf.infolist()[0].filename.split("/")[0]
-            uncompress_size = sum(file.file_size for file in zf.infolist())
-            extracted_size = 0
-
-            for file in zf.infolist():
-                zf.extract(file, self.dist)
-                extracted_size += file.file_size
-                self.progress_changed.emit(extracted_size, uncompress_size)
-
-            zf.close()
-            self.finished.emit(self.dist / folder)
-        elif suffixes[-2] == ".tar":
-            tar = tarfile.open(self.source)
-            folder = tar.getnames()[0].split("/")[0]
-            uncompress_size = sum(member.size for member in tar.getmembers())
-            extracted_size = 0
-
-            for member in tar.getmembers():
-                tar.extract(member, path=self.dist)
-                extracted_size += member.size
-                self.progress_changed.emit(extracted_size, uncompress_size)
-
-            tar.close()
-            self.finished.emit(self.dist / folder)
-        elif suffixes[-1] == ".dmg":
-            _check_call(["hdiutil", "mount", self.source.as_posix()])
-            dist = self.dist / self.source.stem
-
-            if not dist.is_dir():
-                dist.mkdir()
-
-            _check_call(["cp", "-R", "/Volumes/Blender", dist.as_posix()])
-            _check_call(["hdiutil", "unmount", "/Volumes/Blender"])
-
-            self.finished.emit(dist)
+        result = extract(self.source, self.dist, self.progress_changed.emit)
+        if result is not None:
+            self.finished.emit(result)

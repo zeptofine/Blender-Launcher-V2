@@ -89,8 +89,8 @@ class SettingsWindow(BaseWindow, Ui_SettingsWindow):
             if enable_quick_launch_key_seq is True:
                 self.parent.setup_global_hotkeys_listener()
             # Stop hotkeys listener
-            elif self.parent.listener is not None:
-                self.parent.listener.stop()
+            elif self.parent.hk_listener is not None:
+                self.parent.hk_listener.stop()
         # Only key sequence was changed
         # Restart hotkeys listener
         elif self.old_quick_launch_key_seq != quick_launch_key_seq and enable_quick_launch_key_seq:

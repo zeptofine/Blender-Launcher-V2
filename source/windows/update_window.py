@@ -1,8 +1,9 @@
 import os
 
 from modules._platform import _popen, get_cwd, get_platform
-from threads.downloader import Downloader
-from threads.extractor import Extractor
+from modules.actions import ActionQueue
+from threads.downloader import DownloadAction
+from threads.extractor import ExtractAction, Extractor
 from ui.update_window_ui import UpdateWindowUI
 from windows.base_window import BaseWindow
 
@@ -18,6 +19,9 @@ class BlenderLauncherUpdater(BaseWindow, UpdateWindowUI):
         self.platform = get_platform()
         self.cwd = get_cwd()
 
+        self.queue = ActionQueue(parent=self, worker_count=1)
+        self.queue.start()
+
         self.show()
         self.download()
 
@@ -25,16 +29,17 @@ class BlenderLauncherUpdater(BaseWindow, UpdateWindowUI):
         # TODO
         # This function should not use proxy for downloading new builds!
         self.link = link.format(self.release_tag, self.platform)
-        self.downloader = Downloader(self.manager, self.link)
-        self.downloader.progress_changed.connect(self.ProgressBar.set_progress)
-        self.downloader.finished.connect(self.extract)
-        self.downloader.start()
+        assert self.manager is not None
+        a = DownloadAction(self.manager, self.link)
+        a.progress.connect(self.ProgressBar.set_progress)
+        a.finished.connect(self.extract)
+        self.queue.put(a)
 
     def extract(self, source):
-        self.extractor = Extractor(self.manager, source, self.cwd)
-        self.extractor.progress_changed.connect(self.ProgressBar.set_progress)
-        self.extractor.finished.connect(self.finish)
-        self.extractor.start()
+        a = ExtractAction(source, self.cwd)
+        a.progress.connect(self.ProgressBar.set_progress)
+        a.finished.connect(self.finish)
+        self.queue.put(a)
 
     def finish(self, dist):
         # Launch 'Blender Launcher.exe' and exit
@@ -48,5 +53,6 @@ class BlenderLauncherUpdater(BaseWindow, UpdateWindowUI):
         self.app.quit()
 
     def closeEvent(self, event):
+        self.queue.fullstop()
         event.ignore()
         self.showMinimized()

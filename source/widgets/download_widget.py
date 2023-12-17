@@ -3,15 +3,15 @@ from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from modules.build_info import BuildInfo, BuildInfoReader
+from modules.build_info import BuildInfo, ReadBuildAction
 from modules.enums import MessageType
 from modules.settings import get_install_template, get_library_folder
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout
-from threads.downloader import Downloader
-from threads.extractor import Extractor
-from threads.renamer import Renamer
-from threads.template_installer import TemplateInstaller
+from threads.downloader import DownloadAction
+from threads.extractor import ExtractAction
+from threads.renamer import RenameAction
+from threads.template_installer import TemplateAction
 from widgets.base_build_widget import BaseBuildWidget
 from widgets.base_progress_bar_widget import BaseProgressBarWidget
 from widgets.build_state_widget import BuildStateWidget
@@ -31,10 +31,9 @@ class DownloadState(Enum):
 
 
 class DownloadWidget(BaseBuildWidget):
-    def __init__(self, parent: "BlenderLauncher", list_widget, item, build_info,
-                 show_new=False):
+    def __init__(self, parent: "BlenderLauncher", list_widget, item, build_info, show_new=False):
         super().__init__(parent=parent)
-        self.parent = parent
+        self.parent: "BlenderLauncher" = parent
         self.list_widget = list_widget
         self.item = item
         self.build_info = build_info
@@ -51,13 +50,13 @@ class DownloadWidget(BaseBuildWidget):
         self.downloadButton.setFixedWidth(85)
         self.downloadButton.setProperty("LaunchButton", True)
         self.downloadButton.clicked.connect(self.init_downloader)
-        self.downloadButton.setCursor(Qt.PointingHandCursor)
+        self.downloadButton.setCursor(Qt.CursorShape.PointingHandCursor)
 
         self.cancelButton = QPushButton("Cancel")
         self.cancelButton.setFixedWidth(85)
         self.cancelButton.setProperty("CancelButton", True)
         self.cancelButton.clicked.connect(self.download_cancelled)
-        self.cancelButton.setCursor(Qt.PointingHandCursor)
+        self.cancelButton.setCursor(Qt.CursorShape.PointingHandCursor)
         self.cancelButton.hide()
 
         self.main_hl = QHBoxLayout()
@@ -85,13 +84,11 @@ class DownloadWidget(BaseBuildWidget):
             # branch_name = re.sub(
             #     r"(\-|\_)", " ", self.build_info.branch).title()
 
-        self.subversionLabel = QLabel(
-            self.build_info.subversion.split(" ", 1)[0])
+        self.subversionLabel = QLabel(self.build_info.subversion.split(" ", 1)[0])
         self.subversionLabel.setFixedWidth(85)
         self.subversionLabel.setIndent(20)
         self.branchLabel = ElidedTextLabel(branch_name)
-        self.commitTimeLabel = DateTimeWidget(
-            self.build_info.commit_time, self.build_info.build_hash)
+        self.commitTimeLabel = DateTimeWidget(self.build_info.commit_time, self.build_info.build_hash)
         self.build_state_widget = BuildStateWidget(parent, self.list_widget)
 
         self.build_info_hl.addWidget(self.subversionLabel)
@@ -141,17 +138,22 @@ class DownloadWidget(BaseBuildWidget):
             self.build_state_widget.setNewBuild(False)
             self.show_new = False
 
+        assert self.parent.manager is not None
         self.state = DownloadState.DOWNLOADING
         self.progressBar.set_title("Downloading")
-        self.downloader = Downloader(self.parent.manager, self.build_info.link)
-        self.downloader.started.connect(self.download_started)
-        self.downloader.progress_changed.connect(self.progressBar.set_progress)
-        self.downloader.finished.connect(self.init_extractor)
-        self.downloader.start()
+        self.dl_action = DownloadAction(
+            manager=self.parent.manager,
+            link=self.build_info.link,
+        )
+        self.dl_action.progress.connect(self.progressBar.set_progress)
+        self.dl_action.finished.connect(self.init_extractor)
+        self.parent.action_queue.put(self.dl_action)
+        self.download_started()
 
     def init_extractor(self, source):
         self.state = DownloadState.EXTRACTING
         self.progressBar.set_title("Extracting")
+        self.build_state_widget.setExtract()
 
         self.cancelButton.setEnabled(False)
         library_folder = Path(get_library_folder())
@@ -163,23 +165,20 @@ class DownloadWidget(BaseBuildWidget):
         else:
             dist = library_folder / "experimental"
 
-        self.extractor = Extractor(self.parent.manager, source, dist)
-        self.extractor.progress_changed.connect(self.progressBar.set_progress)
-        self.extractor.finished.connect(self.init_template_installer)
-        self.extractor.start()
-        self.build_state_widget.setExtract()
+        a = ExtractAction(file=source, destination=dist)
+        a.progress.connect(self.progressBar.set_progress)
+        a.finished.connect(self.init_template_installer)
+        self.parent.action_queue.put(a)
 
-    def init_template_installer(self, dist):
+    def init_template_installer(self, dist: Path):
         self.build_state_widget.setExtract(False)
         self.build_dir = dist
 
         if get_install_template():
             self.progressBar.set_title("Copying data...")
-            self.template_installer = TemplateInstaller(self.build_dir)
-            self.template_installer.progress_changed.connect(
-                self.progressBar.set_progress)
-            self.template_installer.finished.connect(self.download_get_info)
-            self.template_installer.start()
+            a = TemplateAction(destination=self.build_dir)
+            a.finished.connect(self.download_get_info)
+            self.parent.action_queue.put(a)
         else:
             self.download_get_info()
 
@@ -194,8 +193,7 @@ class DownloadWidget(BaseBuildWidget):
         self.state = DownloadState.IDLE
         self.progressBar.hide()
         self.cancelButton.hide()
-        self.downloader.terminate()
-        self.downloader.wait()
+        self.parent.kill_thread_with_action(self.dl_action)
         self.downloadButton.show()
         self.build_state_widget.setDownload(False)
 
@@ -206,18 +204,27 @@ class DownloadWidget(BaseBuildWidget):
         elif self.parent.platform in {"Windows", "macOS"}:
             archive_name = Path(self.build_info.link).stem
 
-        self.build_info_reader = BuildInfoReader(
-            self.build_dir, archive_name=archive_name)
-        self.build_info_reader.read.connect(self.download_rename)
-        self.build_info_reader.start()
+        assert self.build_dir is not None
+        a = ReadBuildAction(
+            self.build_dir,
+            archive_name=archive_name,
+        )
+        a.finished.connect(self.download_rename)
+        a.failure.connect(lambda: print("Reading failed"))
+        self.parent.action_queue.put(a)
 
     def download_rename(self, build_info: BuildInfo):
         self.state = DownloadState.RENAMING
         new_name = f"blender-{build_info.subversion}+{build_info.branch}.{build_info.build_hash}"
-
-        self.build_renamer = Renamer(self.build_dir, new_name)
-        self.build_renamer.completed.connect(self.download_finished)
-        self.build_renamer.start()
+        print("Renaming")
+        assert self.build_dir is not None
+        a = RenameAction(
+            src=self.build_dir,
+            dst_name=new_name,
+        )
+        a.finished.connect(self.download_finished)
+        a.failure.connect(lambda: print("Renaming failed"))
+        self.parent.action_queue.put(a)
 
     def download_finished(self, path):
         self.state = DownloadState.IDLE
@@ -229,9 +236,7 @@ class DownloadWidget(BaseBuildWidget):
             self.parent.draw_to_library(path, True)
             self.parent.clear_temp()
             name = f"{self.subversionLabel.text()} {self.branchLabel.text} {self.build_info.commit_time}"
-            self.parent.show_message(
-                f"Blender {name} download finished!",
-                type=MessageType.DOWNLOADFINISHED)
+            self.parent.show_message(f"Blender {name} download finished!", type=MessageType.DOWNLOADFINISHED)
             self.destroy()
 
         self.build_state_widget.setExtract(False)

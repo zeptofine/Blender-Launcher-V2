@@ -1,32 +1,22 @@
+from dataclasses import dataclass
 from pathlib import Path
 
+from modules.action import Action
 from PyQt5.QtCore import QThread, pyqtSignal
 
 
-class Renamer(QThread):
-    completed = pyqtSignal([Path], [])
+@dataclass(frozen=True)
+class RenameAction(Action):
+    src: Path
+    dst_name: str
 
-    def __init__(self, src_path, dst_name, parent=None):
-        QThread.__init__(self)
-        self.src_path = src_path
-        self.dst_name = (dst_name.lower()).replace(" ", "-")
-        self.parent = parent
+    finished = pyqtSignal(Path)
+    failure = pyqtSignal()
 
     def run(self):
-
-        if self.parent is not None:
-            while self.parent.renamer_count > 0:
-                QThread.msleep(250)
-
-            self.parent.renamer_count += 1
-
         try:
-            dst = Path(self.src_path).parent / self.dst_name
-            self.src_path.rename(dst)
-            self.completed.emit(dst)
+            dst = self.src.parent / self.dst_name.lower().replace(" ", "-")
+            self.src.rename(dst)
+            self.finished.emit(dst)
         except OSError:
-            self.completed.emit()
-
-        if self.parent is not None:
-            self.parent.remover_count -= 1
-
+            self.failure.emit()

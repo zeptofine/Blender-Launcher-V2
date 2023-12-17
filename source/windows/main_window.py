@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import os
 import re
-import threading
 import webbrowser
 from enum import Enum
 from pathlib import Path
@@ -11,11 +12,11 @@ from time import localtime, strftime
 import resources_rc
 from items.base_list_widget_item import BaseListWidgetItem
 from modules._platform import _popen, get_cwd, get_platform, is_frozen, set_locale
+from modules.actions import Action, ActionQueue
 from modules.connection_manager import ConnectionManager
 from modules.enums import MessageType
 from modules.settings import (
     create_library_folders,
-    get_check_for_new_builds_automatically,
     get_default_downloads_page,
     get_default_library_page,
     get_default_tab,
@@ -24,7 +25,6 @@ from modules.settings import (
     get_enable_quick_launch_key_seq,
     get_launch_minimized_to_tray,
     get_library_folder,
-    get_new_builds_check_frequency,
     get_proxy_type,
     get_quick_launch_key_seq,
     get_show_tray_icon,
@@ -38,7 +38,6 @@ from PyQt5.QtNetwork import QLocalServer
 from PyQt5.QtWidgets import (
     QAction,
     QApplication,
-    QHBoxLayout,
     QLabel,
     QPushButton,
     QStatusBar,
@@ -47,8 +46,8 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from threads.library_drawer import LibraryDrawer
-from threads.remover import Remover
+from threads.library_drawer import DrawLibraryAction
+from threads.remover import RemoveAction
 from threads.scraper import Scraper
 from widgets.base_menu_widget import BaseMenuWidget
 from widgets.base_page_widget import BasePageWidget
@@ -81,10 +80,10 @@ class BlenderLauncher(BaseWindow):
         self.resize(640, 480)
         self.setMinimumSize(QSize(640, 480))
         self.setMaximumSize(QSize(1024, 768))
-        self.CentralWidget = QWidget(self)
-        self.CentralLayout = QVBoxLayout(self.CentralWidget)
+        widget = QWidget(self)
+        self.CentralLayout = QVBoxLayout(widget)
         self.CentralLayout.setContentsMargins(1, 1, 1, 1)
-        self.setCentralWidget(self.CentralWidget)
+        self.setCentralWidget(widget)
         self.setAcceptDrops(True)
 
         # Server
@@ -92,6 +91,11 @@ class BlenderLauncher(BaseWindow):
         self.server.listen("blender-launcher-server")
         self.quick_launch_fail_signal.connect(self.quick_launch_fail)
         self.server.newConnection.connect(self.new_connection)
+
+        # Action queue
+        self.action_queue = ActionQueue(worker_count=4, parent=self)
+        self.action_queue.start()
+        self.quit_signal.connect(self.action_queue.fullstop)
 
         # Global scope
         self.app = app
@@ -110,10 +114,8 @@ class BlenderLauncher(BaseWindow):
         self.latest_tag = ""
         self.new_downloads = False
         self.platform = get_platform()
-        self.remover_count = 0
-        self.renamer_count = 0
         self.settings_window = None
-        self.listener = None
+        self.hk_listener = None
 
         if self.platform == "macOS":
             self.app.aboutToQuit.connect(self._aboutToQuit)
@@ -386,8 +388,8 @@ class BlenderLauncher(BaseWindow):
             self.setup_global_hotkeys_listener()
 
     def setup_global_hotkeys_listener(self):
-        if self.listener is not None:
-            self.listener.stop()
+        if self.hk_listener is not None:
+            self.hk_listener.stop()
 
         key_seq = get_quick_launch_key_seq()
         keys = key_seq.split("+")
@@ -397,7 +399,7 @@ class BlenderLauncher(BaseWindow):
                 key_seq = key_seq.replace(key, "<" + key + ">")
 
         try:
-            self.listener = keyboard.GlobalHotKeys({
+            self.hk_listener = keyboard.GlobalHotKeys({
                 key_seq: self.on_activate_quick_launch})
         except Exception:
             self.dlg = DialogWindow(
@@ -406,7 +408,7 @@ class BlenderLauncher(BaseWindow):
                 accept_text="OK", cancel_text=None)
             return
 
-        self.listener.start()
+        self.hk_listener.start()
 
     def on_activate_quick_launch(self):
         if self.settings_window is None:
@@ -576,6 +578,28 @@ class BlenderLauncher(BaseWindow):
 
         self.destroy()
 
+    def kill_thread_with_action(self, action: Action):
+        """
+        Kills a thread listener using the current action.
+
+        Parameters
+        ----------
+        action : Action
+
+
+        Returns
+        -------
+        bool
+            success.
+        """
+        for listener, a in self.action_queue.workers.items():
+            if a == action:
+                listener.terminate()
+                listener.wait()
+                return True
+        return False
+
+
     def destroy(self):
         self.quit_signal.emit()
 
@@ -611,19 +635,21 @@ class BlenderLauncher(BaseWindow):
         self.LibraryExperimentalListWidget.clear_()
         self.UserCustomListWidget.clear_()
 
-        self.library_drawer = LibraryDrawer()
-        self.library_drawer.build_found.connect(self.draw_to_library)
+        self.library_drawer = DrawLibraryAction()
+        self.library_drawer.found.connect(self.draw_to_library)
 
         if "-offline" not in self.argv:
             self.library_drawer.finished.connect(self.draw_downloads)
 
-        self.library_drawer.start()
+        self.action_queue.put(self.library_drawer)
 
     def reload_custom_builds(self):
         self.UserCustomListWidget.clear_()
-        self.library_drawer = LibraryDrawer(folders=["custom"])
-        self.library_drawer.build_found.connect(self.draw_to_library)
-        self.library_drawer.start()
+
+        self.library_drawer = DrawLibraryAction(["custom"])
+        self.library_drawer.found.connect(self.draw_to_library)
+        self.action_queue.put(self.library_drawer)
+
 
     def draw_downloads(self):
         self.set_status("Checking for new builds", False)
@@ -765,8 +791,8 @@ class BlenderLauncher(BaseWindow):
 
     def clear_temp(self):
         temp_folder = Path(get_library_folder()) / ".temp"
-        self.remover = Remover(temp_folder, self.parent)
-        self.remover.start()
+        a = RemoveAction(temp_folder)
+        self.action_queue.put(a)
 
     @pyqtSlot()
     def attempt_close(self):

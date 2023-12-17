@@ -1,12 +1,15 @@
+from __future__ import annotations
+
 import contextlib
 import os
 import re
 import subprocess
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from items.base_list_widget_item import BaseListWidgetItem
 from modules._platform import _call, _popen, get_platform
-from modules.build_info import BuildInfoReader
+from modules.build_info import BuildInfo, BuildInfoWriter, ReadBuildAction
 from modules.settings import (
     get_bash_arguments,
     get_blender_startup_arguments,
@@ -22,8 +25,8 @@ from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtWidgets import QAction, QApplication, QHBoxLayout, QLabel
 from threads.observer import Observer
 from threads.register import Register
-from threads.remover import Remover
-from threads.template_installer import TemplateInstaller
+from threads.remover import RemoveAction
+from threads.template_installer import TemplateAction
 from widgets.base_build_widget import BaseBuildWidget
 from widgets.base_line_edit import BaseLineEdit
 from widgets.base_menu_widget import BaseMenuWidget
@@ -33,19 +36,22 @@ from widgets.elided_text_label import ElidedTextLabel
 from widgets.left_icon_button_widget import LeftIconButtonWidget
 from windows.dialog_window import DialogWindow
 
+if TYPE_CHECKING:
+    from windows.main_window import BlenderLauncher
+
 
 class LibraryWidget(BaseBuildWidget):
-    def __init__(self, parent, item, link, list_widget,
+    def __init__(self, parent: "BlenderLauncher", item, link, list_widget,
                  show_new=False, parent_widget=None):
         super().__init__(parent=parent)
 
-        self.parent = parent
+        self.parent: "BlenderLauncher" = parent
         self.item = item
         self.link = link
         self.list_widget = list_widget
         self.show_new = show_new
         self.observer = None
-        self.build_info = None
+        self.build_info: BuildInfo | None = None
         self.child_widget = None
         self.parent_widget = parent_widget
         self.build_info_writer = None
@@ -71,31 +77,31 @@ class LibraryWidget(BaseBuildWidget):
             self.layout.addWidget(self.launchButton)
             self.layout.addWidget(self.infoLabel, stretch=1)
 
-            self.build_info_reader = BuildInfoReader(link)
-            self.build_info_reader.read.connect(self.draw)
-            self.build_info_reader.error.connect(self.trigger_damaged)
-            self.build_info_reader.start()
+            a = ReadBuildAction(link)
+            a.finished.connect(self.draw)
+            a.failure.connect(self.trigger_damaged)
+
+            self.parent.action_queue.put(a)
+
         else:
             self.draw(self.parent_widget.build_info)
 
     @pyqtSlot()
     def trigger_damaged(self):
         self.infoLabel.setText(f"Build *{Path(self.link).name}* is damaged!")
-        self.launchButton._setText("Delete")
+        self.launchButton.set_text("Delete")
         self.launchButton.clicked.connect(self.ask_remove_from_drive)
         self.setEnabled(True)
         self.is_damaged = True
 
 
-    def draw(self, build_info):
+    def draw(self, build_info: BuildInfo):
         if self.parent_widget is None:
-            if self.parent.library_drawer is not None:
-                self.parent.library_drawer.build_released.emit()
 
             for i in reversed(range(self.layout.count())):
                 self.layout.itemAt(i).widget().setParent(None)
 
-        self.build_info = build_info
+        self.build_info: BuildInfo = build_info
         self.branch = self.build_info.branch
         self.item.date = build_info.commit_time
 
@@ -108,7 +114,9 @@ class LibraryWidget(BaseBuildWidget):
         elif (self.parent_widget is not None) and self.build_info.custom_name:
             branch_name = self.build_info.custom_name
         elif self.branch == "daily":
-            branch_name = self.build_info.subversion.split(" ", 1)[1]
+            s = self.build_info.subversion.split(" ", 1)
+            branch_name = s[len(s) > 1] # if there is a second one, select it. otherwise select the old one
+
         else:
             branch_name = re.sub(
                 r"(\-|\_)", " ", self.build_info.branch).title()
@@ -304,10 +312,9 @@ class LibraryWidget(BaseBuildWidget):
         self.launchButton.setEnabled(False)
         self.deleteAction.setEnabled(False)
         self.installTemplateAction.setEnabled(False)
-        self.tempalte_installer = TemplateInstaller(self.link)
-        self.tempalte_installer.finished.connect(
-            self.install_template_finished)
-        self.tempalte_installer.start()
+        a = TemplateAction(self.link)
+        a.finished.connect(self.install_template_finished)
+        self.parent.action_queue.put(a)
 
     def install_template_finished(self):
         self.launchButton.set_text("Launch")
@@ -419,9 +426,10 @@ class LibraryWidget(BaseBuildWidget):
 
     def write_build_info(self):
         if self.build_info_writer is None:
-            self.build_info_writer = BuildInfoReader(
-                self.link, build_info=self.build_info,
-                mode=BuildInfoReader.Mode.WRITE)
+            self.build_info_writer = BuildInfoWriter(
+                self.link,
+                self.build_info,
+            )
             self.build_info_writer.finished.connect(
                 self.build_info_writer_finished)
             self.build_info_writer.start()
@@ -455,10 +463,11 @@ class LibraryWidget(BaseBuildWidget):
             return
 
         path = Path(get_library_folder()) / self.link
-        self.remover = Remover(path, self.parent)
-        self.remover.started.connect(self.remover_started)
-        self.remover.completed_removal.connect(self.remover_completed)
-        self.remover.start()
+        a = RemoveAction(path)
+        a.finished.connect(self.remover_completed)
+        self.parent.action_queue.put(a)
+        self.remover_started()
+
 
     # TODO Clear icon if build in quick launch
     def remover_started(self):
@@ -550,10 +559,9 @@ class LibraryWidget(BaseBuildWidget):
         widget.removeFromFavoritesAction.setVisible(False)
         widget.addToFavoritesAction.setVisible(True)
 
+        assert self.build_info is not None
         self.build_info.is_favorite = False
-        self.build_info_writer = BuildInfoReader(
-            self.link, build_info=self.build_info,
-            mode=BuildInfoReader.Mode.WRITE)
+        self.build_info_writer = BuildInfoWriter(self.link, self.build_info)
         self.build_info_writer.start()
 
     @QtCore.pyqtSlot()
