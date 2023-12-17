@@ -6,9 +6,9 @@
 
 Before creating an issue, please check the following:
 
-* Avoid duplicates - look through [open](https://github.com/Victor-IX/Blender-Launcher/issues) and [closed](https://github.com/Victor-IX/Blender-Launcher/issues?q=is%3Aissue+is%3Aclosed) issues sections and make sure your problem is not reported by another user
+* Avoid duplicates - look through [open](https://github.com/Victor-IX/Blender-Launcher-V2/issues) and [closed](https://github.com/Victor-IX/Blender-Launcher-V2/issues?q=is%3Aissue+is%3Aclosed) issues sections and make sure your problem is not reported by another user
 
-* Make sure you're using the latest build of Blender Launcher from [releases](https://github.com/Victor-IX/Blender-Launcher/releases)
+* Make sure you're using the latest build of Blender Launcher from [releases](https://github.com/Victor-IX/Blender-Launcher-V2/releases)
 
 * If Blender 3D is closing right after running it from Blender Launcher, the problem is probably in the build itself or in [configuration files](https://docs.blender.org/manual/en/2.83/advanced/blender_directory_layout.html)
 
@@ -45,6 +45,6 @@ Before creating an issue, please check the following:
 
 ## How to report a bug
 
-To report a bug, use an [issue template](https://github.com/Victor-IX/Blender-Launcher/issues/new?assignees=Victor-IX&labels=bug&template=bug_report.md&title=). Consider attaching a `BL.log` file if it exists near the `Blender Launcher` executable.
+To report a bug, use an [issue template](https://github.com/Victor-IX/Blender-Launcher-V2/issues/new?assignees=Victor-IX&labels=bug&template=bug_report.md&title=). Consider attaching a `BL.log` file if it exists near the `Blender Launcher` executable.
 
-[:fontawesome-solid-bug: Submit an issue](https://github.com/Victor-IX/Blender-Launcher/issues/new?assignees=Victor-IX&labels=bug&template=bug_report.md&title=){: .md-button .md-button--primary }
+[:fontawesome-solid-bug: Submit an issue](https://github.com/Victor-IX/Blender-Launcher-V2/issues/new?assignees=Victor-IX&labels=bug&template=bug_report.md&title=){: .md-button .md-button--primary }

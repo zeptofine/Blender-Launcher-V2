@@ -179,7 +179,7 @@ class BlenderLauncher(BaseWindow):
         self.SettingsButton.clicked.connect(self.show_settings_window)
         self.DocsButton = WHeaderButton(self.icons.wiki, "", self)
         self.DocsButton.setToolTip("Open documentation")
-        self.DocsButton.clicked.connect(lambda: webbrowser.open("https://Victor-IX.github.io/Blender-Launcher"))
+        self.DocsButton.clicked.connect(lambda: webbrowser.open("https://Victor-IX.github.io/Blender-Launcher-V2"))
 
         self.SettingsButton.setProperty("HeaderButton", True)
         self.DocsButton.setProperty("HeaderButton", True)
@@ -416,7 +416,7 @@ class BlenderLauncher(BaseWindow):
             self.quick_launch()
 
     def show_changelog(self):
-        url = f"https://github.com/Victor-IX/Blender-Launcher/releases/tag/v{self.version}"
+        url = f"https://github.com/Victor-IX/Blender-Launcher-V2/releases/tag/v{self.version}"
         webbrowser.open(url)
 
     def toggle_sync_library_and_downloads_pages(self, is_sync):
