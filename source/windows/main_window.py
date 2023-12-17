@@ -436,7 +436,7 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
             self.quick_launch()
 
     def show_changelog(self):
-        url = f"https://github.com/Victor-IX/Blender-Launcher/releases/tag/v{self.version}"
+        url = f"https://github.com/Victor-IX/Blender-Launcher-V2/releases/tag/v{self.version}"
         webbrowser.open(url)
 
     def toggle_sync_library_and_downloads_pages(self, is_sync):

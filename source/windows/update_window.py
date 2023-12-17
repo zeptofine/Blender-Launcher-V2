@@ -7,7 +7,7 @@ from threads.extractor import Extractor
 from ui.update_window_ui import UpdateWindowUI
 from windows.base_window import BaseWindow
 
-link = "https://github.com/Victor-IX/Blender-Launcher/releases/download/{0}/Blender_Launcher_{0}_{1}_x64.zip"
+link = "https://github.com/Victor-IX/Blender-Launcher-V2/releases/download/{0}/Blender_Launcher_{0}_{1}_x64.zip"
 
 
 class BlenderLauncherUpdater(QMainWindow, BaseWindow, UpdateWindowUI):
