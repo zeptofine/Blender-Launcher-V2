@@ -63,19 +63,3 @@ class ExtractAction(Action):
         result = extract(self.file, self.destination, self.progress.emit)
         if result is not None:
             self.finished.emit(result)
-
-
-class Extractor(QThread):
-    progress_changed = pyqtSignal(int, int)
-    finished = pyqtSignal(Path)
-
-    def __init__(self, manager, source, dist):
-        QThread.__init__(self)
-        self.manager = manager
-        self.source = Path(source)
-        self.dist = Path(dist)
-
-    def run(self):
-        result = extract(self.source, self.dist, self.progress_changed.emit)
-        if result is not None:
-            self.finished.emit(result)

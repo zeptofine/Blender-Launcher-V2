@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from queue import Queue
-from typing import TYPE_CHECKING
 
 from modules.action import Action
 from PyQt5.QtCore import QThread, pyqtSignal, pyqtSlot
@@ -16,10 +15,11 @@ class ActionQueue(Queue[Action]):
         )
 
         for listener in self.workers:
+
             def update_listener_dct(item, listener=listener):
                 self.workers[listener] = item
-            listener.item_changed.connect(update_listener_dct)
 
+            listener.item_changed.connect(update_listener_dct)
 
     def start(self):
         for worker in self.workers:
@@ -43,7 +43,6 @@ class ActionWorker(QThread):
             self.item = self.queue.get()
             self.item_changed.emit(self.item)
             self.item.run()
-
 
     @pyqtSlot()
     def fullstop(self):

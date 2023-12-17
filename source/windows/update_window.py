@@ -3,7 +3,7 @@ import os
 from modules._platform import _popen, get_cwd, get_platform
 from modules.actions import ActionQueue
 from threads.downloader import DownloadAction
-from threads.extractor import ExtractAction, Extractor
+from threads.extractor import ExtractAction
 from ui.update_window_ui import UpdateWindowUI
 from windows.base_window import BaseWindow
 
