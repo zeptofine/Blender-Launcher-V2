@@ -153,6 +153,7 @@ class BlenderLauncher(BaseWindow):
             create_library_folders(get_library_folder())
             self.draw()
 
+
     def set_library_folder(self):
         library_folder = get_cwd().as_posix()
         new_library_folder = FileDialogWindow().get_directory(
@@ -592,11 +593,10 @@ class BlenderLauncher(BaseWindow):
         bool
             success.
         """
-        for listener, a in self.action_queue.workers.items():
-            if a == action:
-                listener.terminate()
-                listener.wait()
-                return True
+        thread = self.action_queue.thread_with_action(action)
+        if thread is not None:
+            thread.fullstop()
+            return True
         return False
 
 
@@ -641,14 +641,13 @@ class BlenderLauncher(BaseWindow):
         if "-offline" not in self.argv:
             self.library_drawer.finished.connect(self.draw_downloads)
 
-        self.action_queue.put(self.library_drawer)
-
+        self.action_queue.append(self.library_drawer)
     def reload_custom_builds(self):
         self.UserCustomListWidget.clear_()
 
         self.library_drawer = DrawLibraryAction(["custom"])
         self.library_drawer.found.connect(self.draw_to_library)
-        self.action_queue.put(self.library_drawer)
+        self.action_queue.append(self.library_drawer)
 
 
     def draw_downloads(self):
@@ -792,7 +791,7 @@ class BlenderLauncher(BaseWindow):
     def clear_temp(self):
         temp_folder = Path(get_library_folder()) / ".temp"
         a = RemoveAction(temp_folder)
-        self.action_queue.put(a)
+        self.action_queue.append(a)
 
     @pyqtSlot()
     def attempt_close(self):

@@ -33,13 +33,13 @@ class BlenderLauncherUpdater(BaseWindow, UpdateWindowUI):
         a = DownloadAction(self.manager, self.link)
         a.progress.connect(self.ProgressBar.set_progress)
         a.finished.connect(self.extract)
-        self.queue.put(a)
+        self.queue.append(a)
 
     def extract(self, source):
         a = ExtractAction(source, self.cwd)
         a.progress.connect(self.ProgressBar.set_progress)
         a.finished.connect(self.finish)
-        self.queue.put(a)
+        self.queue.append(a)
 
     def finish(self, dist):
         # Launch 'Blender Launcher.exe' and exit

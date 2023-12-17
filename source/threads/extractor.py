@@ -6,7 +6,7 @@ from pathlib import Path
 
 from modules._platform import _check_call
 from modules.action import Action
-from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtCore import pyqtSignal
 
 
 def extract(source: Path, destination: Path, progress_callback: Callable[[int, int], None]):

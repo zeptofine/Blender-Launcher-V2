@@ -147,7 +147,7 @@ class DownloadWidget(BaseBuildWidget):
         )
         self.dl_action.progress.connect(self.progressBar.set_progress)
         self.dl_action.finished.connect(self.init_extractor)
-        self.parent.action_queue.put(self.dl_action)
+        self.parent.action_queue.append(self.dl_action)
         self.download_started()
 
     def init_extractor(self, source):
@@ -168,7 +168,7 @@ class DownloadWidget(BaseBuildWidget):
         a = ExtractAction(file=source, destination=dist)
         a.progress.connect(self.progressBar.set_progress)
         a.finished.connect(self.init_template_installer)
-        self.parent.action_queue.put(a)
+        self.parent.action_queue.append(a)
 
     def init_template_installer(self, dist: Path):
         self.build_state_widget.setExtract(False)
@@ -178,7 +178,7 @@ class DownloadWidget(BaseBuildWidget):
             self.progressBar.set_title("Copying data...")
             a = TemplateAction(destination=self.build_dir)
             a.finished.connect(self.download_get_info)
-            self.parent.action_queue.put(a)
+            self.parent.action_queue.append(a)
         else:
             self.download_get_info()
 
@@ -193,7 +193,8 @@ class DownloadWidget(BaseBuildWidget):
         self.state = DownloadState.IDLE
         self.progressBar.hide()
         self.cancelButton.hide()
-        self.parent.kill_thread_with_action(self.dl_action)
+        if not self.parent.kill_thread_with_action(self.dl_action): # killing failed
+            self.parent.action_queue.remove(self.dl_action)
         self.downloadButton.show()
         self.build_state_widget.setDownload(False)
 
@@ -211,7 +212,7 @@ class DownloadWidget(BaseBuildWidget):
         )
         a.finished.connect(self.download_rename)
         a.failure.connect(lambda: print("Reading failed"))
-        self.parent.action_queue.put(a)
+        self.parent.action_queue.append(a)
 
     def download_rename(self, build_info: BuildInfo):
         self.state = DownloadState.RENAMING
@@ -224,7 +225,7 @@ class DownloadWidget(BaseBuildWidget):
         )
         a.finished.connect(self.download_finished)
         a.failure.connect(lambda: print("Renaming failed"))
-        self.parent.action_queue.put(a)
+        self.parent.action_queue.append(a)
 
     def download_finished(self, path):
         self.state = DownloadState.IDLE

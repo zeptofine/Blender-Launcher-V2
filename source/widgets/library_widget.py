@@ -81,7 +81,7 @@ class LibraryWidget(BaseBuildWidget):
             a.finished.connect(self.draw)
             a.failure.connect(self.trigger_damaged)
 
-            self.parent.action_queue.put(a)
+            self.parent.action_queue.append(a)
 
         else:
             self.draw(self.parent_widget.build_info)
@@ -314,7 +314,7 @@ class LibraryWidget(BaseBuildWidget):
         self.installTemplateAction.setEnabled(False)
         a = TemplateAction(self.link)
         a.finished.connect(self.install_template_finished)
-        self.parent.action_queue.put(a)
+        self.parent.action_queue.append(a)
 
     def install_template_finished(self):
         self.launchButton.set_text("Launch")
@@ -465,7 +465,7 @@ class LibraryWidget(BaseBuildWidget):
         path = Path(get_library_folder()) / self.link
         a = RemoveAction(path)
         a.finished.connect(self.remover_completed)
-        self.parent.action_queue.put(a)
+        self.parent.action_queue.append(a)
         self.remover_started()
 
 
