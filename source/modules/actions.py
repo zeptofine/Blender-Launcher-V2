@@ -1,16 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from pprint import pprint
 from queue import Queue
 from typing import TYPE_CHECKING
 
 from modules.action import Action
 from PyQt5.QtCore import QThread, pyqtSignal, pyqtSlot
-from threads.template_installer import install_template
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 
 class ActionQueue(Queue[Action]):
@@ -36,18 +30,6 @@ class ActionQueue(Queue[Action]):
             worker.fullstop()
 
 
-    def put(self, item: Action, block: bool = True, timeout: float | None = None) -> None:
-        super().put(item, block, timeout)
-        self._lst.append(item)
-        pprint(self._lst)
-
-    def get(self, block: bool = True, timeout: float | None = None) -> Action:
-        a = super().get(block, timeout)
-        self._lst.remove(a)
-        pprint(self._lst)
-        return a
-
-
 class ActionWorker(QThread):
     item_changed = pyqtSignal(Action)
 
@@ -57,9 +39,6 @@ class ActionWorker(QThread):
         self.item: Action | None = None
 
     def run(self):
-        def print_(*args, **kwargs):
-            return print(self, *args, **kwargs)
-
         while True:
             self.item = self.queue.get()
             self.item_changed.emit(self.item)
