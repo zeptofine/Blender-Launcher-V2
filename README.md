@@ -6,7 +6,7 @@
 
 # Original [Project](https://github.com/DotBow/Blender-Launcher) By [DotBow](https://github.com/DotBow)
 
-> This project exists because DotBow/Blender-Launcher has been abandoned since October of 2022. It was archived on the 28th of Nov, 2023 and will no longer be receiving updates.
+> This project exists because DotBow/Blender-Launcher has been inactive since October of 2022. It was archived on the 28th of Nov, 2023 and will no longer be receiving updates.
 
 <details>
 <summary>Screenshots</summary>
