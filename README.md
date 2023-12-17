@@ -2,7 +2,7 @@
 ![Blender Launcher Logo](docs/mkdocs/imgs/bl_logo.png)
 ## Join the [Discord](https://discord.gg/3jrTZFJkTd) if you want to discuss about the project 
 
-# [Discussions](https://github.com/Victor-IX/Blender-Launcher-V2/discussions) │ [Documentation](https://Victor-IX.github.io/Blender-Launcher) │ [Latest Release](https://github.com/Victor-IX/Blender-Launcher-V2/releases/latest)
+# [Discussions](https://github.com/Victor-IX/Blender-Launcher-V2/discussions) │ [Documentation](https://Victor-IX.github.io/Blender-Launcher-V2) │ [Latest Release](https://github.com/Victor-IX/Blender-Launcher-V2/releases/latest)
 
 # Original [Project](https://github.com/DotBow/Blender-Launcher) By [DotBow](https://github.com/DotBow)
 
@@ -60,7 +60,7 @@ Core features:
 ## How to start using it?
 
 * :floppy_disk: Download [latest version](https://github.com/Victor-IX/Blender-Launcher-V2/releases/latest) from [releases page](https://github.com/Victor-IX/Blender-Launcher-V2/releases)
-* :rocket: Follow [Installation](https://Victor-IX.github.io/Blender-Launcher/installation/#installing-blender-launcher) instructions on [Documentation](https://Victor-IX.github.io/Blender-Launcher) site
+* :rocket: Follow [Installation](https://Victor-IX.github.io/Blender-Launcher-V2/installation/#installing-blender-launcher) instructions on [Documentation](https://Victor-IX.github.io/Blender-Launcher-V2) site
 * :speech_balloon: Use Blender Artists Community [thread](https://blenderartists.org/t/blender-launcher-standalone-software-client) to ask questions and make proposals or [Discord](https://discord.gg/3jrTZFJkTd) 
 
 ## How to thank the developer?

@@ -325,7 +325,7 @@ class BlenderLauncher(QMainWindow, BaseWindow, Ui_MainWindow):
         # Connect buttons
         self.SettingsButton.clicked.connect(self.show_settings_window)
         self.DocsButton.clicked.connect(lambda: webbrowser.open(
-            "https://Victor-IX.github.io/Blender-Launcher"))
+            "https://Victor-IX.github.io/Blender-Launcher-V2"))
         self.MinimizeButton.clicked.connect(self.showMinimized)
         self.CloseButton.clicked.connect(self.close)
 
