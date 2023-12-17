@@ -46,13 +46,10 @@ class BlenderLauncherUpdater(QMainWindow, BaseWindow, UpdateWindowUI):
     def get_link(self, response: GitHubRelease | None = None) -> str:
         assert self.manager is not None
         if response is None:
-            # api_req = api_link.format(self.release_tag)
-            # d = self.manager.request("GET", api_req, headers=self._headers)
-            # assert d.data is not None
-            # response: GitHubRelease = json.loads(d.data)
-            with open("update_test_responses.json") as f:
-                response = json.loads(f.read())
-
+            api_req = api_link.format(self.release_tag)
+            d = self.manager.request("GET", api_req, headers=self._headers)
+            assert d.data is not None
+            response = json.loads(d.data)
         assert response is not None
 
         assets = response["assets"]
@@ -75,11 +72,6 @@ class BlenderLauncherUpdater(QMainWindow, BaseWindow, UpdateWindowUI):
             if key in asset_table:
                 release = asset_table[key]
                 break
-
-        from pprint import pprint
-
-        pprint(release)
-        exit()
 
         return release["browser_download_url"]
 
