@@ -114,3 +114,4 @@ Blender-Launcher.code-workspace
 # Application related settings
 Blender Launcher.ini
 log_file.txt
+nohup.out
