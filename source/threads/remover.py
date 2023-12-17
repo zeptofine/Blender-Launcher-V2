@@ -13,7 +13,11 @@ class RemoveAction(Action):
 
     def run(self):
         try:
-            rmtree(self.path.as_posix())
+            if self.path.is_dir():
+                rmtree(self.path.as_posix())
+            else:
+                self.path.unlink()
+
             self.finished.emit(0)
         except OSError:
             self.finished.emit(1)

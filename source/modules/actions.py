@@ -59,8 +59,9 @@ class ActionQueue(deque[Action]):
 
     def fullstop(self):
         for worker in self.workers:
-            worker.fullstop()
-
+            if worker.isRunning():
+                worker.fullstop()
+                logging.debug(f"Stopped {worker} {self.workers[worker]}")
 
 class ActionWorker(QThread):
     item_changed = pyqtSignal(object)  # Action | None

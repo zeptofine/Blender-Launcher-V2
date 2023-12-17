@@ -29,11 +29,12 @@ def extract(source: Path, destination: Path, progress_callback: Callable[[int, i
     if suffixes[-2] == ".tar":
         with tarfile.open(source) as tar:
             folder = tar.getnames()[0].split("/")[0]
-            uncompress_size = sum(member.size for member in tar.getmembers())
+            members = tar.getmembers()
+            uncompress_size = sum(member.size for member in members)
+            progress_callback(0, uncompress_size)
             extracted_size = 0
 
-            for member in tar.getmembers():
-                progress_callback(0, uncompress_size)
+            for member in members:
                 tar.extract(member, path=destination)
                 extracted_size += member.size
                 progress_callback(extracted_size, uncompress_size)

@@ -788,9 +788,10 @@ class BlenderLauncher(BaseWindow):
     def show_settings_window(self):
         self.settings_window = SettingsWindow(parent=self)
 
-    def clear_temp(self):
-        temp_folder = Path(get_library_folder()) / ".temp"
-        a = RemoveAction(temp_folder)
+    def clear_temp(self, path=None):
+        if path is None:
+            path = Path(get_library_folder()) / ".temp"
+        a = RemoveAction(path)
         self.action_queue.append(a)
 
     @pyqtSlot()

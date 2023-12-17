@@ -11,7 +11,7 @@ from windows.update_window import BlenderLauncherUpdater
 version = "1.16.1"
 
 # Setup logging config
-_format = "%(asctime)s - %(message)s"
+_format = "[%(asctime)s:%(levelname)s] %(message)s"
 logging.basicConfig(format=_format,
                     handlers=[
                         logging.FileHandler(

@@ -40,6 +40,7 @@ class DownloadWidget(BaseBuildWidget):
         self.show_new = show_new
         self.state = DownloadState.IDLE
         self.build_dir = None
+        self.source_file = None
 
         self.progressBar = BaseProgressBarWidget()
         self.progressBar.setFont(self.parent.font_8)
@@ -165,6 +166,7 @@ class DownloadWidget(BaseBuildWidget):
         else:
             dist = library_folder / "experimental"
 
+        self.source_file = source
         a = ExtractAction(file=source, destination=dist)
         a.progress.connect(self.progressBar.set_progress)
         a.finished.connect(self.init_template_installer)
@@ -234,7 +236,10 @@ class DownloadWidget(BaseBuildWidget):
 
         if path is not None:
             self.parent.draw_to_library(path, True)
-            self.parent.clear_temp()
+
+            assert self.source_file is not None
+            self.parent.clear_temp(self.source_file)
+
             name = f"{self.subversionLabel.text()} {self.branchLabel.text} {self.build_info.commit_time}"
             self.parent.show_message(f"Blender {name} download finished!", type=MessageType.DOWNLOADFINISHED)
             self.destroy()
