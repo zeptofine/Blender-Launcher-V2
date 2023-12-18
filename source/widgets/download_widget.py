@@ -81,7 +81,7 @@ class DownloadWidget(BaseBuildWidget):
         elif self.build_info.branch == "daily":
             branch_name = self.build_info.subversion.split(" ", 1)[1].title()
         else:
-            branch_name = self.build_info.subversion.split(" ", 1)[1]
+            branch_name = self.build_info.subversion.split(" ", 1)[-1]
             # branch_name = re.sub(
             #     r"(\-|\_)", " ", self.build_info.branch).title()
 
