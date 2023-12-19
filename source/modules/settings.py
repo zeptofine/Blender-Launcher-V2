@@ -366,7 +366,7 @@ def set_new_builds_check_frequency(frequency):
 
 
 def get_minimum_blender_stable_version() -> float:
-    return get_settings().value("minimum_blender_stable_version", defaultValue=2.79, type=float)
+    return get_settings().value("minimum_blender_stable_version", defaultValue=3.0, type=float)
 
 def set_minimum_blender_stable_version(v: float):
     get_settings().setValue("minimum_blender_stable_version", v)
