@@ -241,7 +241,7 @@ class DownloadWidget(BaseBuildWidget):
             self.parent.clear_temp(self.source_file)
 
             name = f"{self.subversionLabel.text()} {self.branchLabel.text} {self.build_info.commit_time}"
-            self.parent.show_message(f"Blender {name} download finished!", type=MessageType.DOWNLOADFINISHED)
+            self.parent.show_message(f"Blender {name} download finished!", message_type=MessageType.DOWNLOADFINISHED)
             self.destroy()
 
         self.build_state_widget.setExtract(False)

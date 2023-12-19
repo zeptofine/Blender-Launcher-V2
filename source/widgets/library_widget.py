@@ -41,11 +41,11 @@ if TYPE_CHECKING:
 
 
 class LibraryWidget(BaseBuildWidget):
-    def __init__(self, parent: "BlenderLauncher", item, link, list_widget,
+    def __init__(self, parent: BlenderLauncher, item, link, list_widget,
                  show_new=False, parent_widget=None):
         super().__init__(parent=parent)
 
-        self.parent: "BlenderLauncher" = parent
+        self.parent: BlenderLauncher = parent
         self.item = item
         self.link = link
         self.list_widget = list_widget

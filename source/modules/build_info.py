@@ -4,15 +4,12 @@ import json
 import re
 import time
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from pathlib import Path
 
 from modules._platform import _check_output, get_platform, set_locale
 from PyQt5.QtCore import QThread, pyqtSignal
 
 from .action import Action
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 
 class BuildInfo:

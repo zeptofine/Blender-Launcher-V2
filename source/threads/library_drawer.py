@@ -1,13 +1,16 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from modules._platform import get_platform
 from modules.action import Action
 from modules.settings import get_library_folder
-from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtCore import pyqtSignal
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 
 def get_builds(folders: Iterable[str|Path]):
