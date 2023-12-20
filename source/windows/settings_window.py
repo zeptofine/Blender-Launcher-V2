@@ -12,8 +12,8 @@ from modules.settings import (
     get_use_custom_tls_certificates,
     proxy_types,
 )
-from PyQt5.QtWidgets import QTabWidget
-from ui.settings_window_ui import Ui_SettingsWindow
+from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtWidgets import QSizePolicy, QTabWidget, QVBoxLayout, QWidget
 from widgets.header import WindowHeader
 from widgets.settings_window import appearance_tab, blender_builds_tab, connection_tab, general_tab
 from widgets.tab_widget import TabWidget
@@ -21,10 +21,24 @@ from windows.base_window import BaseWindow
 from windows.dialog_window import DialogWindow
 
 
-class SettingsWindow(BaseWindow, Ui_SettingsWindow):
+class SettingsWindow(BaseWindow):
     def __init__(self, parent):
         super().__init__(parent=parent)
-        self.setupUi(self)
+
+        self.setWindowModality(Qt.WindowModality.ApplicationModal)
+        sizePolicy = QSizePolicy(
+            QSizePolicy.Preferred,
+            QSizePolicy.MinimumExpanding,
+        )
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.sizePolicy().hasHeightForWidth())
+        self.setSizePolicy(sizePolicy)
+        self.setMinimumSize(QSize(480, 100))
+        self.CentralWidget  = QWidget(self)
+        self.CentralLayout = QVBoxLayout(self.CentralWidget)
+        self.CentralLayout.setContentsMargins(1, 1, 1, 1)
+        self.setCentralWidget(self.CentralWidget)
         self.setWindowTitle("Settings")
 
         # Global scope for breaking settings
