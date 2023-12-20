@@ -406,3 +406,55 @@ QWidget[FormLayout=true] {
     border: none;
 }
 
+QStatusBar {
+    color: #E6E6E6;
+}
+
+QStatusBar::item {
+    border: none;
+}
+
+QListWidget {
+    background-color: #282828;
+    outline: 0;
+}
+
+QListWidget::item {
+    background-color: #2D2D2D;
+}
+
+QListWidget::item:alternate {
+    background-color: #282828;
+}
+
+QListWidget::item:hover {
+    background-color: #444444;
+}
+
+QListWidget::item:selected {
+    background-color: #3B5689;
+}
+
+QListWidget::item:selected:hover {
+    background-color: #546C98;
+}
+
+QMainWindow {
+    background-color: #232323;
+    border: 1px solid #323232;
+}
+
+QTabBar::tab {
+    color: #989898;
+    background-color: #2B2B2B;
+}
+
+QTabBar::tab:hover {
+    color: #FFFFFF;
+    background-color: #343434;
+}
+
+QTabBar::tab::selected {
+    color: #FFFFFF;
+    background-color: #424242;
+}
