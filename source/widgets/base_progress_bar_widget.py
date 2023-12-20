@@ -11,7 +11,7 @@ class BaseProgressBarWidget(QProgressBar):
         super().__init__(parent)
         self.title = ""
 
-        self.setAlignment(Qt.AlignCenter)
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.setMinimum(0)
         self.set_progress(0, 0)
 
@@ -20,17 +20,17 @@ class BaseProgressBarWidget(QProgressBar):
         self.setFormat(f"{self.title}: {self.last_progress[0]:.1f} of {self.last_progress[1]:.1f} MB")
 
     @pyqtSlot(int, int)
-    def set_progress(self, obtained: int, total: int, title: str | None = None):
+    def set_progress(self, obtained: int | float, total: int | float, title: str | None = None):
         if title is not None and title != self.title:
             self.title = title
+
+        # Update appearance
+        self.setMaximum(int(total))
+        self.setValue(int(obtained))
 
         # Convert bytes to megabytes
         obtained = obtained / 1048576
         total = total / 1048576
-
-        # Update appearance
-        self.setMaximum(total)
-        self.setValue(obtained)
 
         # Repaint and call signal
         self.setFormat(f"{self.title}: {obtained:.1f} of {total:.1f} MB")
