@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from modules.connection_manager import ConnectionManager
-from modules.icons import get_icons
+from modules.icons import Icons
 from modules.settings import get_enable_high_dpi_scaling
 from PyQt5.QtCore import QFile, QPoint, Qt, QTextStream
 from PyQt5.QtGui import QFont, QFontDatabase
@@ -18,7 +18,7 @@ class BaseWindow(QMainWindow):
         self.parent = parent
 
         # Setup icons
-        self.icons = get_icons()
+        self.icons = Icons.get()
 
         if parent is None and app is not None:
             self.app = app

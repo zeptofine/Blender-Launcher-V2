@@ -4,6 +4,9 @@ from PyQt5.QtGui import QColor, QIcon, QPixmap
 
 base_path = ":resources/icons/"
 
+WHITE = QColor(255, 255, 255, 255)
+
+
 
 @dataclass
 class Icons:
@@ -21,12 +24,9 @@ class Icons:
     file: QIcon
     taskbar: QIcon
 
-
-white = QColor(255, 255, 255, 255)
-
-
-def get_icons(color=white):
-    return Icons(
+    @classmethod
+    def get(cls, color=WHITE):
+        return cls(
         load_icon(color, "settings"),
         load_icon(color, "wiki"),
         load_icon(color, "minimize"),
@@ -41,7 +41,6 @@ def get_icons(color=white):
         load_icon(color, "file"),
         QIcon(base_path + "bl/bl.ico"),
     )
-
 
 def load_icon(color, name):
     pixmap = QPixmap(base_path + name + "")
