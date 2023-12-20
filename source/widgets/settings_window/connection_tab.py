@@ -25,10 +25,8 @@ class ConnectionTabWidget(SettingsFormWidget):
 
         # Custom TLS certificates
         self.UseCustomCertificatesCheckBox = QCheckBox()
-        self.UseCustomCertificatesCheckBox.clicked.connect(
-            self.toggle_use_custom_tls_certificates)
-        self.UseCustomCertificatesCheckBox.setChecked(
-            get_use_custom_tls_certificates())
+        self.UseCustomCertificatesCheckBox.clicked.connect(self.toggle_use_custom_tls_certificates)
+        self.UseCustomCertificatesCheckBox.setChecked(get_use_custom_tls_certificates())
 
         # Proxy Type
         self.ProxyTypeComboBox = QComboBox()
@@ -42,7 +40,8 @@ class ConnectionTabWidget(SettingsFormWidget):
         self.ProxyHostLineEdit.setText(get_proxy_host())
         self.ProxyHostLineEdit.setContextMenuPolicy(Qt.NoContextMenu)
         rx = QRegExp(
-            r"^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$")
+            r"^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$"
+        )
         self.host_validator = QtGui.QRegExpValidator(rx, self)
         self.ProxyHostLineEdit.setValidator(self.host_validator)
         self.ProxyHostLineEdit.editingFinished.connect(self.update_proxy_host)
@@ -68,12 +67,10 @@ class ConnectionTabWidget(SettingsFormWidget):
         self.ProxyPasswordLineEdit.setText(get_proxy_password())
         self.ProxyPasswordLineEdit.setContextMenuPolicy(Qt.NoContextMenu)
         self.ProxyPasswordLineEdit.setEchoMode(QLineEdit.Password)
-        self.ProxyPasswordLineEdit.editingFinished.connect(
-            self.update_proxy_password)
+        self.ProxyPasswordLineEdit.editingFinished.connect(self.update_proxy_password)
 
         # Layout
-        self._addRow("Use Custom TLS Certificates",
-                     self.UseCustomCertificatesCheckBox)
+        self._addRow("Use Custom TLS Certificates", self.UseCustomCertificatesCheckBox)
         self._addRow("Proxy Type", self.ProxyTypeComboBox)
         sub_layout = QHBoxLayout()
         sub_layout.addWidget(self.ProxyHostLineEdit)

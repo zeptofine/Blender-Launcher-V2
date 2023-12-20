@@ -12,12 +12,10 @@ version = "1.16.1"
 
 # Setup logging config
 _format = "[%(asctime)s:%(levelname)s] %(message)s"
-logging.basicConfig(format=_format,
-                    handlers=[
-                        logging.FileHandler(
-                            get_cwd() / "Blender Launcher.log"),
-                        logging.StreamHandler(stream=sys.stdout)
-                    ])
+logging.basicConfig(
+    format=_format,
+    handlers=[logging.FileHandler(get_cwd() / "Blender Launcher.log"), logging.StreamHandler(stream=sys.stdout)],
+)
 logger = logging.getLogger(__name__)
 
 
@@ -27,16 +25,14 @@ def handle_exception(exc_type, exc_value, exc_traceback):
         sys.__excepthook__(exc_type, exc_value, exc_traceback)
         return
 
-    logger.error(f"{get_platform()} - Blender Launcher {version}",
-                 exc_info=(exc_type, exc_value, exc_traceback))
+    logger.error(f"{get_platform()} - Blender Launcher {version}", exc_info=(exc_type, exc_value, exc_traceback))
 
 
 sys.excepthook = handle_exception
 
 
 # List of available line arguments
-cli_help = \
-    """
+cli_help = """
     Command line arguments sheet:
 
     -help                        * Show command line arguments sheet
@@ -69,14 +65,12 @@ def main():
 
     # Run updater instead of the main application and exit
     if "-update" in sys.argv:
-        BlenderLauncherUpdater(app=app, version=version,
-                               release_tag=sys.argv[-1])
+        BlenderLauncherUpdater(app=app, version=version, release_tag=sys.argv[-1])
         sys.exit(app.exec_())
 
     # Do not check for other instances running
     if "-instanced" in sys.argv:
-        BlenderLauncher(app=app, version=version,
-                        argv=sys.argv, logger=logger)
+        BlenderLauncher(app=app, version=version, argv=sys.argv, logger=logger)
         sys.exit(app.exec_())
 
     # Check if other instances of application is already running
@@ -86,8 +80,7 @@ def main():
 
     if not is_running:
         socket.close()
-        BlenderLauncher(app=app, version=version,
-                        argv=sys.argv, logger=logger)
+        BlenderLauncher(app=app, version=version, argv=sys.argv, logger=logger)
         sys.exit(app.exec_())
     else:
         socket.write(QByteArray(version.encode()))

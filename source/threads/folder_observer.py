@@ -4,7 +4,6 @@ from PyQt5.QtCore import QThread
 
 
 class FolderObserver(QThread):
-
     def __init__(self, parent, folder):
         QThread.__init__(self)
         self.parent = parent
@@ -33,7 +32,6 @@ class FolderObserver(QThread):
                 subfolders = new_subfolders
 
             QThread.sleep(3)
-
 
     def get_subfolders(self):
         return [sub.name for sub in self.folder.iterdir() if sub.is_dir()]

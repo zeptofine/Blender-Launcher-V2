@@ -38,8 +38,7 @@ class SettingsWindow(BaseWindow, Ui_SettingsWindow):
         self.old_proxy_user = get_proxy_user()
         self.old_proxy_password = get_proxy_password()
 
-        self.old_check_for_new_builds_automatically = \
-            get_check_for_new_builds_automatically()
+        self.old_check_for_new_builds_automatically = get_check_for_new_builds_automatically()
         self.old_new_builds_check_frequency = get_new_builds_check_frequency()
 
         self.old_enable_high_dpi_scaling = get_enable_high_dpi_scaling()
@@ -55,13 +54,11 @@ class SettingsWindow(BaseWindow, Ui_SettingsWindow):
         self.CentralLayout.addWidget(self.TabWidget)
 
         self.GeneralTab = TabWidget(self.TabWidget, "General")
-        self.GeneralTabWidget = general_tab.GeneralTabWidget(
-            parent=self.parent)
+        self.GeneralTabWidget = general_tab.GeneralTabWidget(parent=self.parent)
         self.GeneralTab.layout().addWidget(self.GeneralTabWidget)
 
         self.AppearanceTab = TabWidget(self.TabWidget, "Appearance")
-        self.AppearanceTabWidget = appearance_tab.AppearanceTabWidget(
-            parent=self.parent)
+        self.AppearanceTabWidget = appearance_tab.AppearanceTabWidget(parent=self.parent)
         self.AppearanceTab.layout().addWidget(self.AppearanceTabWidget)
 
         self.ConnectionTab = TabWidget(self.TabWidget, "Connection")
@@ -69,8 +66,7 @@ class SettingsWindow(BaseWindow, Ui_SettingsWindow):
         self.ConnectionTab.layout().addWidget(self.ConnectionTabWidget)
 
         self.BlenderBuildsTab = TabWidget(self.TabWidget, "Blender Builds")
-        self.BlenderBuildsTabWidget = \
-            blender_builds_tab.BlenderBuildsTabWidget()
+        self.BlenderBuildsTabWidget = blender_builds_tab.BlenderBuildsTabWidget()
         self.BlenderBuildsTab.layout().addWidget(self.BlenderBuildsTabWidget)
 
         self.resize(self.sizeHint())
@@ -94,7 +90,7 @@ class SettingsWindow(BaseWindow, Ui_SettingsWindow):
         # Only key sequence was changed
         # Restart hotkeys listener
         elif self.old_quick_launch_key_seq != quick_launch_key_seq and enable_quick_launch_key_seq:
-                self.parent.setup_global_hotkeys_listener()
+            self.parent.setup_global_hotkeys_listener()
 
         """Update connection"""
         use_custom_tls_certificates = get_use_custom_tls_certificates()
@@ -106,15 +102,19 @@ class SettingsWindow(BaseWindow, Ui_SettingsWindow):
 
         # Restart app if any of the connection settings changed
         if self.old_use_custom_tls_certificates != use_custom_tls_certificates:
-            self.pending_to_restart.append("Use Custom TLS Certificates: {}🠆{}".format(
-                "ON" if self.old_use_custom_tls_certificates else "OFF",
-                "ON" if use_custom_tls_certificates else "OFF"))
+            self.pending_to_restart.append(
+                "Use Custom TLS Certificates: {}🠆{}".format(
+                    "ON" if self.old_use_custom_tls_certificates else "OFF",
+                    "ON" if use_custom_tls_certificates else "OFF",
+                )
+            )
 
         if self.old_proxy_type != proxy_type:
             r_proxy_types = dict(zip(proxy_types.values(), proxy_types.keys()))
 
-            self.pending_to_restart.append("Proxy Type: {}🠆{}".format(
-                r_proxy_types[self.old_proxy_type], r_proxy_types[proxy_type]))
+            self.pending_to_restart.append(
+                "Proxy Type: {}🠆{}".format(r_proxy_types[self.old_proxy_type], r_proxy_types[proxy_type])
+            )
 
         if self.old_proxy_host != proxy_host:
             self.pending_to_restart.append(f"Proxy Host: {self.old_proxy_host}🠆{proxy_host}")
@@ -129,24 +129,25 @@ class SettingsWindow(BaseWindow, Ui_SettingsWindow):
             self.pending_to_restart.append("Proxy Password")
 
         """Update build check frequency"""
-        check_for_new_builds_automatically = \
-            get_check_for_new_builds_automatically()
+        check_for_new_builds_automatically = get_check_for_new_builds_automatically()
         new_builds_check_frequency = get_new_builds_check_frequency()
 
         # Restart scraper if any of the build check settings changed
-        if self.old_check_for_new_builds_automatically != \
-                check_for_new_builds_automatically or \
-                self.old_new_builds_check_frequency != \
-                new_builds_check_frequency:
+        if (
+            self.old_check_for_new_builds_automatically != check_for_new_builds_automatically
+            or self.old_new_builds_check_frequency != new_builds_check_frequency
+        ):
             self.parent.draw_library(clear=True)
 
         """Update high DPI scaling"""
         enable_high_dpi_scaling = get_enable_high_dpi_scaling()
 
         if self.old_enable_high_dpi_scaling != enable_high_dpi_scaling:
-            self.pending_to_restart.append("High DPI Scaling: {}🠆{}".format(
-                "ON" if self.old_enable_high_dpi_scaling else "OFF",
-                "ON" if enable_high_dpi_scaling else "OFF"))
+            self.pending_to_restart.append(
+                "High DPI Scaling: {}🠆{}".format(
+                    "ON" if self.old_enable_high_dpi_scaling else "OFF", "ON" if enable_high_dpi_scaling else "OFF"
+                )
+            )
 
         """Ask for app restart if needed else destroy self"""
         if len(self.pending_to_restart) != 0:
@@ -161,10 +162,13 @@ class SettingsWindow(BaseWindow, Ui_SettingsWindow):
             pending_to_restart += "<br>- " + s
 
         self.dlg = DialogWindow(
-            parent=self.parent, title="Warning",
+            parent=self.parent,
+            title="Warning",
             text=f"Restart Blender Launcher in<br> \
                   order to apply following settings:{pending_to_restart}",
-            accept_text="Restart Now", cancel_text="Ignore")
+            accept_text="Restart Now",
+            cancel_text="Ignore",
+        )
         self.dlg.accepted.connect(self.restart_app)
         self.dlg.cancelled.connect(self._destroy)
 

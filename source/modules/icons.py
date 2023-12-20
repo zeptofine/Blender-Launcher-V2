@@ -7,7 +7,6 @@ base_path = ":resources/icons/"
 WHITE = QColor(255, 255, 255, 255)
 
 
-
 @dataclass
 class Icons:
     settings: QIcon
@@ -27,20 +26,21 @@ class Icons:
     @classmethod
     def get(cls, color=WHITE):
         return cls(
-        load_icon(color, "settings"),
-        load_icon(color, "wiki"),
-        load_icon(color, "minimize"),
-        load_icon(color, "close"),
-        load_icon(color, "folder"),
-        load_icon(color, "favorite"),
-        load_icon(color, "fake"),
-        load_icon(color, "delete"),
-        load_icon(color, "filled_circle"),
-        load_icon(color, "quick_launch"),
-        load_icon(color, "download"),
-        load_icon(color, "file"),
-        QIcon(base_path + "bl/bl.ico"),
-    )
+            load_icon(color, "settings"),
+            load_icon(color, "wiki"),
+            load_icon(color, "minimize"),
+            load_icon(color, "close"),
+            load_icon(color, "folder"),
+            load_icon(color, "favorite"),
+            load_icon(color, "fake"),
+            load_icon(color, "delete"),
+            load_icon(color, "filled_circle"),
+            load_icon(color, "quick_launch"),
+            load_icon(color, "download"),
+            load_icon(color, "file"),
+            QIcon(base_path + "bl/bl.ico"),
+        )
+
 
 def load_icon(color, name):
     pixmap = QPixmap(base_path + name + "")

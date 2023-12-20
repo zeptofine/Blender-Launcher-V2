@@ -14,7 +14,6 @@ class Observer(QThread):
         self.append_proc.connect(self.handle_append_proc)
 
     def run(self):
-
         while self.parent:
             for proc in self.processes:
                 if proc.poll() is not None:

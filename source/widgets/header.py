@@ -67,7 +67,6 @@ class WindowHeader(QWidget):
             buttons.append(self.minimize_button)
         buttons.append(self.close_button)
 
-
         for widget in buttons:
             if widget is self.label:
                 layout.addWidget(widget, 2)

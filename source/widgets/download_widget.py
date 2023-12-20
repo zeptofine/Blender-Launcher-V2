@@ -195,7 +195,7 @@ class DownloadWidget(BaseBuildWidget):
         self.state = DownloadState.IDLE
         self.progressBar.hide()
         self.cancelButton.hide()
-        if not self.parent.kill_thread_with_action(self.dl_action): # killing failed
+        if not self.parent.kill_thread_with_action(self.dl_action):  # killing failed
             self.parent.action_queue.remove(self.dl_action)
         self.downloadButton.show()
         self.build_state_widget.setDownload(False)
@@ -243,7 +243,8 @@ class DownloadWidget(BaseBuildWidget):
             name = f"{self.subversionLabel.text()} {self.branchLabel.text} {self.build_info.commit_time}"
             self.parent.show_message(
                 f"Blender {name} download finished!",
-                message_type=MessageType.DOWNLOADFINISHED)
+                message_type=MessageType.DOWNLOADFINISHED,
+            )
             self.destroy()
 
         self.build_state_widget.setExtract(False)

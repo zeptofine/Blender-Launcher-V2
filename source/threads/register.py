@@ -19,8 +19,13 @@ class Register(QThread):
 
         if platform == "Windows":
             b3d_exe = Path(self.path) / "blender.exe"
-            subprocess.call([str(b3d_exe), "-r"], creationflags=CREATE_NO_WINDOW,
-                            shell=True, stdout=PIPE, stderr=STDOUT, stdin=DEVNULL)
+            subprocess.call(
+                [str(b3d_exe), "-r"],
+                creationflags=CREATE_NO_WINDOW,
+                shell=True,
+                stdout=PIPE,
+                stderr=STDOUT,
+                stdin=DEVNULL,
+            )
         elif platform == "Linux":
             b3d_exe = Path(self.path) / "blender"
-

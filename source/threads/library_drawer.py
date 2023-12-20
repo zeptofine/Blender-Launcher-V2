@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
 
-def get_builds(folders: Iterable[str|Path]):
+def get_builds(folders: Iterable[str | Path]):
     library_folder = Path(get_library_folder())
     platform = get_platform()
 
