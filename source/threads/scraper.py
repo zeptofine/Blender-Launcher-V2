@@ -15,6 +15,7 @@ import lxml
 from bs4 import BeautifulSoup, SoupStrainer
 from modules._platform import get_platform, set_locale
 from modules.build_info import BuildInfo
+from modules.settings import get_minimum_blender_stable_version
 from PyQt5.QtCore import QThread, pyqtSignal
 
 if TYPE_CHECKING:
@@ -56,7 +57,10 @@ class Scraper(QThread):
         self.manager.manager.clear()
 
     def get_latest_tag(self) -> str | None:
-        r = self.manager.request("GET", "https://github.com/Victor-IX/Blender-Launcher-V2/releases/latest")
+        r = self.manager.request(
+            "GET",
+            "https://github.com/Victor-IX/Blender-Launcher-V2/releases/latest",
+        )
 
         if r is None:
             return None
@@ -207,11 +211,13 @@ class Scraper(QThread):
         if not any(releases):
             print("Failed to gather stable releases")
 
+        minimum_version = get_minimum_blender_stable_version()
+
         for release in releases:
             href = release["href"]
             match = re.search(subversion, href)
 
-            if float(match.group(0)) >= 3.0:
+            if float(match.group(0)) >= minimum_version:
                 self.scrap_download_links(urljoin(url, href), "stable", stable=True)
 
         r.release_conn()

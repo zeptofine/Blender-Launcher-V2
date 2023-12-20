@@ -79,7 +79,7 @@ class DownloadWidget(BaseBuildWidget):
         if self.build_info.branch == "lts":
             branch_name = "LTS"
         elif self.build_info.branch == "daily":
-            branch_name = self.build_info.subversion.split(" ", 1)[1].title()
+            branch_name = self.build_info.subversion.split(" ", 1)[-1].title()
         else:
             branch_name = self.build_info.subversion.split(" ", 1)[-1]
             # branch_name = re.sub(
@@ -241,7 +241,9 @@ class DownloadWidget(BaseBuildWidget):
             self.parent.clear_temp(self.source_file)
 
             name = f"{self.subversionLabel.text()} {self.branchLabel.text} {self.build_info.commit_time}"
-            self.parent.show_message(f"Blender {name} download finished!", message_type=MessageType.DOWNLOADFINISHED)
+            self.parent.show_message(
+                f"Blender {name} download finished!",
+                message_type=MessageType.DOWNLOADFINISHED)
             self.destroy()
 
         self.build_state_widget.setExtract(False)
