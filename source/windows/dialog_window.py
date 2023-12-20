@@ -4,8 +4,7 @@ from enum import Enum
 
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import QHBoxLayout, QLabel, QPushButton
-from ui.dialog_window_ui import Ui_DialogWindow
+from PyQt5.QtWidgets import QHBoxLayout, QLabel, QPushButton, QSizePolicy, QVBoxLayout, QWidget
 from windows.base_window import BaseWindow
 
 
@@ -14,7 +13,7 @@ class DialogIcon(Enum):
     INFO = 2
 
 
-class DialogWindow(BaseWindow, Ui_DialogWindow):
+class DialogWindow(BaseWindow):
     accepted = pyqtSignal()
     cancelled = pyqtSignal()
 
@@ -29,7 +28,23 @@ class DialogWindow(BaseWindow, Ui_DialogWindow):
     ):
         super().__init__(parent=parent)
 
-        self.setupUi(self)
+        self.setWindowModality(Qt.WindowModality.ApplicationModal)
+        self.resize(160, 60)
+
+        sizePolicy = QSizePolicy(
+            QSizePolicy.ExMinimumExpanding,
+            QSizePolicy.MinimumExpanding,
+        )
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.sizePolicy().hasHeightForWidth())
+        self.setSizePolicy(sizePolicy)
+
+        self.CentralWidget = QWidget(self)
+        self.CentralLayout = QVBoxLayout(self.CentralWidget)
+        self.CentralLayout.setContentsMargins(6, 6, 6, 6)
+        self.CentralLayout.setSpacing(0)
+
         self.setWindowTitle(title)
 
         self.IconLabel = QLabel()
