@@ -8,8 +8,8 @@ from PyQt5.QtGui import QFont, QFontDatabase
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget
 
 if get_enable_high_dpi_scaling():
-    QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
-    QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
+    QApplication.setAttribute(Qt.ApplicationAttribute.AA_EnableHighDpiScaling, True)
+    QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseHighDpiPixmaps, True)
 
 
 class BaseWindow(QMainWindow):
@@ -43,8 +43,8 @@ class BaseWindow(QMainWindow):
             self.style_sheet = QTextStream(file).readAll()
             self.app.setStyleSheet(self.style_sheet)
 
-        self.setWindowFlags(Qt.FramelessWindowHint)
-        self.setAttribute(Qt.WA_DeleteOnClose)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
 
         self.pos = self.pos()
         self.pressing = False
@@ -54,7 +54,7 @@ class BaseWindow(QMainWindow):
     def mousePressEvent(self, event):
         self.pos = event.globalPos()
         self.pressing = True
-        self.setCursor(Qt.ClosedHandCursor)
+        self.setCursor(Qt.CursorShape.ClosedHandCursor)
 
     def mouseMoveEvent(self, event):
         if self.pressing:
@@ -72,7 +72,7 @@ class BaseWindow(QMainWindow):
 
     def mouseReleaseEvent(self, QMouseEvent):
         self.pressing = False
-        self.setCursor(Qt.ArrowCursor)
+        self.setCursor(Qt.CursorShape.ArrowCursor)
 
     def showEvent(self, event):
         parent = self.parent

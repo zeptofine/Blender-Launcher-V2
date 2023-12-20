@@ -98,7 +98,7 @@ class LibraryWidget(BaseBuildWidget):
             for i in reversed(range(self.layout.count())):
                 self.layout.itemAt(i).widget().setParent(None)
 
-        self.build_info: BuildInfo = build_info
+        self.build_info = build_info
         self.branch = self.build_info.branch
         self.item.date = build_info.commit_time
 
@@ -133,7 +133,7 @@ class LibraryWidget(BaseBuildWidget):
         if self.parent_widget is not None:
             self.lineEdit = BaseLineEdit()
             self.lineEdit.setMaxLength(256)
-            self.lineEdit.setContextMenuPolicy(Qt.NoContextMenu)
+            self.lineEdit.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
             self.lineEdit.escapePressed.connect(self.rename_branch_rejected)
             self.lineEdit.returnPressed.connect(self.rename_branch_accepted)
             self.layout.addWidget(self.lineEdit, stretch=1)
@@ -143,7 +143,7 @@ class LibraryWidget(BaseBuildWidget):
         self.layout.addWidget(self.build_state_widget)
 
         self.launchButton.clicked.connect(lambda: self.launch(True))
-        self.launchButton.setCursor(Qt.PointingHandCursor)
+        self.launchButton.setCursor(Qt.CursorShape.PointingHandCursor)
 
         # Context menu
         self.menu_extended = BaseMenuWidget()
@@ -281,13 +281,13 @@ class LibraryWidget(BaseBuildWidget):
             self.launch()
 
     def mouseReleaseEvent(self, event):
-        if event.button == Qt.LeftButton:
+        if event.button == Qt.MouseButton.LeftButton:
             if self.show_new is True:
                 self.build_state_widget.setNewBuild(False)
                 self.show_new = False
 
             mod = QApplication.keyboardModifiers()
-            if mod not in (Qt.ShiftModifier, Qt.ControlModifier):
+            if mod not in (Qt.KeyboardModifier.ShiftModifier, Qt.KeyboardModifier.ControlModifier):
                 self.list_widget.clearSelection()
                 self.item.setSelected(True)
 

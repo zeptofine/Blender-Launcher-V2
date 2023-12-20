@@ -90,7 +90,7 @@ class BasePageWidget(QWidget):
         self.subversionLabel.setCheckable(True)
         self.subversionLabel.clicked.connect(lambda: self.set_sorting_type(SortingType.VERSION))
         self.branchLabel = QLabel("Branch")
-        self.branchLabel.setAlignment(Qt.AlignCenter)
+        self.branchLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.commitTimeLabel = QPushButton(time_label)
         self.commitTimeLabel.setFixedWidth(118)
         self.commitTimeLabel.setProperty("ListHeader", True)

@@ -808,10 +808,12 @@ class BlenderLauncher(BaseWindow):
 
     def new_connection(self):
         self.socket = self.server.nextPendingConnection()
+        assert self.socket is not None
         self.socket.readyRead.connect(self.read_socket_data)
         self._show()
 
     def read_socket_data(self):
+        assert self.socket is not None
         data = self.socket.readAll()
 
         if str(data, encoding="ascii") != self.version:

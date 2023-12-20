@@ -74,7 +74,7 @@ class BlenderBuildsTabWidget(SettingsFormWidget):
         self.QuickLaunchKeySeq.setEnabled(get_enable_quick_launch_key_seq())
         self.QuickLaunchKeySeq.keyPressEvent = self._keyPressEvent
         self.QuickLaunchKeySeq.setText(str(get_quick_launch_key_seq()))
-        self.QuickLaunchKeySeq.setContextMenuPolicy(Qt.NoContextMenu)
+        self.QuickLaunchKeySeq.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
         self.QuickLaunchKeySeq.setCursorPosition(0)
         self.QuickLaunchKeySeq.editingFinished.connect(self.update_quick_launch_key_seq)
 

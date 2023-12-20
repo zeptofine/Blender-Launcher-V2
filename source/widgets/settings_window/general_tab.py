@@ -30,7 +30,7 @@ class GeneralTabWidget(SettingsFormWidget):
         # Library Folder
         self.LibraryFolderLineEdit = QLineEdit()
         self.LibraryFolderLineEdit.setText(str(get_library_folder()))
-        self.LibraryFolderLineEdit.setContextMenuPolicy(Qt.NoContextMenu)
+        self.LibraryFolderLineEdit.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
         self.LibraryFolderLineEdit.setReadOnly(True)
         self.LibraryFolderLineEdit.setCursorPosition(0)
 
