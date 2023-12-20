@@ -7,9 +7,11 @@ from typing import TypedDict
 import distro
 from modules._platform import _popen, get_cwd, get_platform
 from modules.actions import ActionQueue
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QLabel, QVBoxLayout, QWidget
 from threads.downloader import DownloadAction
 from threads.extractor import ExtractAction
-from ui.update_window_ui import UpdateWindowUI
+from widgets.base_progress_bar_widget import BaseProgressBarWidget
 from windows.base_window import BaseWindow
 
 release_link = "https://github.com/Victor-IX/Blender-Launcher-V2/releases/download/{0}/Blender_Launcher_{0}_{1}_x64.zip"
@@ -27,10 +29,26 @@ class GitHubRelease(TypedDict):
     assets: list[GitHubAsset]
 
 
-class BlenderLauncherUpdater(BaseWindow, UpdateWindowUI):
+class BlenderLauncherUpdater(BaseWindow):
     def __init__(self, app, version, release_tag):
         super().__init__(app=app, version=version)
-        self.setupUi(self)
+
+        self.setWindowModality(Qt.WindowModality.ApplicationModal)
+        self.resize(256, 77)
+        self.setWindowTitle("Updating Blender Launcher")
+
+        self.CentralWidget = QWidget(self)
+        self.CentralLayout = QVBoxLayout(self.CentralWidget)
+        self.CentralLayout.setContentsMargins(3, 0, 3, 3)
+        self.setCentralWidget(self.CentralWidget)
+
+        self.HeaderLabel = QLabel("Updating Blender Launcher")
+        self.HeaderLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.ProgressBar = BaseProgressBarWidget(self)
+        self.ProgressBar.setFixedHeight(36)
+        self.CentralLayout.addWidget(self.HeaderLabel)
+        self.CentralLayout.addWidget(self.ProgressBar)
 
         self._headers = {
             "X-GitHub-Api-Version": "2022-11-28",
@@ -84,12 +102,14 @@ class BlenderLauncherUpdater(BaseWindow, UpdateWindowUI):
         link = self.get_link() if self.platform == "Linux" else release_link.format(self.release_tag, self.platform)
 
         assert self.manager is not None
+        self.ProgressBar.set_title("Downloading")
         a = DownloadAction(self.manager, link)
         a.progress.connect(self.ProgressBar.set_progress)
         a.finished.connect(self.extract)
         self.queue.append(a)
 
     def extract(self, source):
+        self.ProgressBar.set_title("Extracting")
         a = ExtractAction(source, self.cwd)
         a.progress.connect(self.ProgressBar.set_progress)
         a.finished.connect(self.finish)

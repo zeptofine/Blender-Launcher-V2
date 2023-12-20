@@ -209,7 +209,7 @@ class Scraper(QThread):
 
         releases = soup.find_all(href=b3d_link)
         if not any(releases):
-            print("Failed to gather stable releases")
+            logging.info("Failed to gather stable releases")
 
         minimum_version = get_minimum_blender_stable_version()
 
