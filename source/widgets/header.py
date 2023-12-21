@@ -3,18 +3,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from PyQt5.QtCore import QSize, Qt, pyqtSignal
-from PyQt5.QtGui import QIcon
-from PyQt5.QtNetwork import QLocalServer
 from PyQt5.QtWidgets import (
-    QAction,
-    QApplication,
     QHBoxLayout,
     QLabel,
-    QLayoutItem,
     QPushButton,
-    QSystemTrayIcon,
-    QTabWidget,
-    QVBoxLayout,
     QWidget,
 )
 

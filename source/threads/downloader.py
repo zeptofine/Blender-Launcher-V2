@@ -6,7 +6,7 @@ from modules._copyfileobj import copyfileobj
 from modules.action import Action
 from modules.connection_manager import REQUEST_MANAGER
 from modules.settings import get_library_folder
-from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtCore import pyqtSignal
 
 
 def download(

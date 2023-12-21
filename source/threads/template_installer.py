@@ -5,7 +5,7 @@ from shutil import copytree
 
 from modules.action import Action
 from modules.settings import get_library_folder
-from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtCore import pyqtSignal
 
 
 def install_template(dist: Path):

@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from modules.action import Action
-from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtCore import pyqtSignal
 
 
 @dataclass(frozen=True)

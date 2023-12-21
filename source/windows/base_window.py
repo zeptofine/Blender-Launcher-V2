@@ -5,7 +5,7 @@ from modules.icons import Icons
 from modules.settings import get_enable_high_dpi_scaling
 from PyQt5.QtCore import QFile, QPoint, Qt, QTextStream
 from PyQt5.QtGui import QFont, QFontDatabase
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget
+from PyQt5.QtWidgets import QApplication, QMainWindow
 
 if get_enable_high_dpi_scaling():
     QApplication.setAttribute(Qt.ApplicationAttribute.AA_EnableHighDpiScaling, True)

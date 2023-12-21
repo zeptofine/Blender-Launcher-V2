@@ -3,15 +3,12 @@ from __future__ import annotations
 import json
 import logging
 import re
-import sys
 import time
-import traceback
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
 from urllib.parse import urljoin
 
-import lxml
 from bs4 import BeautifulSoup, SoupStrainer
 from modules._platform import get_platform, set_locale
 from modules.build_info import BuildInfo
