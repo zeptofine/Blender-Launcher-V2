@@ -145,7 +145,6 @@ def read_blender_version(path: Path, old_build_info: BuildInfo | None = None, ar
 
 
 class BuildInfoWriter(QThread):
-    read = pyqtSignal(BuildInfo)  # past-tense >:[
     written = pyqtSignal()
     error = pyqtSignal()
 
