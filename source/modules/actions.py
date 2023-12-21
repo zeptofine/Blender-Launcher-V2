@@ -50,16 +50,9 @@ class ActionQueue(deque[Action]):
 
         if name is not None:
             w.setObjectName(name)
-        update_listener_dct(None)
+        self.workers[w] = None
         if start:
             w.start()
-
-    def _remove_non_running(self):
-        ws = list(self.workers)
-        for worker in ws:
-            if not worker.isRunning():
-                self.workers.pop(worker)
-                logging.debug("Popped", worker)
 
     def thread_with_action(self, action: Action):
         for listener, a in self.workers.items():
@@ -72,10 +65,10 @@ class ActionQueue(deque[Action]):
             worker.start()
 
     def fullstop(self):
-        for worker in self.workers:
+        for worker, item in list(self.workers.items()):
             if worker.isRunning():
                 worker.fullstop()
-                logging.debug(f"Stopped {worker} {self.workers[worker]}")
+                logging.debug(f"Stopped {worker} {item}")
 
 
 class ActionWorker(QThread):
@@ -111,7 +104,6 @@ class ActionWorker(QThread):
     @pyqtSlot()
     def fullstop(self):
         self.terminate()
-        self.wait()
 
     def __repr__(self):
         return f"{self.__class__.__name__}[{self.objectName()}]"
