@@ -2,24 +2,38 @@ from __future__ import annotations
 
 import logging
 from collections import deque
+from typing import TYPE_CHECKING, Any
 
 from modules.action import Action
 from PyQt5.QtCore import QThread, pyqtSignal, pyqtSlot
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
 
 class ActionQueue(deque[Action]):
-    def __init__(self, worker_count=4, parent=None, maxlen=None, new_workers_on_crash=True):
+    def __init__(
+        self,
+        worker_count=4,
+        parent=None,
+        maxlen=None,
+        new_workers_on_crash=True,
+        on_spawn: Callable[[ActionWorker], Any] | None = None,
+    ):
         if maxlen:
             super().__init__(maxlen=maxlen)
         else:
             super().__init__()
         self.parent = parent
         self.workers: dict[ActionWorker, Action | None] = {}
+        self.on_spawn: Callable[[ActionWorker], Any] | None = on_spawn
         for i in range(worker_count):
             self.spawn_new_worker(readd_on_crash=new_workers_on_crash, name=str(i))
 
     def spawn_new_worker(self, start=False, readd_on_crash=False, name: str | None = None):
         w = ActionWorker(queue=self, parent=self.parent)
+        if self.on_spawn is not None:
+            self.on_spawn(w)
 
         def update_listener_dct(item, w=w):
             self.workers[w] = item
@@ -66,6 +80,7 @@ class ActionQueue(deque[Action]):
 
 class ActionWorker(QThread):
     item_changed = pyqtSignal(object)  # Action | None
+    error = pyqtSignal(Exception)
 
     def __init__(self, queue: ActionQueue, parent=None):
         super().__init__(parent)
@@ -87,7 +102,11 @@ class ActionWorker(QThread):
 
             empty = False
             self.item_changed.emit(self.item)
-            self.item.run()
+            try:
+                self.item.run()
+            except Exception as e:
+                logging.exception(e)
+                self.error.emit(e)
 
     @pyqtSlot()
     def fullstop(self):

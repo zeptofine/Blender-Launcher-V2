@@ -20,3 +20,4 @@ class RenameAction(Action):
             self.finished.emit(dst)
         except OSError:
             self.failure.emit()
+            raise

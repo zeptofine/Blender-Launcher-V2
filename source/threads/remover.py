@@ -21,3 +21,5 @@ class RemoveAction(Action):
             self.finished.emit(0)
         except OSError:
             self.finished.emit(1)
+            raise
+

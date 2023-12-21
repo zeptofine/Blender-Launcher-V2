@@ -93,7 +93,11 @@ class BlenderLauncher(BaseWindow):
         self.server.newConnection.connect(self.new_connection)
 
         # Action queue
-        self.action_queue = ActionQueue(worker_count=4, parent=self)
+        self.action_queue = ActionQueue(
+            worker_count=4,
+            parent=self,
+            on_spawn=lambda w: w.error.connect(self.message_from_error),
+        )
         self.action_queue.start()
         self.quit_signal.connect(self.action_queue.fullstop)
 
@@ -536,6 +540,10 @@ class BlenderLauncher(BaseWindow):
             if value is not None:
                 self.notification_pool.append(value)
             self.tray_icon.showMessage("Blender Launcher", message, self.icons.taskbar, 10000)
+
+    def message_from_error(self, err: Exception):
+        self.show_message(f"An error has occurred: {err}\nSee the logs for more details.", MessageType.ERROR)
+
 
     def show_favorites(self):
         self.TabWidget.setCurrentWidget(self.UserTab)

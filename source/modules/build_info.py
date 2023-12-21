@@ -160,6 +160,7 @@ class BuildInfoWriter(QThread):
             self.written.emit()
         except Exception:
             self.error.emit()
+            raise
 
 
 def read_build_info(path: Path, archive_name: str | None = None):
@@ -204,3 +205,4 @@ class ReadBuildAction(Action):
             self.finished.emit(build_info)
         except Exception as e:
             self.failure.emit(e)
+            raise

@@ -32,7 +32,7 @@ class DialogWindow(BaseWindow):
         self.resize(160, 60)
 
         sizePolicy = QSizePolicy(
-            QSizePolicy.ExMinimumExpanding,
+            QSizePolicy.MinimumExpanding,
             QSizePolicy.MinimumExpanding,
         )
         sizePolicy.setHorizontalStretch(0)
@@ -44,7 +44,7 @@ class DialogWindow(BaseWindow):
         self.CentralLayout = QVBoxLayout(self.CentralWidget)
         self.CentralLayout.setContentsMargins(6, 6, 6, 6)
         self.CentralLayout.setSpacing(0)
-
+        self.setCentralWidget(self.CentralWidget)
         self.setWindowTitle(title)
 
         self.IconLabel = QLabel()
