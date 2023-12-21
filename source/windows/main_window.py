@@ -25,6 +25,7 @@ from modules.settings import (
     get_enable_quick_launch_key_seq,
     get_launch_minimized_to_tray,
     get_library_folder,
+    get_make_error_popup,
     get_proxy_type,
     get_quick_launch_key_seq,
     get_show_tray_icon,
@@ -542,7 +543,8 @@ class BlenderLauncher(BaseWindow):
             self.tray_icon.showMessage("Blender Launcher", message, self.icons.taskbar, 10000)
 
     def message_from_error(self, err: Exception):
-        self.show_message(f"An error has occurred: {err}\nSee the logs for more details.", MessageType.ERROR)
+        if get_make_error_popup():
+            self.show_message(f"An error has occurred: {err}\nSee the logs for more details.", MessageType.ERROR)
 
 
     def show_favorites(self):

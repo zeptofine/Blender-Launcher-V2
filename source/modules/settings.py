@@ -370,3 +370,10 @@ def get_minimum_blender_stable_version() -> float:
 
 def set_minimum_blender_stable_version(v: float):
     get_settings().setValue("minimum_blender_stable_version", v)
+
+
+def get_make_error_popup():
+    return get_settings().value("error_popup", defaultValue=True, type=bool)
+
+def set_make_error_popup(v: bool):
+    get_settings().setValue("error_popup", v)

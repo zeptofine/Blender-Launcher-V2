@@ -4,6 +4,7 @@ from modules.settings import (
     get_launch_minimized_to_tray,
     get_launch_when_system_starts,
     get_library_folder,
+    get_make_error_popup,
     get_new_builds_check_frequency,
     get_platform,
     get_show_tray_icon,
@@ -12,6 +13,7 @@ from modules.settings import (
     set_launch_minimized_to_tray,
     set_launch_when_system_starts,
     set_library_folder,
+    set_make_error_popup,
     set_new_builds_check_frequency,
     set_show_tray_icon,
 )
@@ -79,6 +81,12 @@ class GeneralTabWidget(SettingsFormWidget):
         self.EnableHighDpiScalingCheckBox.clicked.connect(self.toggle_enable_high_dpi_scaling)
         self.EnableHighDpiScalingCheckBox.setChecked(get_enable_high_dpi_scaling())
 
+        # Error popups
+        self.EnableErrorPopupsCheckBox = QCheckBox(self)
+        self.EnableErrorPopupsCheckBox.clicked.connect(self.toggle_enable_error_popups)
+        self.EnableErrorPopupsCheckBox.setChecked(get_make_error_popup())
+
+
         # Layout
         self._addRow("Library Folder", self.LibraryFolderWidget, new_line=True)
 
@@ -95,6 +103,8 @@ class GeneralTabWidget(SettingsFormWidget):
         sub_layout.addWidget(self.NewBuildsCheckFrequency)
         self._addRow("Check For New Builds Automatically", sub_layout)
         self._addRow("Enable High DPI Scaling", self.EnableHighDpiScalingCheckBox)
+        self._addRow("Enable Error Popups", self.EnableErrorPopupsCheckBox)
+
 
     def set_library_folder(self):
         library_folder = str(get_library_folder())
@@ -134,3 +144,6 @@ class GeneralTabWidget(SettingsFormWidget):
 
     def toggle_enable_high_dpi_scaling(self, is_checked):
         set_enable_high_dpi_scaling(is_checked)
+
+    def toggle_enable_error_popups(self, is_checked):
+        set_make_error_popup(is_checked)
