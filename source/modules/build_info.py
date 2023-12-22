@@ -143,15 +143,13 @@ def read_blender_version(path: Path, old_build_info: BuildInfo | None = None, ar
         is_favorite,
     )
 
-
-class BuildInfoWriter(QThread):
+@dataclass(frozen=True)
+class WriteBuildAction(Action):
     written = pyqtSignal()
     error = pyqtSignal()
 
-    def __init__(self, path, build_info):
-        QThread.__init__(self)
-        self.path = Path(path)
-        self.build_info: BuildInfo = build_info
+    path: Path
+    build_info: BuildInfo
 
     def run(self):
         try:
@@ -160,7 +158,6 @@ class BuildInfoWriter(QThread):
         except Exception:
             self.error.emit()
             raise
-
 
 def read_build_info(path: Path, archive_name: str | None = None):
     blinfo = path / ".blinfo"
