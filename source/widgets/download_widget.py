@@ -31,13 +31,14 @@ class DownloadState(Enum):
 
 
 class DownloadWidget(BaseBuildWidget):
-    def __init__(self, parent: "BlenderLauncher", list_widget, item, build_info, show_new=False):
+    def __init__(self, parent: "BlenderLauncher", list_widget, item, build_info, is_installed, show_new=False):
         super().__init__(parent=parent)
         self.parent: "BlenderLauncher" = parent
         self.list_widget = list_widget
         self.item = item
         self.build_info = build_info
         self.show_new = show_new
+        self.is_installed = is_installed
         self.state = DownloadState.IDLE
         self.build_dir = None
         self.source_file = None
@@ -52,6 +53,11 @@ class DownloadWidget(BaseBuildWidget):
         self.downloadButton.setProperty("LaunchButton", True)
         self.downloadButton.clicked.connect(self.init_downloader)
         self.downloadButton.setCursor(Qt.CursorShape.PointingHandCursor)
+
+        self.installedButton = QPushButton("Installed")
+        self.installedButton.setFixedWidth(85)
+        self.installedButton.setProperty("InstalledButton", True)
+        self.installedButton.setCursor(Qt.CursorShape.PointingHandCursor)
 
         self.cancelButton = QPushButton("Cancel")
         self.cancelButton.setFixedWidth(85)
@@ -96,7 +102,7 @@ class DownloadWidget(BaseBuildWidget):
         self.build_info_hl.addWidget(self.branchLabel, stretch=1)
         self.build_info_hl.addWidget(self.commitTimeLabel)
 
-        if self.show_new:
+        if self.show_new and not self.is_installed:
             self.build_state_widget.setNewBuild(True)
 
         self.progress_bar_hl.addWidget(self.progressBar)
@@ -104,10 +110,17 @@ class DownloadWidget(BaseBuildWidget):
         self.sub_vl.addLayout(self.build_info_hl)
         self.sub_vl.addLayout(self.progress_bar_hl)
 
-        self.main_hl.addWidget(self.downloadButton)
-        self.main_hl.addWidget(self.cancelButton)
-        self.main_hl.addLayout(self.sub_vl)
-        self.main_hl.addWidget(self.build_state_widget)
+        if self.is_installed:
+            self.downloadButton.hide()
+            self.main_hl.addWidget(self.installedButton)
+            self.main_hl.addWidget(self.cancelButton)
+            self.main_hl.addLayout(self.sub_vl)
+            self.main_hl.addWidget(self.build_state_widget)
+        else:
+            self.main_hl.addWidget(self.downloadButton)
+            self.main_hl.addWidget(self.cancelButton)
+            self.main_hl.addLayout(self.sub_vl)
+            self.main_hl.addWidget(self.build_state_widget)
 
         self.setLayout(self.main_hl)
 

@@ -208,6 +208,12 @@ QPushButton[LaunchButton=true]:disabled {
     padding: 9px;
 }
 
+QPushButton[InstalledButton=true] {
+    background-color: #318CE7;
+    border: none;
+    padding: 9px;
+}
+
 QPushButton[CancelButton=true] {
     background-color: #FF613D;
     border: none;
