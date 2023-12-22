@@ -37,7 +37,7 @@ class ActionQueue(deque[Action]):
 
         def update_listener_dct(item, w=w):
             self.workers[w] = item
-            logging.debug(f"{w}: {item}")
+            logging.debug(f"{w}: {item!r}")
 
         w.item_changed.connect(update_listener_dct)
         if readd_on_crash:
