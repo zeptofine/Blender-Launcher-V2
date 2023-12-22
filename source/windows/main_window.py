@@ -35,6 +35,7 @@ from modules.settings import (
 )
 from pynput import keyboard
 from PyQt5.QtCore import QSize, Qt, pyqtSignal, pyqtSlot
+from PyQt5.QtGui import QDragEnterEvent, QDragMoveEvent
 from PyQt5.QtNetwork import QLocalServer
 from PyQt5.QtWidgets import (
     QAction,
@@ -809,7 +810,10 @@ class BlenderLauncher(BaseWindow):
 
     @pyqtSlot()
     def attempt_close(self):
-        self.close()
+        if get_show_tray_icon():
+            self.close()
+        else:
+            self.quit_()
 
     def closeEvent(self, event):
         if get_show_tray_icon():
@@ -838,7 +842,9 @@ class BlenderLauncher(BaseWindow):
                       version to proceed this action!",
                 accept_text="OK", cancel_text=None, icon=DialogIcon.WARNING)
 
-    def dragEnterEvent(self, e):
+    def dragEnterEvent(self, e: QDragEnterEvent):
+        print(e)
+        
         if e.mimeData().hasFormat("text/plain"):
             e.accept()
         else:
