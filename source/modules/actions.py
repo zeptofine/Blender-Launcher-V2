@@ -60,6 +60,9 @@ class ActionQueue(deque[Action]):
                 return listener
         return None
 
+    def get_busy_threads(self):
+        return {worker: item for worker, item in self.workers.items() if item is not None}
+
     def start(self):
         for worker in self.workers:
             worker.start()

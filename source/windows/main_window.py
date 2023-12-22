@@ -195,7 +195,7 @@ class BlenderLauncher(BaseWindow):
             "Blender Launcher",
             (self.SettingsButton, self.DocsButton,),
         )
-        self.header.close_signal.connect(self.attempt_close)
+        self.header.close_signal.connect(self.quit_)
         self.header.minimize_signal.connect(self.showMinimized)
         self.CentralLayout.addWidget(self.header)
 
@@ -577,11 +577,15 @@ class BlenderLauncher(BaseWindow):
         self.quit_()
 
     def quit_(self):
-        if not self.is_downloading_idle():
+        busy = self.action_queue.get_busy_threads()
+        if any(busy):
             self.dlg = DialogWindow(
                 parent=self, title="Warning",
-                text="Active downloads in progress!<br>\
-                        Are you sure you want to quit?",
+                text=(
+                    "Some actions are still in progress!<br>"
+                    + "\n".join([f" - {item}<br>" for worker, item in busy.items()])
+                    + "Are you sure you want to quit?"
+                ),
                 accept_text="Yes", cancel_text="No")
 
             self.dlg.accepted.connect(self.destroy)
