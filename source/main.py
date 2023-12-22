@@ -70,7 +70,7 @@ def main():
 
     # Do not check for other instances running
     if "-instanced" in sys.argv:
-        BlenderLauncher(app=app, version=version, argv=sys.argv, logger=logger)
+        BlenderLauncher(app=app, version=version, argv=sys.argv)
         sys.exit(app.exec_())
 
     # Check if other instances of application is already running
@@ -80,7 +80,7 @@ def main():
 
     if not is_running:
         socket.close()
-        BlenderLauncher(app=app, version=version, argv=sys.argv, logger=logger)
+        BlenderLauncher(app=app, version=version, argv=sys.argv)
         sys.exit(app.exec_())
     else:
         socket.write(QByteArray(version.encode()))

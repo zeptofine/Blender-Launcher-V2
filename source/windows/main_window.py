@@ -76,7 +76,7 @@ class BlenderLauncher(BaseWindow):
     quit_signal = pyqtSignal()
     quick_launch_fail_signal = pyqtSignal()
 
-    def __init__(self, app: QApplication, version, logger, argv):
+    def __init__(self, app: QApplication, version, argv):
         super().__init__(app=app, version=version)
         self.resize(640, 480)
         self.setMinimumSize(QSize(640, 480))
@@ -105,7 +105,6 @@ class BlenderLauncher(BaseWindow):
         # Global scope
         self.app = app
         self.version = version
-        self.logger = logger
         self.argv = argv
         self.favorite = None
         self.status = "Unknown"
@@ -195,7 +194,7 @@ class BlenderLauncher(BaseWindow):
             "Blender Launcher",
             (self.SettingsButton, self.DocsButton,),
         )
-        self.header.close_signal.connect(self.quit_)
+        self.header.close_signal.connect(self.attempt_close)
         self.header.minimize_signal.connect(self.showMinimized)
         self.CentralLayout.addWidget(self.header)
 
