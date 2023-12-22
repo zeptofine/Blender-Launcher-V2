@@ -46,3 +46,6 @@ class DownloadAction(Action):
             progress_callback=self.progress.emit,
         )
         self.finished.emit(dst)
+
+    def __str__(self):
+        return f"Download {self.link}"

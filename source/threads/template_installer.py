@@ -33,3 +33,6 @@ class TemplateAction(Action):
     def run(self):
         install_template(self.destination)
         self.finished.emit()
+
+    def __str__(self):
+        return f"Install template to {self.destination}"

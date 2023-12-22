@@ -43,3 +43,6 @@ class DrawLibraryAction(Action):
         for build in get_builds(self.folders):
             self.found.emit(build)
         self.finished.emit()
+
+    def __str__(self):
+        return f"Draw libraries {self.folders}"

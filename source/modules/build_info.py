@@ -205,3 +205,6 @@ class ReadBuildAction(Action):
         except Exception as e:
             self.failure.emit(e)
             raise
+
+    def __str__(self):
+        return f"Read build at {self.path}"
