@@ -15,7 +15,7 @@ from .action import Action
 class BuildInfo:
     file_version = "1.2"
     # https://www.blender.org/download/lts/
-    lts_tags = ("2.83", "2.93", "3.3", "3.7")
+    lts_tags = ("2.83", "2.93", "3.3", "3.6", "4.3", "4.6")
 
     def __init__(self, link, subversion, build_hash, commit_time, branch, custom_name="", is_favorite=False):
         self.link = link
