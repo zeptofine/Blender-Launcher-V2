@@ -204,7 +204,7 @@ class DownloadWidget(BaseBuildWidget):
         self.state = DownloadState.READING
         if self.parent.platform == "Linux":
             archive_name = Path(self.build_info.link).with_suffix("").stem
-        elif self.parent.platform in {"Windows", "macOS"}:
+        else:
             archive_name = Path(self.build_info.link).stem
 
         assert self.build_dir is not None

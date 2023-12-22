@@ -5,9 +5,6 @@ from pathlib import Path
 from modules._platform import get_cwd, get_platform
 from PyQt5.QtCore import QSettings
 
-if get_platform() == "Windows":
-    import winreg
-
 tabs = {
     "Library": 0,
     "Downloads": 1,
@@ -111,6 +108,7 @@ def set_favorite_path(path):
 
 def get_launch_when_system_starts():
     if get_platform() == "Windows":
+        import winreg
         key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
                              r"SOFTWARE\Microsoft\Windows\CurrentVersion\Run")
         path = sys.executable
@@ -129,6 +127,7 @@ def get_launch_when_system_starts():
 
 def set_launch_when_system_starts(is_checked):
     if get_platform() == "Windows":
+        import winreg
         key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
                              r"SOFTWARE\Microsoft\Windows\CurrentVersion\Run",
                              0, winreg.KEY_SET_VALUE)

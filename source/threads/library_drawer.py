@@ -17,12 +17,11 @@ def get_builds(folders: Iterable[str | Path]):
     library_folder = Path(get_library_folder())
     platform = get_platform()
 
-    if platform == "Windows":
-        blender_exe = "blender.exe"
-    elif platform == "Linux":
-        blender_exe = "blender"
-    elif platform == "macOS":
-        blender_exe = "Blender/Blender.app/Contents/MacOS/Blender"
+    blender_exe = {
+        "Windows": "blender.exe",
+        "Linux": "blender",
+        "macOS": "Blender/Blender.app/Contents/MacOS/Blender",
+    }.get(platform, "blender")
 
     for folder in folders:
         path = library_folder / folder

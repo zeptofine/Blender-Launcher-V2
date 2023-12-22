@@ -326,6 +326,8 @@ class LibraryWidget(BaseBuildWidget):
         library_folder = Path(get_library_folder())
         blender_args = get_blender_startup_arguments()
 
+        proc = None
+
         if platform == "Windows":
             if exe is not None:
                 b3d_exe = library_folder / self.link / exe
@@ -355,6 +357,7 @@ class LibraryWidget(BaseBuildWidget):
             b3d_exe = library_folder / self.link / "blender"
             proc = _popen(f'{bash_args} "{b3d_exe.as_posix()}" {blender_args}')
 
+        assert proc is not None
         if self.observer is None:
             self.observer = Observer(self)
             self.observer.count_changed.connect(self.proc_count_changed)

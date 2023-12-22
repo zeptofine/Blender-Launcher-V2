@@ -4,12 +4,15 @@ import json
 import re
 import time
 from dataclasses import dataclass
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from modules._platform import _check_output, get_platform, set_locale
 from PyQt5.QtCore import QThread, pyqtSignal
 
 from .action import Action
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class BuildInfo:
@@ -82,17 +85,14 @@ def write_build_info(build_info: BuildInfo, dist: Path):
 def read_blender_version(path: Path, old_build_info: BuildInfo | None = None, archive_name=None):
     set_locale()
 
-    platform = get_platform()
-    if platform == "Windows":
-        blender_exe = "blender.exe"
-    elif platform == "Linux":
-        blender_exe = "blender"
-    elif platform == "macOS":
-        blender_exe = "Blender/Blender.app/Contents/MacOS/Blender"
+    blender_exe = {
+        "Windows": "blender.exe",
+        "Linux": "blender",
+        "macOS": "Blender/Blender.app/Contents/MacOS/Blender",
+    }.get(get_platform(), "blender")
 
     exe_path = path / blender_exe
-    version = _check_output([exe_path.as_posix(), "-v"])
-    version = version.decode("UTF-8")
+    version = _check_output([exe_path.as_posix(), "-v"]).decode("UTF-8")
 
     ctime = re.search("build commit time: " + "(.*)", version)[1].rstrip()
     cdate = re.search("build commit date: " + "(.*)", version)[1].rstrip()
@@ -104,10 +104,8 @@ def read_blender_version(path: Path, old_build_info: BuildInfo | None = None, ar
     subfolder = path.parent.name
 
     name = archive_name or path.name
-
+    branch = subfolder
     if subfolder == "daily":
-        branch = "daily"
-
         # If branch from console is empty, it is probably stable release
         if len(subversion.split(" ")) == 1:
             subversion += " Stable"
@@ -123,8 +121,6 @@ def read_blender_version(path: Path, old_build_info: BuildInfo | None = None, ar
                 branch = old_build_info.branch
         else:
             branch = match.group(1)
-    elif subfolder == "stable":
-        branch = "stable"
 
     # Recover user defined favorites builds information
     custom_name = ""
@@ -143,6 +139,7 @@ def read_blender_version(path: Path, old_build_info: BuildInfo | None = None, ar
         is_favorite,
     )
 
+
 @dataclass(frozen=True)
 class WriteBuildAction(Action):
     written = pyqtSignal()
@@ -158,6 +155,7 @@ class WriteBuildAction(Action):
         except Exception:
             self.error.emit()
             raise
+
 
 def read_build_info(path: Path, archive_name: str | None = None):
     blinfo = path / ".blinfo"
