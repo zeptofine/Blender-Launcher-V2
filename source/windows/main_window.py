@@ -8,6 +8,7 @@ from pathlib import Path
 from platform import version
 from shutil import copyfileobj
 from time import localtime, strftime
+from typing import TYPE_CHECKING
 
 import resources_rc
 from items.base_list_widget_item import BaseListWidgetItem
@@ -35,7 +36,6 @@ from modules.settings import (
 )
 from pynput import keyboard
 from PyQt5.QtCore import QSize, Qt, pyqtSignal, pyqtSlot
-from PyQt5.QtGui import QDragEnterEvent, QDragMoveEvent
 from PyQt5.QtNetwork import QLocalServer
 from PyQt5.QtWidgets import (
     QAction,
@@ -61,6 +61,10 @@ from windows.base_window import BaseWindow
 from windows.dialog_window import DialogIcon, DialogWindow
 from windows.file_dialog_window import FileDialogWindow
 from windows.settings_window import SettingsWindow
+
+if TYPE_CHECKING:
+    from PyQt5.QtGui import QDragEnterEvent, QDragMoveEvent
+    from widgets.base_build_widget import BaseBuildWidget
 
 if get_platform() == "Windows":
     from PyQt5.QtWinExtras import QWinThumbnailToolBar, QWinThumbnailToolButton
@@ -107,7 +111,7 @@ class BlenderLauncher(BaseWindow):
         self.app = app
         self.version = version
         self.argv = argv
-        self.favorite = None
+        self.favorite: BaseBuildWidget | None = None
         self.status = "Unknown"
         self.is_force_check_on = False
         self.app_state = AppState.IDLE
@@ -184,7 +188,7 @@ class BlenderLauncher(BaseWindow):
         self.SettingsButton.clicked.connect(self.show_settings_window)
         self.DocsButton = WHeaderButton(self.icons.wiki, "", self)
         self.DocsButton.setToolTip("Open documentation")
-        self.DocsButton.clicked.connect(lambda: webbrowser.open("https://Victor-IX.github.io/Blender-Launcher-V2"))
+        self.DocsButton.clicked.connect(self.open_docs)
 
         self.SettingsButton.setProperty("HeaderButton", True)
         self.DocsButton.setProperty("HeaderButton", True)
@@ -554,6 +558,7 @@ class BlenderLauncher(BaseWindow):
 
     def quick_launch(self):
         try:
+            assert self.favorite
             self.favorite.launch()
         except Exception:
             self.quick_launch_fail_signal.emit()
@@ -842,9 +847,10 @@ class BlenderLauncher(BaseWindow):
                       version to proceed this action!",
                 accept_text="OK", cancel_text=None, icon=DialogIcon.WARNING)
 
+    def open_docs(self):
+        webbrowser.open("https://Victor-IX.github.io/Blender-Launcher-V2")
+
     def dragEnterEvent(self, e: QDragEnterEvent):
-        print(e)
-        
         if e.mimeData().hasFormat("text/plain"):
             e.accept()
         else:
