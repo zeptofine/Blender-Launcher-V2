@@ -383,7 +383,7 @@ def get_default_worker_thread_count() -> int:
     if cpu_count is None: # why can os.cpu_count() return None
         return 4
 
-    return cpu_count * 3 // 4
+    return round(max(cpu_count * 3 / 4, 1))
 
 def get_worker_thread_count() -> int:
     v = get_settings().value("worker_thread_count", type=int)
