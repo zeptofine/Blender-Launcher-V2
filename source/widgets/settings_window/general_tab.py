@@ -1,3 +1,5 @@
+import os
+
 from modules.settings import (
     get_check_for_new_builds_automatically,
     get_enable_high_dpi_scaling,
@@ -8,6 +10,7 @@ from modules.settings import (
     get_new_builds_check_frequency,
     get_platform,
     get_show_tray_icon,
+    get_worker_thread_count,
     set_check_for_new_builds_automatically,
     set_enable_high_dpi_scaling,
     set_launch_minimized_to_tray,
@@ -16,6 +19,7 @@ from modules.settings import (
     set_make_error_popup,
     set_new_builds_check_frequency,
     set_show_tray_icon,
+    set_worker_thread_count,
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QCheckBox, QHBoxLayout, QLineEdit, QPushButton, QSpinBox, QWidget
@@ -86,6 +90,28 @@ class GeneralTabWidget(SettingsFormWidget):
         self.EnableErrorPopupsCheckBox.clicked.connect(self.toggle_enable_error_popups)
         self.EnableErrorPopupsCheckBox.setChecked(get_make_error_popup())
 
+        # Worker thread count
+
+        self.WorkerThreadCount = QSpinBox()
+
+        self.WorkerThreadCount.setToolTip(
+            "Determines how many IO operations can be done at once, ex. Downloading, deleting, and extracting files"
+        )
+        self.WorkerThreadCount.editingFinished.connect(self.set_worker_thread_count)
+        self.WorkerThreadCount.setMinimum(1)
+        self.WorkerThreadCount.setValue(get_worker_thread_count())
+
+        # Warn if thread count exceeds cpu count
+        cpu_count = os.cpu_count()
+        if cpu_count is not None:
+
+            def warn_values_above_cpu(v: int):
+                if v > cpu_count:
+                    self.WorkerThreadCount.setSuffix(f" (warning: value above {cpu_count} (cpu count) !!)")
+                else:
+                    self.WorkerThreadCount.setSuffix(None)
+
+            self.WorkerThreadCount.valueChanged.connect(warn_values_above_cpu)
 
         # Layout
         self._addRow("Library Folder", self.LibraryFolderWidget, new_line=True)
@@ -104,7 +130,7 @@ class GeneralTabWidget(SettingsFormWidget):
         self._addRow("Check For New Builds Automatically", sub_layout)
         self._addRow("Enable High DPI Scaling", self.EnableHighDpiScalingCheckBox)
         self._addRow("Enable Error Popups", self.EnableErrorPopupsCheckBox)
-
+        self._addRow("Worker Thread Count", self.WorkerThreadCount)
 
     def set_library_folder(self):
         library_folder = str(get_library_folder())
@@ -147,3 +173,6 @@ class GeneralTabWidget(SettingsFormWidget):
 
     def toggle_enable_error_popups(self, is_checked):
         set_make_error_popup(is_checked)
+
+    def set_worker_thread_count(self):
+        set_worker_thread_count(self.WorkerThreadCount.value())

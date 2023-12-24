@@ -1,4 +1,5 @@
 import contextlib
+import os
 import sys
 from pathlib import Path
 
@@ -53,7 +54,7 @@ proxy_types = {
 
 def get_settings():
     return QSettings((get_cwd() / "Blender Launcher.ini").as_posix(),
-                     QSettings.IniFormat)
+                     QSettings.Format.IniFormat)
 
 
 def get_library_folder():
@@ -376,3 +377,20 @@ def get_make_error_popup():
 
 def set_make_error_popup(v: bool):
     get_settings().setValue("error_popup", v)
+
+def get_default_worker_thread_count() -> int:
+    cpu_count = os.cpu_count()
+    if cpu_count is None: # why can os.cpu_count() return None
+        return 4
+
+    return cpu_count * 3 // 4
+
+def get_worker_thread_count() -> int:
+    v = get_settings().value("worker_thread_count", type=int)
+    if v == 0:
+        return get_default_worker_thread_count()
+
+    return v
+
+def set_worker_thread_count(v: int):
+    get_settings().setValue("worker_thread_count", v)

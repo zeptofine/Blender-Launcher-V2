@@ -31,6 +31,7 @@ from modules.settings import (
     get_quick_launch_key_seq,
     get_show_tray_icon,
     get_sync_library_and_downloads_pages,
+    get_worker_thread_count,
     is_library_folder_valid,
     set_library_folder,
 )
@@ -100,7 +101,7 @@ class BlenderLauncher(BaseWindow):
 
         # Action queue
         self.action_queue = ActionQueue(
-            worker_count=4,
+            worker_count=get_worker_thread_count(),
             parent=self,
             on_spawn=lambda w: w.error.connect(self.message_from_error),
         )

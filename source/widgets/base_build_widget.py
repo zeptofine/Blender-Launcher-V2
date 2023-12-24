@@ -13,7 +13,7 @@ class BaseBuildWidget(QWidget):
         super().__init__()
         self.parent = parent
 
-        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self.context_menu)
 
         self.menu = BaseMenuWidget()
