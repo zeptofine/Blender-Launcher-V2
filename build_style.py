@@ -3,7 +3,7 @@ from pathlib import Path
 
 cwd = Path.cwd()
 dist = Path(r"source/resources/styles")
-styles = (cwd / dist).glob("*.css")
+styles = sorted((cwd / dist).glob("*.css"))
 
 with (dist / "global.qss").open("w") as outfile:
     for style in styles:
