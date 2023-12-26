@@ -56,6 +56,7 @@ class WindowHeader(QWidget):
         if use_minimize:
             self.minimize_button = WHeaderButton(parent.icons.minimize, "")
             self.minimize_button.setProperty("HeaderButton", True)
+            self.minimize_button.clicked.connect(self.minimize_signal.emit)
             buttons.append(self.minimize_button)
         buttons.append(self.close_button)
 
