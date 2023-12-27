@@ -15,8 +15,7 @@ class BaseMenuWidget(QMenu):
 
     def trigger(self):
         actions = self.actions()
-        actions_count = sum((a.isVisible() and not a.isSeparator())
-                            for a in actions)
+        actions_count = sum((a.isVisible() and not a.isSeparator()) for a in actions)
 
         if actions_count == 0:
             return
@@ -42,9 +41,7 @@ class BaseMenuWidget(QMenu):
             if action.isVisible() and not action.isSeparator():
                 if action.isEnabled():
                     self.setActiveAction(action)
-                    cursor.setY(cursor.y() + i *
-                                (self.action_height if reverse
-                                 else (- self.action_height)))
+                    cursor.setY(cursor.y() + i * (self.action_height if reverse else (-self.action_height)))
                     break
 
                 i = i + 1

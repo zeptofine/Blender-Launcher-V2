@@ -21,7 +21,7 @@ class DateTimeWidget(QPushButton):
         self.DayLabel = QLabel(date_parts[0])
         self.MonthLabel = QLabel(date_parts[1])
         self.MonthLabel.setFixedWidth(32)
-        self.MonthLabel.setAlignment(Qt.AlignCenter)
+        self.MonthLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.YearLabel = QLabel(date_parts[2] + ", ")
         self.TimeLabel = QLabel(datetime_parts[1])
 
@@ -44,7 +44,7 @@ class DateTimeWidget(QPushButton):
             self.layout.addStretch()
             self.layout.addWidget(self.RightArrowLabel)
 
-            self.setCursor(Qt.PointingHandCursor)
+            self.setCursor(Qt.CursorShape.PointingHandCursor)
             self.setToolTip("Press to show build hash number")
             self.clicked.connect(self.toggle_visibility)
         else:

@@ -1,11 +1,18 @@
+from __future__ import annotations
+
 import json
 import re
 import time
-from enum import Enum
-from pathlib import Path
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from modules._platform import _check_output, get_platform, set_locale
 from PyQt5.QtCore import QThread, pyqtSignal
+
+from .action import Action
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class BuildInfo:
@@ -13,15 +20,11 @@ class BuildInfo:
     # https://www.blender.org/download/lts/
     lts_tags = ("2.83", "2.93", "3.3", "3.7")
 
-    def __init__(self, link, subversion,
-                 build_hash, commit_time, branch,
-                 custom_name="", is_favorite=False):
+    def __init__(self, link, subversion, build_hash, commit_time, branch, custom_name="", is_favorite=False):
         self.link = link
 
-        if any(w in subversion.lower()
-               for w in ["release", "rc"]):
-            subversion = re.sub(
-                "[a-zA-Z ]+", " Candidate ", subversion).rstrip()
+        if any(w in subversion.lower() for w in ["release", "rc"]):
+            subversion = re.sub("[a-zA-Z ]+", " Candidate ", subversion).rstrip()
 
         self.subversion = subversion
         self.build_hash = build_hash
@@ -43,153 +46,160 @@ class BuildInfo:
             return self.build_hash == other.build_hash
         return self.subversion == other.subversion
 
-
-class BuildInfoReader(QThread):
-    Mode = Enum("Mode", "READ WRITE", start=1)
-    finished = pyqtSignal("PyQt_PyObject")
-
-    def __init__(self, path, build_info=None,
-                 archive_name=None, mode=Mode.READ):
-        QThread.__init__(self)
-        self.path = Path(path)
-        self.build_info = build_info
-        self.mode = mode
-        self.archive_name = archive_name
-        self.platform = get_platform()
-
-    def run(self):
-        if self.mode == self.Mode.READ:
-            try:
-                build_info = self.read_build_info()
-                self.finished.emit(build_info)
-            except Exception:
-                self.finished.emit(None)
-        elif self.mode == self.Mode.WRITE:
-            try:
-                self.write_build_info(self.build_info)
-                self.finished.emit(0)
-            except Exception:
-                self.finished.emit(None)
-
-
-    def read_blender_version(self, old_build_info=None):
-        set_locale()
-
-        if self.platform == "Windows":
-            blender_exe = "blender.exe"
-        elif self.platform == "Linux":
-            blender_exe = "blender"
-        elif self.platform == "macOS":
-            blender_exe = "Blender/Blender.app/Contents/MacOS/Blender"
-
-        exe_path = self.path / blender_exe
-        version = _check_output([exe_path.as_posix(), "-v"])
-        version = version.decode("UTF-8")
-
-        ctime = re.search("build commit time: " + "(.*)", version)[1].rstrip()
-        cdate = re.search("build commit date: " + "(.*)", version)[1].rstrip()
-        strptime = time.strptime(cdate + " " + ctime, "%Y-%m-%d %H:%M")
-        commit_time = time.strftime("%d-%b-%y-%H:%M", strptime)
-        build_hash = re.search("build hash: " + "(.*)", version)[1].rstrip()
-        subversion = re.search("Blender " + "(.*)", version)[1].rstrip()
-
-        subfolder = self.path.parent.name
-
-        name = self.archive_name or self.path.name
-
-        if subfolder == "daily":
-            branch = "daily"
-
-            # If branch from console is empty, it is probably stable release
-            if len(subversion.split(" ")) == 1:
-                subversion += " Stable"
-        elif subfolder == "custom":
-            branch = name
-        elif subfolder == "experimental":
-            # Sensitive data! Requires proper folder naming!
-            match = re.search(r"\+(.+?)\.", name)
-
-            # Fix for naming conventions changes after 1.12.0 release
-            if match is None:
-                if old_build_info is not None:
-                    branch = old_build_info.branch
-            else:
-                branch = match.group(1)
-        elif subfolder == "stable":
-            branch = "stable"
-
-        # Recover user defined favorites builds information
-        custom_name = ""
-        is_favorite = False
-
-        if old_build_info is not None:
-            custom_name = old_build_info.custom_name
-            is_favorite = old_build_info.is_favorite
-
-        return BuildInfo(
-            self.path.as_posix(),
-            subversion,
-            build_hash,
-            commit_time,
-            branch,
-            custom_name,
-            is_favorite
-        )
-
-
-    def write_build_info(self, build_info):
-        data = {}
-
-        data["file_version"] = BuildInfo.file_version
-        data["blinfo"] = []
-
-        data["blinfo"].append({
-            "branch": build_info.branch,
-            "subversion": build_info.subversion,
-            "build_hash": build_info.build_hash,
-            "commit_time": build_info.commit_time,
-            "custom_name": build_info.custom_name,
-            "is_favorite": build_info.is_favorite,
-        })
-
-        path = self.path / ".blinfo"
-
-        with open(path, "w", encoding="utf-8") as file:
-            json.dump(data, file)
-
-        return data
-
-    def read_build_info(self):
-        path = self.path / ".blinfo"
-
-        # Check if build information is already present
-        if path.is_file():
-            with open(path, encoding="utf-8") as file:
-                data = json.load(file)
-
-            build_info = self.build_info_from_json(data["blinfo"][0])
-
-            # Check if file version changed
-            if ("file_version" not in data) or \
-                    (data["file_version"] != BuildInfo.file_version):
-                new_build_info = self.read_blender_version(build_info)
-                self.write_build_info(new_build_info)
-                return new_build_info
-            return build_info
-
-        # Generating new build information
-        build_info = self.read_blender_version()
-        self.write_build_info(build_info)
-        return build_info
-
-    def build_info_from_json(self, blinfo):
-        return BuildInfo(
-            self.path.as_posix(),
+    @classmethod
+    def from_dict(cls, path: Path, blinfo: dict):
+        return cls(
+            path.as_posix(),
             blinfo["subversion"],
             blinfo["build_hash"],
             blinfo["commit_time"],
             blinfo["branch"],
             blinfo["custom_name"],
-            blinfo["is_favorite"]
+            blinfo["is_favorite"],
         )
 
+    def to_dict(self):
+        return {
+            "file_version": self.__class__.file_version,
+            "blinfo": [
+                {
+                    "branch": self.branch,
+                    "subversion": self.subversion,
+                    "build_hash": self.build_hash,
+                    "commit_time": self.commit_time,
+                    "custom_name": self.custom_name,
+                    "is_favorite": self.is_favorite,
+                }
+            ],
+        }
+
+
+def write_build_info(build_info: BuildInfo, dist: Path):
+    data = build_info.to_dict()
+    blinfo = dist / ".blinfo"
+    with blinfo.open("w", encoding="utf-8") as file:
+        json.dump(data, file)
+    return data
+
+
+def read_blender_version(path: Path, old_build_info: BuildInfo | None = None, archive_name=None):
+    set_locale()
+
+    blender_exe = {
+        "Windows": "blender.exe",
+        "Linux": "blender",
+        "macOS": "Blender/Blender.app/Contents/MacOS/Blender",
+    }.get(get_platform(), "blender")
+
+    exe_path = path / blender_exe
+    version = _check_output([exe_path.as_posix(), "-v"]).decode("UTF-8")
+
+    ctime = re.search("build commit time: " + "(.*)", version)[1].rstrip()
+    cdate = re.search("build commit date: " + "(.*)", version)[1].rstrip()
+    strptime = time.strptime(cdate + " " + ctime, "%Y-%m-%d %H:%M")
+    commit_time = time.strftime("%d-%b-%y-%H:%M", strptime)
+    build_hash = re.search("build hash: " + "(.*)", version)[1].rstrip()
+    subversion = re.search("Blender " + "(.*)", version)[1].rstrip()
+
+    subfolder = path.parent.name
+
+    name = archive_name or path.name
+    branch = subfolder
+    if subfolder == "daily":
+        # If branch from console is empty, it is probably stable release
+        if len(subversion.split(" ")) == 1:
+            subversion += " Stable"
+    elif subfolder == "custom":
+        branch = name
+    elif subfolder == "experimental":
+        # Sensitive data! Requires proper folder naming!
+        match = re.search(r"\+(.+?)\.", name)
+
+        # Fix for naming conventions changes after 1.12.0 release
+        if match is None:
+            if old_build_info is not None:
+                branch = old_build_info.branch
+        else:
+            branch = match.group(1)
+
+    # Recover user defined favorites builds information
+    custom_name = ""
+    is_favorite = False
+    if old_build_info is not None:
+        custom_name = old_build_info.custom_name
+        is_favorite = old_build_info.is_favorite
+
+    return BuildInfo(
+        path.as_posix(),
+        subversion,
+        build_hash,
+        commit_time,
+        branch,
+        custom_name,
+        is_favorite,
+    )
+
+
+@dataclass(frozen=True)
+class WriteBuildAction(Action):
+    written = pyqtSignal()
+    error = pyqtSignal()
+
+    path: Path
+    build_info: BuildInfo
+
+    def run(self):
+        try:
+            write_build_info(self.build_info, self.path)
+            self.written.emit()
+        except Exception:
+            self.error.emit()
+            raise
+
+
+def read_build_info(path: Path, archive_name: str | None = None):
+    blinfo = path / ".blinfo"
+
+    # Check if build information is already present
+    if blinfo.is_file():
+        with blinfo.open(encoding="utf-8") as file:
+            data = json.load(file)
+
+        build_info = BuildInfo.from_dict(path, data["blinfo"][0])
+
+        # Check if file version changed
+        if ("file_version" not in data) or (data["file_version"] != BuildInfo.file_version):
+            new_build_info = read_blender_version(
+                path,
+                build_info,
+                archive_name,
+            )
+            write_build_info(new_build_info, path)
+            return new_build_info
+        return build_info
+
+    # Generating new build information
+    build_info = read_blender_version(path, archive_name=archive_name)
+    write_build_info(build_info, path)
+    return build_info
+
+
+@dataclass(frozen=True)
+class ReadBuildAction(Action):
+    path: Path
+    build_info: str | None = None
+    archive_name: str | None = None
+
+    finished = pyqtSignal(BuildInfo)
+    failure = pyqtSignal(Exception)
+
+    def run(self):
+        try:
+            build_info = read_build_info(self.path, self.archive_name)
+            self.finished.emit(build_info)
+        except Exception as e:
+            self.failure.emit(e)
+            raise
+
+    def __str__(self):
+        return f"Read build at {self.path}"

@@ -3,9 +3,9 @@ from pathlib import Path
 
 cwd = Path.cwd()
 dist = Path(r"source/resources/styles")
-styles = (cwd / dist).glob("*.css")
+styles = sorted((cwd / dist).glob("*.css"))
 
-with open(dist / "global.qss", "w") as outfile:
+with (dist / "global.qss").open("w") as outfile:
     for style in styles:
         outfile.write(style.read_text())
         outfile.write("\n")

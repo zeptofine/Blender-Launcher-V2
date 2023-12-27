@@ -6,16 +6,15 @@ from shutil import copyfile
 from modules._platform import get_platform
 from modules.settings import get_library_folder
 
-if get_platform() == "Windows":
-    import win32com.client
-    from win32comext.shell import shell, shellcon
-
 
 def create_shortcut(folder, name):
     platform = get_platform()
     library_folder = Path(get_library_folder())
 
     if platform == "Windows":
+        import win32com.client
+        from win32comext.shell import shell, shellcon
+
         targetpath = library_folder / folder / "blender.exe"
         workingdir = library_folder / folder
         desktop = shell.SHGetFolderPath(0, shellcon.CSIDL_DESKTOP, None, 0)

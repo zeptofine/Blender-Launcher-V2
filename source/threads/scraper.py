@@ -1,15 +1,14 @@
+from __future__ import annotations
+
 import json
 import logging
 import re
-import sys
 import time
-import traceback
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
 from urllib.parse import urljoin
 
-import lxml
 from bs4 import BeautifulSoup, SoupStrainer
 from modules._platform import get_platform, set_locale
 from modules.build_info import BuildInfo
@@ -21,10 +20,9 @@ if TYPE_CHECKING:
 
 
 class Scraper(QThread):
-    links = pyqtSignal("PyQt_PyObject")
-    new_bl_version = pyqtSignal("PyQt_PyObject")
+    links = pyqtSignal(BuildInfo)
+    new_bl_version = pyqtSignal(str)
     error = pyqtSignal()
-    finished = pyqtSignal()
 
     def __init__(self, parent, man):
         QThread.__init__(self)
@@ -39,10 +37,10 @@ class Scraper(QThread):
 
         if self.platform == "Windows":
             regex_filter = r"blender-.+win.+64.+zip$"
-        elif self.platform == "Linux":
-            regex_filter = r"blender-.+lin.+64.+tar+(?!.*sha256).*"
         elif self.platform == "macOS":
             regex_filter = r"blender-.+(macOS|darwin).+dmg$"
+        else:
+            regex_filter = r"blender-.+lin.+64.+tar+(?!.*sha256).*"
 
         self.b3d_link = re.compile(regex_filter, re.IGNORECASE)
         self.hash = re.compile(r"\w{12}")
@@ -54,9 +52,8 @@ class Scraper(QThread):
         if latest_tag is not None:
             self.new_bl_version.emit(self.get_latest_tag())
         self.manager.manager.clear()
-        self.finished.emit()
 
-    def get_latest_tag(self):
+    def get_latest_tag(self) -> str | None:
         r = self.manager.request(
             "GET",
             "https://github.com/Victor-IX/Blender-Launcher-V2/releases/latest",
@@ -99,14 +96,12 @@ class Scraper(QThread):
         self.strptime = datetime.fromtimestamp(build["file_mtime"], tz=timezone.utc)
         commit_time = self.strptime.strftime("%d-%b-%y-%H:%M")
         subversion = build["version"]
-        branch = branch_type
         build_var = ""
         if build["patch"] is not None and branch_type != "daily":
             build_var = build["patch"]
 
         if build["release_cycle"] is not None and branch_type == "daily":
             build_var = build["release_cycle"]
-            branch = build["branch"]
 
         if build["branch"] and branch_type == "experimental":
             build_var = build["branch"]
@@ -164,10 +159,8 @@ class Scraper(QThread):
 
         match = re.search(self.subversion, stem)
         subversion = match.group(0).replace("-", "")
-
-        if branch_type == "stable":
-            branch = "stable"
-        else:
+        branch = branch_type
+        if branch_type != "stable":
             build_var = ""
             tag = tag.find_next("span", class_="build-var")
 
@@ -211,7 +204,7 @@ class Scraper(QThread):
 
         releases = soup.find_all(href=b3d_link)
         if not any(releases):
-            print("Failed to gather stable releases")
+            logging.info("Failed to gather stable releases")
 
         minimum_version = get_minimum_blender_stable_version()
 

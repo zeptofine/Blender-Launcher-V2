@@ -1,12 +1,15 @@
+from __future__ import annotations
+
 import contextlib
 import os
 import re
 import subprocess
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from items.base_list_widget_item import BaseListWidgetItem
 from modules._platform import _call, _popen, get_platform
-from modules.build_info import BuildInfoReader
+from modules.build_info import BuildInfo, ReadBuildAction, WriteBuildAction
 from modules.settings import (
     get_bash_arguments,
     get_blender_startup_arguments,
@@ -18,12 +21,12 @@ from modules.settings import (
 )
 from modules.shortcut import create_shortcut
 from PyQt5 import QtCore
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtWidgets import QAction, QApplication, QHBoxLayout, QLabel
 from threads.observer import Observer
 from threads.register import Register
-from threads.remover import Remover
-from threads.template_installer import TemplateInstaller
+from threads.remover import RemoveAction
+from threads.template_installer import TemplateAction
 from widgets.base_build_widget import BaseBuildWidget
 from widgets.base_line_edit import BaseLineEdit
 from widgets.base_menu_widget import BaseMenuWidget
@@ -33,22 +36,23 @@ from widgets.elided_text_label import ElidedTextLabel
 from widgets.left_icon_button_widget import LeftIconButtonWidget
 from windows.dialog_window import DialogWindow
 
+if TYPE_CHECKING:
+    from windows.main_window import BlenderLauncher
+
 
 class LibraryWidget(BaseBuildWidget):
-    def __init__(self, parent, item, link, list_widget,
-                 show_new=False, parent_widget=None):
+    def __init__(self, parent: BlenderLauncher, item, link, list_widget, show_new=False, parent_widget=None):
         super().__init__(parent=parent)
 
-        self.parent = parent
+        self.parent: BlenderLauncher = parent
         self.item = item
         self.link = link
         self.list_widget = list_widget
         self.show_new = show_new
         self.observer = None
-        self.build_info = None
+        self.build_info: BuildInfo | None = None
         self.child_widget = None
         self.parent_widget = parent_widget
-        self.build_info_writer = None
         self.is_damaged = False
 
         self.parent.quit_signal.connect(self.list_widget_deleted)
@@ -62,34 +66,34 @@ class LibraryWidget(BaseBuildWidget):
         if self.parent_widget is None:
             self.setEnabled(False)
             self.infoLabel = QLabel("Loading build information...")
+            self.infoLabel.setWordWrap(True)
 
-            self.launchButton = LeftIconButtonWidget("Launch")
+            self.launchButton = LeftIconButtonWidget("")
             self.launchButton.setFixedWidth(85)
             self.launchButton.setProperty("CancelButton", True)
 
             self.layout.addWidget(self.launchButton)
             self.layout.addWidget(self.infoLabel, stretch=1)
 
-            self.build_info_reader = BuildInfoReader(link)
-            self.build_info_reader.finished.connect(self.draw)
-            self.build_info_reader.start()
+            a = ReadBuildAction(link)
+            a.finished.connect(self.draw)
+            a.failure.connect(self.trigger_damaged)
+
+            self.parent.action_queue.append(a)
+
         else:
             self.draw(self.parent_widget.build_info)
 
-    def draw(self, build_info):
+    @pyqtSlot()
+    def trigger_damaged(self):
+        self.infoLabel.setText(f"Build *{Path(self.link).name}* is damaged!")
+        self.launchButton.set_text("Delete")
+        self.launchButton.clicked.connect(self.ask_remove_from_drive)
+        self.setEnabled(True)
+        self.is_damaged = True
+
+    def draw(self, build_info: BuildInfo):
         if self.parent_widget is None:
-            if self.parent.library_drawer is not None:
-                self.parent.library_drawer.build_released.emit()
-
-            if build_info is None:
-                self.infoLabel.setText(
-                    f"Build *{Path(self.link).name}* is damaged!")
-                self.launchButton.setText("Delete")
-                self.launchButton.clicked.connect(self.ask_remove_from_drive)
-                self.setEnabled(True)
-                self.is_damaged = True
-                return
-
             for i in reversed(range(self.layout.count())):
                 self.layout.itemAt(i).widget().setParent(None)
 
@@ -106,21 +110,20 @@ class LibraryWidget(BaseBuildWidget):
         elif (self.parent_widget is not None) and self.build_info.custom_name:
             branch_name = self.build_info.custom_name
         elif self.branch == "daily":
-            branch_name = self.build_info.subversion.split(" ", 1)[1]
+            s = self.build_info.subversion.split(" ", 1)
+            branch_name = s[len(s) > 1]  # if there is a second one, select it. otherwise select the old one
+
         else:
-            branch_name = re.sub(
-                r"(\-|\_)", " ", self.build_info.branch).title()
+            branch_name = re.sub(r"(\-|\_)", " ", self.build_info.branch).title()
 
         sub = self.build_info.subversion.split(" ", 1)
         self.subversionLabel = QLabel(sub[0])
         self.subversionLabel.setFixedWidth(85)
         self.subversionLabel.setIndent(20)
         self.branchLabel = ElidedTextLabel(branch_name)
-        self.commitTimeLabel = DateTimeWidget(
-            self.build_info.commit_time, self.build_info.build_hash)
+        self.commitTimeLabel = DateTimeWidget(self.build_info.commit_time, self.build_info.build_hash)
 
-        self.build_state_widget = BuildStateWidget(
-            self.parent, self.list_widget)
+        self.build_state_widget = BuildStateWidget(self.parent, self.list_widget)
 
         self.layout.addWidget(self.launchButton)
         self.layout.addWidget(self.subversionLabel)
@@ -129,11 +132,9 @@ class LibraryWidget(BaseBuildWidget):
         if self.parent_widget is not None:
             self.lineEdit = BaseLineEdit()
             self.lineEdit.setMaxLength(256)
-            self.lineEdit.setContextMenuPolicy(Qt.NoContextMenu)
-            self.lineEdit.escapePressed.connect(
-                self.rename_branch_rejected)
-            self.lineEdit.returnPressed.connect(
-                self.rename_branch_accepted)
+            self.lineEdit.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
+            self.lineEdit.escapePressed.connect(self.rename_branch_rejected)
+            self.lineEdit.returnPressed.connect(self.rename_branch_accepted)
             self.layout.addWidget(self.lineEdit, stretch=1)
             self.lineEdit.hide()
 
@@ -141,28 +142,27 @@ class LibraryWidget(BaseBuildWidget):
         self.layout.addWidget(self.build_state_widget)
 
         self.launchButton.clicked.connect(lambda: self.launch(True))
-        self.launchButton.setCursor(Qt.PointingHandCursor)
+        self.launchButton.setCursor(Qt.CursorShape.PointingHandCursor)
 
         # Context menu
         self.menu_extended = BaseMenuWidget()
         self.menu_extended.setFont(self.parent.font_10)
 
         self.deleteAction = QAction("Delete From Drive", self)
-        self.deleteAction.setIcon(self.parent.icon_delete)
+        self.deleteAction.setIcon(self.parent.icons.delete)
         self.deleteAction.triggered.connect(self.ask_remove_from_drive)
 
         self.addToQuickLaunchAction = QAction("Add To Quick Launch", self)
-        self.addToQuickLaunchAction.setIcon(self.parent.icon_quick_launch)
+        self.addToQuickLaunchAction.setIcon(self.parent.icons.quick_launch)
         self.addToQuickLaunchAction.triggered.connect(self.add_to_quick_launch)
 
         self.addToFavoritesAction = QAction("Add To Favorites", self)
-        self.addToFavoritesAction.setIcon(self.parent.icon_favorite)
+        self.addToFavoritesAction.setIcon(self.parent.icons.favorite)
         self.addToFavoritesAction.triggered.connect(self.add_to_favorites)
 
         self.removeFromFavoritesAction = QAction("Remove From Favorites", self)
-        self.removeFromFavoritesAction.setIcon(self.parent.icon_favorite)
-        self.removeFromFavoritesAction.triggered.connect(
-            self.remove_from_favorites)
+        self.removeFromFavoritesAction.setIcon(self.parent.icons.favorite)
+        self.removeFromFavoritesAction.triggered.connect(self.remove_from_favorites)
 
         if self.parent_widget is not None:
             self.addToFavoritesAction.setVisible(False)
@@ -170,8 +170,7 @@ class LibraryWidget(BaseBuildWidget):
             self.removeFromFavoritesAction.setVisible(False)
 
         self.registerExtentionAction = QAction("Register Extension")
-        self.registerExtentionAction.setToolTip(
-            "Use this build for .blend files and to display thumbnails")
+        self.registerExtentionAction.setToolTip("Use this build for .blend files and to display thumbnails")
         self.registerExtentionAction.triggered.connect(self.register_extension)
 
         self.createShortcutAction = QAction("Create Shortcut")
@@ -190,17 +189,15 @@ class LibraryWidget(BaseBuildWidget):
         self.debugMenu.setFont(self.parent.font_10)
 
         self.debugLogAction = QAction("Debug Log")
-        self.debugLogAction.triggered.connect(
-            lambda: self.launch(exe="blender_debug_log.cmd"))
+        self.debugLogAction.triggered.connect(lambda: self.launch(exe="blender_debug_log.cmd"))
         self.debugFactoryStartupAction = QAction("Factory Startup")
-        self.debugFactoryStartupAction.triggered.connect(
-            lambda: self.launch(exe="blender_factory_startup.cmd"))
+        self.debugFactoryStartupAction.triggered.connect(lambda: self.launch(exe="blender_factory_startup.cmd"))
         self.debugGpuTemplateAction = QAction("Debug GPU")
-        self.debugGpuTemplateAction.triggered.connect(
-            lambda: self.launch(exe="blender_debug_gpu.cmd"))
+        self.debugGpuTemplateAction.triggered.connect(lambda: self.launch(exe="blender_debug_gpu.cmd"))
         self.debugGpuGWTemplateAction = QAction("Debug GPU Glitch Workaround")
         self.debugGpuGWTemplateAction.triggered.connect(
-            lambda: self.launch(exe="blender_debug_gpu_glitchworkaround.cmd"))
+            lambda: self.launch(exe="blender_debug_gpu_glitchworkaround.cmd")
+        )
 
         self.debugMenu.addAction(self.debugLogAction)
         self.debugMenu.addAction(self.debugFactoryStartupAction)
@@ -246,9 +243,9 @@ class LibraryWidget(BaseBuildWidget):
 
             if get_mark_as_favorite() == 0:
                 pass
-            elif (get_mark_as_favorite() == 1 and self.branch == "stable"):
+            elif get_mark_as_favorite() == 1 and self.branch == "stable":
                 self.add_to_quick_launch()
-            elif (get_mark_as_favorite() == 2 and self.branch == "daily"):
+            elif get_mark_as_favorite() == 2 and self.branch == "daily":
                 self.add_to_quick_launch()
             elif get_mark_as_favorite() == 3:
                 self.add_to_quick_launch()
@@ -274,7 +271,7 @@ class LibraryWidget(BaseBuildWidget):
         link = link_path.as_posix()
 
         if os.path.exists(link) and (os.path.isdir(link) or os.path.islink(link)) and link_path.resolve() == self.link:
-                self.createSymlinkAction.setEnabled(False)
+            self.createSymlinkAction.setEnabled(False)
 
         self.menu.trigger()
 
@@ -283,13 +280,13 @@ class LibraryWidget(BaseBuildWidget):
             self.launch()
 
     def mouseReleaseEvent(self, event):
-        if event.button == Qt.LeftButton:
+        if event.button == Qt.MouseButton.LeftButton:
             if self.show_new is True:
                 self.build_state_widget.setNewBuild(False)
                 self.show_new = False
 
             mod = QApplication.keyboardModifiers()
-            if mod not in (Qt.ShiftModifier, Qt.ControlModifier):
+            if mod not in (Qt.KeyboardModifier.ShiftModifier, Qt.KeyboardModifier.ControlModifier):
                 self.list_widget.clearSelection()
                 self.item.setSelected(True)
 
@@ -302,11 +299,9 @@ class LibraryWidget(BaseBuildWidget):
         self.launchButton.setEnabled(False)
         self.deleteAction.setEnabled(False)
         self.installTemplateAction.setEnabled(False)
-        self.tempalte_installer = TemplateInstaller(
-            self.parent.manager, self.link)
-        self.tempalte_installer.finished.connect(
-            self.install_template_finished)
-        self.tempalte_installer.start()
+        a = TemplateAction(self.link)
+        a.finished.connect(self.install_template_finished)
+        self.parent.action_queue.append(a)
 
     def install_template_finished(self):
         self.launchButton.set_text("Launch")
@@ -330,6 +325,8 @@ class LibraryWidget(BaseBuildWidget):
         platform = get_platform()
         library_folder = Path(get_library_folder())
         blender_args = get_blender_startup_arguments()
+
+        proc = None
 
         if platform == "Windows":
             if exe is not None:
@@ -360,6 +357,7 @@ class LibraryWidget(BaseBuildWidget):
             b3d_exe = library_folder / self.link / "blender"
             proc = _popen(f'{bash_args} "{b3d_exe.as_posix()}" {blender_args}')
 
+        assert proc is not None
         if self.observer is None:
             self.observer = Observer(self)
             self.observer.count_changed.connect(self.proc_count_changed)
@@ -417,13 +415,12 @@ class LibraryWidget(BaseBuildWidget):
         self.branchLabel.show()
 
     def write_build_info(self):
-        if self.build_info_writer is None:
-            self.build_info_writer = BuildInfoReader(
-                self.link, build_info=self.build_info,
-                mode=BuildInfoReader.Mode.WRITE)
-            self.build_info_writer.finished.connect(
-                self.build_info_writer_finished)
-            self.build_info_writer.start()
+        assert self.build_info is not None
+        self.build_info_writer = WriteBuildAction(
+            self.link, self.build_info,
+        )
+        self.build_info_writer.written.connect(self.build_info_writer_finished)
+        self.parent.action_queue.append(self.build_info_writer)
 
     def build_info_writer_finished(self):
         self.build_info_writer = None
@@ -432,10 +429,13 @@ class LibraryWidget(BaseBuildWidget):
     def ask_remove_from_drive(self):
         self.item.setSelected(True)
         self.dlg = DialogWindow(
-            parent=self.parent, title="Warning",
+            parent=self.parent,
+            title="Warning",
             text="Are you sure you want to<br> \
                   delete selected builds?",
-            accept_text="Yes", cancel_text="No")
+            accept_text="Yes",
+            cancel_text="No",
+        )
 
         if len(self.list_widget.selectedItems()) > 1:
             self.dlg.accepted.connect(self.remove_from_drive_extended)
@@ -454,10 +454,10 @@ class LibraryWidget(BaseBuildWidget):
             return
 
         path = Path(get_library_folder()) / self.link
-        self.remover = Remover(path, self.parent)
-        self.remover.started.connect(self.remover_started)
-        self.remover.finished.connect(self.remover_finished)
-        self.remover.start()
+        a = RemoveAction(path)
+        a.finished.connect(self.remover_completed)
+        self.parent.action_queue.append(a)
+        self.remover_started()
 
     # TODO Clear icon if build in quick launch
     def remover_started(self):
@@ -468,9 +468,9 @@ class LibraryWidget(BaseBuildWidget):
         if self.child_widget is not None:
             self.child_widget.remover_started()
 
-    def remover_finished(self, code):
+    def remover_completed(self, code):
         if self.child_widget is not None:
-            self.child_widget.remover_finished(code)
+            self.child_widget.remover_completed(code)
 
         if code == 0:
             self.list_widget.remove_item(self.item)
@@ -486,47 +486,42 @@ class LibraryWidget(BaseBuildWidget):
 
     @QtCore.pyqtSlot()
     def add_to_quick_launch(self):
-        if (self.parent.favorite is not None) and \
-                (self.parent.favorite.link != self.link):
+        if (self.parent.favorite is not None) and (self.parent.favorite.link != self.link):
             self.parent.favorite.remove_from_quick_launch()
 
         set_favorite_path(self.link.as_posix())
         self.parent.favorite = self
 
-        self.launchButton.setIcon(self.parent.icon_quick_launch)
+        self.launchButton.setIcon(self.parent.icons.quick_launch)
         self.addToQuickLaunchAction.setEnabled(False)
 
         # TODO Make more optimal and simpler synchronization
         if self.parent_widget is not None:
-            self.parent_widget.launchButton.setIcon(
-                self.parent.icon_quick_launch)
+            self.parent_widget.launchButton.setIcon(self.parent.icons.quick_launch)
             self.parent_widget.addToQuickLaunchAction.setEnabled(False)
 
         if self.child_widget is not None:
-            self.child_widget.launchButton.setIcon(
-                self.parent.icon_quick_launch)
+            self.child_widget.launchButton.setIcon(self.parent.icons.quick_launch)
             self.child_widget.addToQuickLaunchAction.setEnabled(False)
 
     @QtCore.pyqtSlot()
     def remove_from_quick_launch(self):
-        self.launchButton.setIcon(self.parent.icon_fake)
+        self.launchButton.setIcon(self.parent.icons.fake)
         self.addToQuickLaunchAction.setEnabled(True)
 
         # TODO Make more optimal and simpler synchronization
         if self.parent_widget is not None:
-            self.parent_widget.launchButton.setIcon(self.parent.icon_fake)
+            self.parent_widget.launchButton.setIcon(self.parent.icons.fake)
             self.parent_widget.addToQuickLaunchAction.setEnabled(True)
 
         if self.child_widget is not None:
-            self.child_widget.launchButton.setIcon(self.parent.icon_fake)
+            self.child_widget.launchButton.setIcon(self.parent.icons.fake)
             self.child_widget.addToQuickLaunchAction.setEnabled(True)
 
     @QtCore.pyqtSlot()
     def add_to_favorites(self):
         item = BaseListWidgetItem()
-        widget = LibraryWidget(self.parent, item, self.link,
-                               self.parent.UserFavoritesListWidget,
-                               parent_widget=self)
+        widget = LibraryWidget(self.parent, item, self.link, self.parent.UserFavoritesListWidget, parent_widget=self)
         if not self.parent.UserFavoritesListWidget.contains_build_info(self.build_info):
             self.parent.UserFavoritesListWidget.insert_item(item, widget)
         self.child_widget = widget
@@ -542,18 +537,16 @@ class LibraryWidget(BaseBuildWidget):
     def remove_from_favorites(self):
         widget = self.parent_widget or self
 
-        self.parent.UserFavoritesListWidget.remove_item(
-            widget.child_widget.item)
+        self.parent.UserFavoritesListWidget.remove_item(widget.child_widget.item)
 
         widget.child_widget = None
         widget.removeFromFavoritesAction.setVisible(False)
         widget.addToFavoritesAction.setVisible(True)
 
+        assert self.build_info is not None
         self.build_info.is_favorite = False
-        self.build_info_writer = BuildInfoReader(
-            self.link, build_info=self.build_info,
-            mode=BuildInfoReader.Mode.WRITE)
-        self.build_info_writer.start()
+        self.build_info_writer = WriteBuildAction(self.link, self.build_info)
+        self.parent.action_queue.append(self.build_info_writer)
 
     @QtCore.pyqtSlot()
     def register_extension(self):
@@ -566,7 +559,8 @@ class LibraryWidget(BaseBuildWidget):
         assert self.build_info is not None
         name = "Blender {} {}".format(
             self.build_info.subversion.replace("(", "").replace(")", ""),
-            self.build_info.branch.replace("-", " ").title())
+            self.build_info.branch.replace("-", " ").title(),
+        )
 
         create_shortcut(self.link, name)
 

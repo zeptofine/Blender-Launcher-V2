@@ -1,36 +1,38 @@
+from dataclasses import dataclass
 from pathlib import Path
 from re import match
 from shutil import copytree
 
+from modules.action import Action
 from modules.settings import get_library_folder
-from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtCore import pyqtSignal
 
 
-class TemplateInstaller(QThread):
-    started = pyqtSignal()
-    progress_changed = pyqtSignal("PyQt_PyObject", "PyQt_PyObject")
+def install_template(dist: Path):
+    library_folder = Path(get_library_folder())
+    template = library_folder / "template"
+
+    template.mkdir(exist_ok=True)
+
+    for directory in dist.iterdir():
+        if match(r"\d+\.\d+.*", directory.name) is not None:
+            copytree(
+                src=template.as_posix(),
+                dst=directory.as_posix(),
+                dirs_exist_ok=True,
+            )
+            return
+
+
+@dataclass(frozen=True)
+class TemplateAction(Action):
+    destination: Path
+
     finished = pyqtSignal()
 
-    def __init__(self, manager, dist):
-        QThread.__init__(self)
-        self.manager = manager
-        self.dist = dist
-
     def run(self):
-        self.progress_changed.emit(0, "Copying Data...")
-        library_folder = Path(get_library_folder())
-        template = library_folder / "template"
-
-        if not template.is_dir():
-            template.mkdir()
-
-        for directory in self.dist.iterdir():
-            if match(r"\d+\.\d+.*", directory.name) is not None:
-                source = template.as_posix()
-                dist = directory.as_posix()
-                copytree(source, dist, dirs_exist_ok=True)
-                self.finished.emit()
-                return
-
+        install_template(self.destination)
         self.finished.emit()
-        return
+
+    def __str__(self):
+        return f"Install template to {self.destination}"

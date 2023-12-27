@@ -439,21 +439,6 @@ QListWidget::item:selected:hover {
     background-color: #546C98;
 }
 
-QDoubleSpinBox {
-    background-color: #1F1F1F;
-    color: #E6E6E6;
-    border: 1px solid #444444;
-    padding: 1px;
-}
-
-QDoubleSpinBox:disabled {
-    color: #828282;
-}
-
-QDoubleSpinBox[text=\"\"] {
-    color: #E6E6E6;
-}
-
 QMainWindow {
     background-color: #232323;
     border: 1px solid #323232;
@@ -473,4 +458,3 @@ QTabBar::tab::selected {
     color: #FFFFFF;
     background-color: #424242;
 }
-

@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import ssl
 import sys
+from typing import Union
 
 from modules._platform import get_cwd, get_platform_full, is_frozen
 from modules.settings import (
@@ -21,6 +24,8 @@ proxy_types_chemes = {
     4: "socks5h://"
 }
 
+REQUEST_MANAGER = Union[PoolManager, ProxyManager, SOCKSProxyManager]
+
 
 # TODO
 # It is impossible to kill existing instance of PoolManager
@@ -35,7 +40,7 @@ class ConnectionManager(QObject):
         if proxy_type is None:
             proxy_type = get_proxy_type()
         self.proxy_type = proxy_type
-        self.manager = None
+        self.manager: REQUEST_MANAGER | None = None
 
         # Basic Headers
         self._headers = {

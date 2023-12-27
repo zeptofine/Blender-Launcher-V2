@@ -13,7 +13,7 @@ class BaseBuildWidget(QWidget):
         super().__init__()
         self.parent = parent
 
-        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self.context_menu)
 
         self.menu = BaseMenuWidget()
@@ -28,23 +28,19 @@ class BaseBuildWidget(QWidget):
 
     @QtCore.pyqtSlot()
     def show_release_notes(self):
-
         if self.build_info.branch == "stable":
             # TODO Check format for Blender 3 release
             # Extract X.X format version
             ver = re.search(r"\d.\d+", self.build_info.subversion).group(0)
 
-            webbrowser.open(
-                f"https://wiki.blender.org/wiki/Reference/Release_Notes/{ver}")
+            webbrowser.open(f"https://wiki.blender.org/wiki/Reference/Release_Notes/{ver}")
         elif self.build_info.branch == "lts":
             # Raw numbers from version
             ver = re.sub(r"\D", "", self.build_info.subversion)
 
-            webbrowser.open(
-                f"https://www.blender.org/download/lts/#lts-release-{ver}")
+            webbrowser.open(f"https://www.blender.org/download/lts/#lts-release-{ver}")
         else:  # Open for builds with D12345 name pattern
             # Extract only D12345 substring
             m = re.search(r"D\d{5}", self.build_info.branch)
 
-            webbrowser.open(
-                f"https://developer.blender.org/{m.group(0)}")
+            webbrowser.open(f"https://developer.blender.org/{m.group(0)}")

@@ -1,12 +1,10 @@
 import contextlib
+import os
 import sys
 from pathlib import Path
 
 from modules._platform import get_cwd, get_platform
 from PyQt5.QtCore import QSettings
-
-if get_platform() == "Windows":
-    import winreg
 
 tabs = {
     "Library": 0,
@@ -56,7 +54,7 @@ proxy_types = {
 
 def get_settings():
     return QSettings((get_cwd() / "Blender Launcher.ini").as_posix(),
-                     QSettings.IniFormat)
+                     QSettings.Format.IniFormat)
 
 
 def get_library_folder():
@@ -111,6 +109,7 @@ def set_favorite_path(path):
 
 def get_launch_when_system_starts():
     if get_platform() == "Windows":
+        import winreg
         key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
                              r"SOFTWARE\Microsoft\Windows\CurrentVersion\Run")
         path = sys.executable
@@ -129,6 +128,7 @@ def get_launch_when_system_starts():
 
 def set_launch_when_system_starts(is_checked):
     if get_platform() == "Windows":
+        import winreg
         key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
                              r"SOFTWARE\Microsoft\Windows\CurrentVersion\Run",
                              0, winreg.KEY_SET_VALUE)
@@ -370,3 +370,27 @@ def get_minimum_blender_stable_version() -> float:
 
 def set_minimum_blender_stable_version(v: float):
     get_settings().setValue("minimum_blender_stable_version", v)
+
+
+def get_make_error_popup():
+    return get_settings().value("error_popup", defaultValue=True, type=bool)
+
+def set_make_error_popup(v: bool):
+    get_settings().setValue("error_popup", v)
+
+def get_default_worker_thread_count() -> int:
+    cpu_count = os.cpu_count()
+    if cpu_count is None: # why can os.cpu_count() return None
+        return 4
+
+    return round(max(cpu_count * 3 / 4, 1))
+
+def get_worker_thread_count() -> int:
+    v = get_settings().value("worker_thread_count", type=int)
+    if v == 0:
+        return get_default_worker_thread_count()
+
+    return v
+
+def set_worker_thread_count(v: int):
+    get_settings().setValue("worker_thread_count", v)
