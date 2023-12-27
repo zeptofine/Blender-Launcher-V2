@@ -50,7 +50,7 @@ class Scraper(QThread):
         self.get_download_links()
         latest_tag = self.get_latest_tag()
         if latest_tag is not None:
-            self.new_bl_version.emit(self.get_latest_tag())
+            self.new_bl_version.emit(latest_tag)
         self.manager.manager.clear()
 
     def get_latest_tag(self) -> str | None:
