@@ -257,10 +257,14 @@ class DownloadWidget(BaseBuildWidget):
                 f"Blender {name} download finished!",
                 message_type=MessageType.DOWNLOADFINISHED,
             )
-            self.destroy()
+            self.setInstalled()
 
         self.build_state_widget.setExtract(False)
 
-    def destroy(self):
+    def setInstalled(self):
         if self.state == DownloadState.IDLE:
-            self.list_widget.remove_item(self.item)
+            self.downloadButton.hide()
+            self.cancelButton.hide()
+            self.progressBar.hide()
+            self.main_hl.insertWidget(0, self.installedButton)  # Add installedButton at the beginning
+            self.is_installed = True
