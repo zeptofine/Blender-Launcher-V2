@@ -57,7 +57,6 @@ class DownloadWidget(BaseBuildWidget):
         self.installedButton = QPushButton("Installed")
         self.installedButton.setFixedWidth(85)
         self.installedButton.setProperty("InstalledButton", True)
-        self.installedButton.setCursor(Qt.CursorShape.PointingHandCursor)
 
         self.cancelButton = QPushButton("Cancel")
         self.cancelButton.setFixedWidth(85)
