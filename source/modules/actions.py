@@ -37,7 +37,7 @@ class ActionQueue(deque[Action]):
 
         def update_listener_dct(item, w=w):
             self.workers[w] = item
-            logging.debug(f"{w}: {item}")
+            logging.debug(f"{w}: {item!r}")
 
         w.item_changed.connect(update_listener_dct)
         if readd_on_crash:
@@ -59,6 +59,9 @@ class ActionQueue(deque[Action]):
             if a == action:
                 return listener
         return None
+
+    def get_busy_threads(self):
+        return {worker: item for worker, item in self.workers.items() if item is not None}
 
     def start(self):
         for worker in self.workers:

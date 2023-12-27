@@ -23,3 +23,5 @@ class RemoveAction(Action):
             self.finished.emit(1)
             raise
 
+    def __str__(self):
+        return f"Remove {self.path}"

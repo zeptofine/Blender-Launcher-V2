@@ -8,6 +8,7 @@ from pathlib import Path
 from platform import version
 from shutil import copyfileobj
 from time import localtime, strftime
+from typing import TYPE_CHECKING
 
 import resources_rc
 from items.base_list_widget_item import BaseListWidgetItem
@@ -30,6 +31,7 @@ from modules.settings import (
     get_quick_launch_key_seq,
     get_show_tray_icon,
     get_sync_library_and_downloads_pages,
+    get_worker_thread_count,
     is_library_folder_valid,
     set_library_folder,
 )
@@ -61,6 +63,10 @@ from windows.dialog_window import DialogIcon, DialogWindow
 from windows.file_dialog_window import FileDialogWindow
 from windows.settings_window import SettingsWindow
 
+if TYPE_CHECKING:
+    from PyQt5.QtGui import QDragEnterEvent, QDragMoveEvent
+    from widgets.base_build_widget import BaseBuildWidget
+
 if get_platform() == "Windows":
     from PyQt5.QtWinExtras import QWinThumbnailToolBar, QWinThumbnailToolButton
 
@@ -76,7 +82,7 @@ class BlenderLauncher(BaseWindow):
     quit_signal = pyqtSignal()
     quick_launch_fail_signal = pyqtSignal()
 
-    def __init__(self, app: QApplication, version, logger, argv):
+    def __init__(self, app: QApplication, version, argv):
         super().__init__(app=app, version=version)
         self.resize(640, 480)
         self.setMinimumSize(QSize(640, 480))
@@ -95,7 +101,7 @@ class BlenderLauncher(BaseWindow):
 
         # Action queue
         self.action_queue = ActionQueue(
-            worker_count=4,
+            worker_count=get_worker_thread_count(),
             parent=self,
             on_spawn=lambda w: w.error.connect(self.message_from_error),
         )
@@ -105,9 +111,8 @@ class BlenderLauncher(BaseWindow):
         # Global scope
         self.app = app
         self.version = version
-        self.logger = logger
         self.argv = argv
-        self.favorite = None
+        self.favorite: BaseBuildWidget | None = None
         self.status = "Unknown"
         self.is_force_check_on = False
         self.app_state = AppState.IDLE
@@ -184,7 +189,7 @@ class BlenderLauncher(BaseWindow):
         self.SettingsButton.clicked.connect(self.show_settings_window)
         self.DocsButton = WHeaderButton(self.icons.wiki, "", self)
         self.DocsButton.setToolTip("Open documentation")
-        self.DocsButton.clicked.connect(lambda: webbrowser.open("https://Victor-IX.github.io/Blender-Launcher-V2"))
+        self.DocsButton.clicked.connect(self.open_docs)
 
         self.SettingsButton.setProperty("HeaderButton", True)
         self.DocsButton.setProperty("HeaderButton", True)
@@ -554,6 +559,7 @@ class BlenderLauncher(BaseWindow):
 
     def quick_launch(self):
         try:
+            assert self.favorite
             self.favorite.launch()
         except Exception:
             self.quick_launch_fail_signal.emit()
@@ -577,11 +583,15 @@ class BlenderLauncher(BaseWindow):
         self.quit_()
 
     def quit_(self):
-        if not self.is_downloading_idle():
+        busy = self.action_queue.get_busy_threads()
+        if any(busy):
             self.dlg = DialogWindow(
                 parent=self, title="Warning",
-                text="Active downloads in progress!<br>\
-                        Are you sure you want to quit?",
+                text=(
+                    "Some actions are still in progress!<br>"
+                    + "\n".join([f" - {item}<br>" for worker, item in busy.items()])
+                    + "Are you sure you want to quit?"
+                ),
                 accept_text="Yes", cancel_text="No")
 
             self.dlg.accepted.connect(self.destroy)
@@ -811,7 +821,10 @@ class BlenderLauncher(BaseWindow):
 
     @pyqtSlot()
     def attempt_close(self):
-        self.close()
+        if get_show_tray_icon():
+            self.close()
+        else:
+            self.quit_()
 
     def closeEvent(self, event):
         if get_show_tray_icon():
@@ -840,7 +853,10 @@ class BlenderLauncher(BaseWindow):
                       version to proceed this action!",
                 accept_text="OK", cancel_text=None, icon=DialogIcon.WARNING)
 
-    def dragEnterEvent(self, e):
+    def open_docs(self):
+        webbrowser.open("https://Victor-IX.github.io/Blender-Launcher-V2")
+
+    def dragEnterEvent(self, e: QDragEnterEvent):
         if e.mimeData().hasFormat("text/plain"):
             e.accept()
         else:

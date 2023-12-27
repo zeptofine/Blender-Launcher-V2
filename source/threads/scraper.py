@@ -37,10 +37,10 @@ class Scraper(QThread):
 
         if self.platform == "Windows":
             regex_filter = r"blender-.+win.+64.+zip$"
-        elif self.platform == "Linux":
-            regex_filter = r"blender-.+lin.+64.+tar+(?!.*sha256).*"
         elif self.platform == "macOS":
             regex_filter = r"blender-.+(macOS|darwin).+dmg$"
+        else:
+            regex_filter = r"blender-.+lin.+64.+tar+(?!.*sha256).*"
 
         self.b3d_link = re.compile(regex_filter, re.IGNORECASE)
         self.hash = re.compile(r"\w{12}")
@@ -159,10 +159,8 @@ class Scraper(QThread):
 
         match = re.search(self.subversion, stem)
         subversion = match.group(0).replace("-", "")
-
-        if branch_type == "stable":
-            branch = "stable"
-        else:
+        branch = branch_type
+        if branch_type != "stable":
             build_var = ""
             tag = tag.find_next("span", class_="build-var")
 

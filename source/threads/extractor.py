@@ -66,3 +66,6 @@ class ExtractAction(Action):
         result = extract(self.file, self.destination, self.progress.emit)
         if result is not None:
             self.finished.emit(result)
+
+    def __str__(self):
+        return f"Extract {self.file} to {self.destination}"

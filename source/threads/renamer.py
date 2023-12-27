@@ -21,3 +21,6 @@ class RenameAction(Action):
         except OSError:
             self.failure.emit()
             raise
+
+    def __str__(self):
+        return f"Rename {self.src} to {self.dst_name}"

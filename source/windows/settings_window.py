@@ -10,6 +10,7 @@ from modules.settings import (
     get_proxy_user,
     get_quick_launch_key_seq,
     get_use_custom_tls_certificates,
+    get_worker_thread_count,
     proxy_types,
 )
 from PyQt5.QtCore import QSize, Qt
@@ -35,7 +36,7 @@ class SettingsWindow(BaseWindow):
         sizePolicy.setHeightForWidth(self.sizePolicy().hasHeightForWidth())
         self.setSizePolicy(sizePolicy)
         self.setMinimumSize(QSize(480, 100))
-        self.CentralWidget  = QWidget(self)
+        self.CentralWidget = QWidget(self)
         self.CentralLayout = QVBoxLayout(self.CentralWidget)
         self.CentralLayout.setContentsMargins(1, 1, 1, 1)
         self.setCentralWidget(self.CentralWidget)
@@ -56,6 +57,7 @@ class SettingsWindow(BaseWindow):
         self.old_new_builds_check_frequency = get_new_builds_check_frequency()
 
         self.old_enable_high_dpi_scaling = get_enable_high_dpi_scaling()
+        self.old_thread_count = get_worker_thread_count()
 
         # Header layout
         self.header = WindowHeader(self, "Settings", use_minimize=False)
@@ -87,7 +89,8 @@ class SettingsWindow(BaseWindow):
         self.show()
 
     def _close(self):
-        self.pending_to_restart = []
+        pending_to_restart = []
+        on_off_dct = {True: "ON", False: "OFF"}
 
         """Update quick launch key"""
         enable_quick_launch_key_seq = get_enable_quick_launch_key_seq()
@@ -116,31 +119,29 @@ class SettingsWindow(BaseWindow):
 
         # Restart app if any of the connection settings changed
         if self.old_use_custom_tls_certificates != use_custom_tls_certificates:
-            self.pending_to_restart.append(
+            pending_to_restart.append(
                 "Use Custom TLS Certificates: {}🠆{}".format(
-                    "ON" if self.old_use_custom_tls_certificates else "OFF",
-                    "ON" if use_custom_tls_certificates else "OFF",
+                    on_off_dct.get(self.old_use_custom_tls_certificates),
+                    on_off_dct.get(use_custom_tls_certificates),
                 )
             )
 
         if self.old_proxy_type != proxy_type:
             r_proxy_types = dict(zip(proxy_types.values(), proxy_types.keys()))
 
-            self.pending_to_restart.append(
-                "Proxy Type: {}🠆{}".format(r_proxy_types[self.old_proxy_type], r_proxy_types[proxy_type])
-            )
+            pending_to_restart.append(f"Proxy Type: {r_proxy_types[self.old_proxy_type]}🠆{r_proxy_types[proxy_type]}")
 
         if self.old_proxy_host != proxy_host:
-            self.pending_to_restart.append(f"Proxy Host: {self.old_proxy_host}🠆{proxy_host}")
+            pending_to_restart.append(f"Proxy Host: {self.old_proxy_host}🠆{proxy_host}")
 
         if self.old_proxy_port != proxy_port:
-            self.pending_to_restart.append(f"Proxy Port: {self.old_proxy_port}🠆{proxy_port}")
+            pending_to_restart.append(f"Proxy Port: {self.old_proxy_port}🠆{proxy_port}")
 
         if self.old_proxy_user != proxy_user:
-            self.pending_to_restart.append(f"Proxy User: {self.old_proxy_user}🠆{proxy_user}")
+            pending_to_restart.append(f"Proxy User: {self.old_proxy_user}🠆{proxy_user}")
 
         if self.old_proxy_password != proxy_password:
-            self.pending_to_restart.append("Proxy Password")
+            pending_to_restart.append("Proxy Password")
 
         """Update build check frequency"""
         check_for_new_builds_automatically = get_check_for_new_builds_automatically()
@@ -157,22 +158,29 @@ class SettingsWindow(BaseWindow):
         enable_high_dpi_scaling = get_enable_high_dpi_scaling()
 
         if self.old_enable_high_dpi_scaling != enable_high_dpi_scaling:
-            self.pending_to_restart.append(
+            pending_to_restart.append(
                 "High DPI Scaling: {}🠆{}".format(
-                    "ON" if self.old_enable_high_dpi_scaling else "OFF", "ON" if enable_high_dpi_scaling else "OFF"
+                    on_off_dct.get(self.old_enable_high_dpi_scaling),
+                    on_off_dct.get(enable_high_dpi_scaling),
                 )
             )
 
+        """Update worker thread count"""
+        worker_thread_count = get_worker_thread_count()
+
+        if self.old_thread_count != worker_thread_count:
+            pending_to_restart.append(f"Worker Threads: {self.old_thread_count}🠆{worker_thread_count}")
+
         """Ask for app restart if needed else destroy self"""
-        if len(self.pending_to_restart) != 0:
-            self.show_dlg_restart_bl()
+        if len(pending_to_restart) != 0:
+            self.show_dlg_restart_bl(pending_to_restart)
         else:
             self._destroy()
 
-    def show_dlg_restart_bl(self):
+    def show_dlg_restart_bl(self, pending: list):
         pending_to_restart = ""
 
-        for s in self.pending_to_restart:
+        for s in pending:
             pending_to_restart += "<br>- " + s
 
         self.dlg = DialogWindow(

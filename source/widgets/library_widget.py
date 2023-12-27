@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 
 from items.base_list_widget_item import BaseListWidgetItem
 from modules._platform import _call, _popen, get_platform
-from modules.build_info import BuildInfo, BuildInfoWriter, ReadBuildAction
+from modules.build_info import BuildInfo, ReadBuildAction, WriteBuildAction
 from modules.settings import (
     get_bash_arguments,
     get_blender_startup_arguments,
@@ -53,7 +53,6 @@ class LibraryWidget(BaseBuildWidget):
         self.build_info: BuildInfo | None = None
         self.child_widget = None
         self.parent_widget = parent_widget
-        self.build_info_writer = None
         self.is_damaged = False
 
         self.parent.quit_signal.connect(self.list_widget_deleted)
@@ -327,6 +326,8 @@ class LibraryWidget(BaseBuildWidget):
         library_folder = Path(get_library_folder())
         blender_args = get_blender_startup_arguments()
 
+        proc = None
+
         if platform == "Windows":
             if exe is not None:
                 b3d_exe = library_folder / self.link / exe
@@ -356,6 +357,7 @@ class LibraryWidget(BaseBuildWidget):
             b3d_exe = library_folder / self.link / "blender"
             proc = _popen(f'{bash_args} "{b3d_exe.as_posix()}" {blender_args}')
 
+        assert proc is not None
         if self.observer is None:
             self.observer = Observer(self)
             self.observer.count_changed.connect(self.proc_count_changed)
@@ -413,13 +415,12 @@ class LibraryWidget(BaseBuildWidget):
         self.branchLabel.show()
 
     def write_build_info(self):
-        if self.build_info_writer is None:
-            self.build_info_writer = BuildInfoWriter(
-                self.link,
-                self.build_info,
-            )
-            self.build_info_writer.finished.connect(self.build_info_writer_finished)
-            self.build_info_writer.start()
+        assert self.build_info is not None
+        self.build_info_writer = WriteBuildAction(
+            self.link, self.build_info,
+        )
+        self.build_info_writer.written.connect(self.build_info_writer_finished)
+        self.parent.action_queue.append(self.build_info_writer)
 
     def build_info_writer_finished(self):
         self.build_info_writer = None
@@ -544,8 +545,8 @@ class LibraryWidget(BaseBuildWidget):
 
         assert self.build_info is not None
         self.build_info.is_favorite = False
-        self.build_info_writer = BuildInfoWriter(self.link, self.build_info)
-        self.build_info_writer.start()
+        self.build_info_writer = WriteBuildAction(self.link, self.build_info)
+        self.parent.action_queue.append(self.build_info_writer)
 
     @QtCore.pyqtSlot()
     def register_extension(self):

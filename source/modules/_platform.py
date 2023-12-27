@@ -53,11 +53,9 @@ def get_environment():
 
 
 def _popen(args):
-    platform = get_platform()
-
-    if platform == "Windows":
+    if get_platform() == "Windows":
         DETACHED_PROCESS = 0x00000008
-        proc = Popen(
+        return Popen(
             args,
             shell=True,
             stdin=None,
@@ -67,18 +65,16 @@ def _popen(args):
             creationflags=DETACHED_PROCESS,
             start_new_session=True,
         )
-    elif platform == "Linux":
-        proc = Popen(
-            args,
-            shell=True,
-            stdout=None,
-            stderr=None,
-            close_fds=True,
-            preexec_fn=os.setpgrp,
-            env=get_environment(),
-        )
 
-    return proc
+    return Popen(
+        args,
+        shell=True,
+        stdout=None,
+        stderr=None,
+        close_fds=True,
+        preexec_fn=os.setpgrp,  # type: ignore
+        env=get_environment(),
+    )
 
 
 def _check_call(args):
@@ -87,11 +83,9 @@ def _check_call(args):
     if platform == "Windows":
         from subprocess import CREATE_NO_WINDOW
 
-        returncode = check_call(args, creationflags=CREATE_NO_WINDOW, shell=True, stderr=DEVNULL, stdin=DEVNULL)
-    elif platform in {"Linux", "macOS"}:
-        returncode = check_call(args, shell=False, stderr=DEVNULL, stdin=DEVNULL)
+        return check_call(args, creationflags=CREATE_NO_WINDOW, shell=True, stderr=DEVNULL, stdin=DEVNULL)
 
-    return returncode
+    return check_call(args, shell=False, stderr=DEVNULL, stdin=DEVNULL)
 
 
 def _call(args):
@@ -111,11 +105,9 @@ def _check_output(args):
     if platform == "Windows":
         from subprocess import CREATE_NO_WINDOW
 
-        output = check_output(args, creationflags=CREATE_NO_WINDOW, shell=True, stderr=DEVNULL, stdin=DEVNULL)
-    elif platform in {"Linux", "macOS"}:
-        output = check_output(args, shell=False, stderr=DEVNULL, stdin=DEVNULL)
+        return check_output(args, creationflags=CREATE_NO_WINDOW, shell=True, stderr=DEVNULL, stdin=DEVNULL)
 
-    return output
+    return check_output(args, shell=False, stderr=DEVNULL, stdin=DEVNULL)
 
 
 def is_frozen():
