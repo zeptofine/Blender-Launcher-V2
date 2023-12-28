@@ -1,5 +1,7 @@
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QTabWidget
+from widgets.base_list_widget import BaseListWidget
+from widgets.base_page_widget import BasePageWidget
 
 
 class BaseToolBoxWidget(QTabWidget):
@@ -16,7 +18,7 @@ class BaseToolBoxWidget(QTabWidget):
         self.setProperty("West", True)
         self.currentChanged.connect(self.current_changed)
 
-    def add_page_widget(self, page_widget, page_name):
+    def add_page_widget(self, page_widget: BasePageWidget, page_name) -> BaseListWidget:
         self.pages.append(page_widget)
         self.addTab(page_widget, page_name)
         self.list_widgets.add(page_widget.list_widget)

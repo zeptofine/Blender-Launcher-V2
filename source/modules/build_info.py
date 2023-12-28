@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 @dataclass
 class BuildInfo:
     # Class variables
-    file_version = "1.2"
+    file_version = "1.3"
     # https://www.blender.org/download/lts/
     lts_tags = ("2.83", "2.93", "3.3", "3.7")
 
@@ -29,6 +29,7 @@ class BuildInfo:
     branch: str
     custom_name: str = ""
     is_favorite: bool = False
+    custom_executable: str = ""
 
     def __post_init__(self):
         if any(w in self.subversion.lower() for w in ["release", "rc"]):
@@ -54,6 +55,7 @@ class BuildInfo:
             blinfo["branch"],
             blinfo["custom_name"],
             blinfo["is_favorite"],
+            blinfo.get("custom_executable", ""),
         )
 
     def to_dict(self):
@@ -67,6 +69,7 @@ class BuildInfo:
                     "commit_time": self.commit_time,
                     "custom_name": self.custom_name,
                     "is_favorite": self.is_favorite,
+                    "custom_executable": self.custom_executable,
                 }
             ],
         }
@@ -82,13 +85,17 @@ class BuildInfo:
 def read_blender_version(path: Path, old_build_info: BuildInfo | None = None, archive_name=None):
     set_locale()
 
-    blender_exe = {
-        "Windows": "blender.exe",
-        "Linux": "blender",
-        "macOS": "Blender/Blender.app/Contents/MacOS/Blender",
-    }.get(get_platform(), "blender")
+    if old_build_info is not None and old_build_info.custom_executable:
+        exe_path = path / old_build_info.custom_executable
+    else:
+        blender_exe = {
+            "Windows": "blender.exe",
+            "Linux": "blender",
+            "macOS": "Blender/Blender.app/Contents/MacOS/Blender",
+        }.get(get_platform(), "blender")
 
-    exe_path = path / blender_exe
+        exe_path = path / blender_exe
+
     version = _check_output([exe_path.as_posix(), "-v"]).decode("UTF-8")
 
     ctime = re.search("build commit time: " + "(.*)", version)[1].rstrip()
