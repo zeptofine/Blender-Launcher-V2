@@ -119,18 +119,3 @@ def get_cwd():
         return Path(os.path.dirname(sys.executable))
 
     return Path.cwd()
-
-# hidden check taken from https://stackoverflow.com/a/6365265
-def is_hidden(filepath) -> bool:
-    name = os.path.basename(os.path.abspath(filepath))
-    return name.startswith(".") or has_hidden_attribute(filepath)
-
-def has_hidden_attribute(filepath):
-    try:
-        import ctypes
-        attrs = ctypes.windll.kernel32.GetFileAttributesW(filepath) # type: ignore
-        assert attrs != -1
-        result = bool(attrs & 2)
-    except (AttributeError, AssertionError):
-        result = False
-    return result

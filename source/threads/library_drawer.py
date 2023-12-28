@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from modules._platform import get_platform, is_hidden
+from modules._platform import get_platform
 from modules.action import Action
 from modules.settings import get_library_folder
 from PyQt5.QtCore import pyqtSignal
@@ -35,7 +35,7 @@ class DrawLibraryAction(Action):
 
             if path.is_dir():
                 for build in path.iterdir():
-                    if build.is_dir() and not is_hidden(build):
+                    if build.is_dir():
                         if (folder / build / ".blinfo").is_file() or (path / build / blender_exe).is_file():
                             self.found.emit(folder / build)
                         else:
