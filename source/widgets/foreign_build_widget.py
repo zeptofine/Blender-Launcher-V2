@@ -1,21 +1,10 @@
-import re
-from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from modules.build_info import BuildInfo, ReadBuildAction
-from modules.enums import MessageType
-from modules.settings import get_install_template, get_library_folder
+from modules.build_info import BuildInfo
 from PyQt5.QtCore import Qt, pyqtSlot
-from PyQt5.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout
-from threads.downloader import DownloadAction
-from threads.extractor import ExtractAction
-from threads.renamer import RenameAction
-from threads.template_installer import TemplateAction
+from PyQt5.QtWidgets import QHBoxLayout, QPushButton, QVBoxLayout
 from widgets.base_build_widget import BaseBuildWidget
-from widgets.base_progress_bar_widget import BaseProgressBarWidget
-from widgets.build_state_widget import BuildStateWidget
-from widgets.datetime_widget import DateTimeWidget
 from widgets.elided_text_label import ElidedTextLabel
 from windows.custom_build_dialog_window import CustomBuildDialogWindow
 
@@ -23,14 +12,6 @@ from .base_list_widget import BaseListWidget
 
 if TYPE_CHECKING:
     from windows.main_window import BlenderLauncher
-
-
-class DownloadState(Enum):
-    IDLE = 1
-    DOWNLOADING = 2
-    EXTRACTING = 3
-    READING = 4
-    RENAMING = 5
 
 
 class UnrecoBuildWidget(BaseBuildWidget):

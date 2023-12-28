@@ -104,7 +104,6 @@ def get_blender_ver_info(exe: Path) -> tuple[str, str, str, str]:
         build_hash = s[1].rstrip()
 
     if s := re.search("Blender (.*)", version):
-
         subversion = s[1].rstrip()
     else:
         s = version.splitlines()[0].strip()
@@ -168,8 +167,6 @@ def read_blender_version(
     if old_build_info is not None:
         custom_name = old_build_info.custom_name
         is_favorite = old_build_info.is_favorite
-    
-
 
     return BuildInfo(
         path.as_posix(),
@@ -179,7 +176,7 @@ def read_blender_version(
         branch,
         custom_name,
         is_favorite,
-        custom_executable=custom_exe
+        custom_executable=custom_exe,
     )
 
 
