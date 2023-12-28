@@ -6,6 +6,7 @@ import os
 from enum import Enum
 from typing import TYPE_CHECKING
 
+from modules._platform import get_platform
 from modules.build_info import BuildInfo, ReadBuildAction
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtWidgets import (
@@ -92,10 +93,17 @@ class CustomBuildDialogWindow(BaseWindow):
         self.button_layout.addWidget(self.accept_button, alignment=Qt.AlignmentFlag.AlignRight, stretch=1)
         self.button_layout.addWidget(self.cancel_button)
 
+        platform = get_platform()
+
         # get list of executable files in `path`
-        executables = [
-            str(file.relative_to(path)) for file in path.iterdir() if file.is_file() and os.access(file, os.X_OK)
-        ]
+        if platform == "Windows":
+            executables = [
+                str(file.relative_to(path)) for file in path.iterdir() if file.is_file() and file.suffix == ".exe"
+            ]
+        else:
+            executables = [
+                str(file.relative_to(path)) for file in path.iterdir() if file.is_file() and os.access(file, os.X_OK)
+            ]
         completer = QCompleter(executables, self)
         logging.debug(f"Detected executables: {executables}")
 
