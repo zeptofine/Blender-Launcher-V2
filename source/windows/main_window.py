@@ -56,6 +56,7 @@ from widgets.base_menu_widget import BaseMenuWidget
 from widgets.base_page_widget import BasePageWidget
 from widgets.base_tool_box_widget import BaseToolBoxWidget
 from widgets.download_widget import DownloadState, DownloadWidget
+from widgets.foreign_build_widget import UnrecoBuildWidget
 from widgets.header import WHeaderButton, WindowHeader
 from widgets.library_widget import LibraryWidget
 from windows.base_window import BaseWindow
@@ -784,18 +785,20 @@ class BlenderLauncher(BaseWindow):
         branch = Path(path).parent.name
 
         if branch in ("stable", "lts"):
-            page_widget = self.LibraryStablePageWidget
+            list_widget = self.LibraryStableListWidget
         elif branch == "daily":
-            page_widget = self.LibraryDailyPageWidget
+            list_widget = self.LibraryDailyListWidget
         elif branch == "experimental":
-            page_widget = self.LibraryExperimentalPageWidget
+            list_widget = self.LibraryExperimentalListWidget
         elif branch == "custom":
-            page_widget = self.UserCustomPageWidget
+            list_widget = self.UserCustomListWidget
         else:
             return
 
-        page_widget.add_unrecognized_build(path)
+        item = BaseListWidgetItem()
+        widget = UnrecoBuildWidget(self, path, list_widget, item)
 
+        list_widget.insert_item(item, widget)
 
     def set_status(self, status=None, is_force_check_on=None):
         if status is not None:

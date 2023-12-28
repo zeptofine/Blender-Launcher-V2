@@ -1,25 +1,16 @@
 from enum import Enum
-from pathlib import Path
 
 from modules.settings import get_list_sorting_type, set_list_sorting_type
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import (
-    QAction,
     QHBoxLayout,
     QLabel,
-    QListWidget,
-    QListWidgetItem,
-    QMenu,
     QPushButton,
-    QSplitter,
-    QToolButton,
     QVBoxLayout,
     QWidget,
 )
 from widgets.base_list_widget import BaseListWidget
-from widgets.base_menu_widget import BaseMenuWidget
-from windows.custom_build_dialog_window import CustomBuildDialogWindow
 
 
 class SortingType(Enum):
@@ -31,7 +22,6 @@ class BasePageWidget(QWidget):
     def __init__(self, parent, page_name, time_label, info_text, show_reload=False, extended_selection=False):
         super().__init__()
         self.name = page_name
-        self.parent_ = parent
 
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
@@ -82,21 +72,6 @@ class BasePageWidget(QWidget):
 
         self.PlaceholderLayout.addStretch()
 
-        self.unrecognizedBuildList = QListWidget(self)
-        self.unrecognizedBuildList.hide()
-        self.unrecognizedBuildList.itemClicked.connect(self.init_unrecognized)
-
-        self.unrecognizedBuildButton = QPushButton(self)
-        self.unrecognizedBuildButton.setToolTip("Add unrecognized builds to the list")
-        self.unrecognizedBuildButton.hide()
-        self.unrecognizedBuildButton.clicked.connect(
-            lambda: self.unrecognizedBuildList.setVisible(not self.unrecognizedBuildList.isVisible())
-        )
-        self.unrecognizedLayout = QVBoxLayout()
-        self.unrecognizedLayout.setContentsMargins(0, 0, 0, 0)
-        self.unrecognizedLayout.addWidget(self.unrecognizedBuildButton)
-        self.unrecognizedLayout.addWidget(self.unrecognizedBuildList)
-
         # Header Widget
         self.HeaderWidget = QWidget()
         self.HeaderWidget.hide()
@@ -138,27 +113,9 @@ class BasePageWidget(QWidget):
         self.layout.addWidget(self.HeaderWidget)
         self.layout.addWidget(self.PlaceholderWidget)
         self.layout.addWidget(self.list_widget)
-        self.layout.addLayout(self.unrecognizedLayout)
 
         self.sorting_type = SortingType(get_list_sorting_type(self.name))
         self.set_sorting_type(self.sorting_type)
-
-    def add_unrecognized_build(self, path: Path):
-        item = QListWidgetItem()
-        item.setText(str(path))
-        self.unrecognizedBuildList.addItem(item)
-
-        self.unrecognizedBuildButton.show()
-        self.unrecognizedBuildButton.setText(f"Add unrecognized builds: {self.unrecognized_builds}")
-
-    @property
-    def unrecognized_builds(self):
-        return self.unrecognizedBuildList.count()
-
-    def init_unrecognized(self, item: QListWidgetItem):
-        path = Path(item.text())
-
-        dlg = CustomBuildDialogWindow(self.parent_, path)
 
     def set_info_label_text(self, text):
         self.InfoLabel.setText(text)

@@ -198,7 +198,7 @@ class CustomBuildDialogWindow(BaseWindow):
             str(self.path),
             self.subversion_edit.text(),
             self.hash_edit.text(),
-            self.commit_time.text(),
+            self.commit_time.dateTime().toPyDateTime().strftime("%d-%b-%y-%H:%M"),
             self.branch_edit.text(),
             self.custom_name.text(),
             self.favorite.isChecked(),
