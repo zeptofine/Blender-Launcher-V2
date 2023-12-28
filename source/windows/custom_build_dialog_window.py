@@ -97,7 +97,6 @@ class CustomBuildDialogWindow(BaseWindow):
             str(file.relative_to(path)) for file in path.iterdir() if file.is_file() and os.access(file, os.X_OK)
         ]
         completer = QCompleter(executables, self)
-        completer.highlighted.connect(lambda: print("highlighted"))
         logging.debug(f"Detected executables: {executables}")
 
         def _red_asterisk():
@@ -214,7 +213,6 @@ class CustomBuildDialogWindow(BaseWindow):
         self.close()
 
     def check_executable_choice(self):
-        print(self.executable_choice.text())
         p = self.path / self.executable_choice.text()
         if os.access(p, os.X_OK):
             self.executable_choice.setStyleSheet("border-color:")
