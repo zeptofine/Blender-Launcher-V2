@@ -7,39 +7,37 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from modules._platform import _check_output, get_platform, set_locale
+from modules.action import Action
 from PyQt5.QtCore import QThread, pyqtSignal
-
-from .action import Action
 
 if TYPE_CHECKING:
     from pathlib import Path
 
 
+@dataclass
 class BuildInfo:
+    # Class variables
     file_version = "1.2"
     # https://www.blender.org/download/lts/
     lts_tags = ("2.83", "2.93", "3.3", "3.7")
 
-    def __init__(self, link, subversion, build_hash, commit_time, branch, custom_name="", is_favorite=False):
-        self.link = link
+    # Build variables
+    link: str
+    subversion: str
+    build_hash: str
+    commit_time: str
+    branch: str
+    custom_name: str = ""
+    is_favorite: bool = False
 
-        if any(w in subversion.lower() for w in ["release", "rc"]):
-            subversion = re.sub("[a-zA-Z ]+", " Candidate ", subversion).rstrip()
+    def __post_init__(self):
+        if any(w in self.subversion.lower() for w in ["release", "rc"]):
+            self.subversion = re.sub("[a-zA-Z ]+", " Candidate ", self.subversion).rstrip()
 
-        self.subversion = subversion
-        self.build_hash = build_hash
-        self.commit_time = commit_time
+        if self.branch == "stable" and self.subversion.startswith(self.lts_tags):
+            self.branch = "lts"
 
-        if branch == "stable" and subversion.startswith(self.lts_tags):
-            branch = "lts"
-
-        self.branch = branch
-        self.custom_name = custom_name
-        self.is_favorite = is_favorite
-
-        self.platform = get_platform()
-
-    def __eq__(self, other):
+    def __eq__(self, other: BuildInfo):
         if (self is None) or (other is None):
             return False
         if (self.build_hash is not None) and (other.build_hash is not None):
@@ -73,13 +71,12 @@ class BuildInfo:
             ],
         }
 
-
-def write_build_info(build_info: BuildInfo, dist: Path):
-    data = build_info.to_dict()
-    blinfo = dist / ".blinfo"
-    with blinfo.open("w", encoding="utf-8") as file:
-        json.dump(data, file)
-    return data
+    def write_to(self, path: Path):
+        data = self.to_dict()
+        blinfo = path / ".blinfo"
+        with blinfo.open("w", encoding="utf-8") as file:
+            json.dump(data, file)
+        return data
 
 
 def read_blender_version(path: Path, old_build_info: BuildInfo | None = None, archive_name=None):
@@ -150,7 +147,7 @@ class WriteBuildAction(Action):
 
     def run(self):
         try:
-            write_build_info(self.build_info, self.path)
+            self.build_info.write_to(self.path)
             self.written.emit()
         except Exception:
             self.error.emit()
@@ -174,13 +171,13 @@ def read_build_info(path: Path, archive_name: str | None = None):
                 build_info,
                 archive_name,
             )
-            write_build_info(new_build_info, path)
+            new_build_info.write_to(path)
             return new_build_info
         return build_info
 
     # Generating new build information
     build_info = read_blender_version(path, archive_name=archive_name)
-    write_build_info(build_info, path)
+    build_info.write_to(path)
     return build_info
 
 
