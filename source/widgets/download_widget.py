@@ -112,7 +112,6 @@ class DownloadWidget(BaseBuildWidget):
         if self.is_installed:
             self.downloadButton.hide()
             self.main_hl.addWidget(self.installedButton)
-            self.main_hl.addWidget(self.cancelButton)
             self.main_hl.addLayout(self.sub_vl)
             self.main_hl.addWidget(self.build_state_widget)
         else:
