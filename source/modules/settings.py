@@ -217,12 +217,8 @@ def set_enable_download_notifications(is_checked):
     get_settings().setValue("enable_download_notifications", is_checked)
 
 
-def get_blender_startup_arguments():
-    args = get_settings().value("blender_startup_arguments")
-
-    if args is None:
-        return ""
-    return args.strip()
+def get_blender_startup_arguments() -> str:
+    return get_settings().value("blender_startup_arguments", defaultValue="", type=str).strip()
 
 
 def set_blender_startup_arguments(args):

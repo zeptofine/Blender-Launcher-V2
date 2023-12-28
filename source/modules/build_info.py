@@ -29,7 +29,7 @@ class BuildInfo:
     branch: str
     custom_name: str = ""
     is_favorite: bool = False
-    custom_executable: str = ""
+    custom_executable: str | None = None
 
     def __post_init__(self):
         if any(w in self.subversion.lower() for w in ["release", "rc"]):
@@ -82,10 +82,53 @@ class BuildInfo:
         return data
 
 
-def read_blender_version(path: Path, old_build_info: BuildInfo | None = None, archive_name=None):
+def get_blender_ver_info(exe: Path) -> tuple[str, str, str, str]:
+    version = _check_output([exe.as_posix(), "-v"]).decode("UTF-8")
+
+    commit_time = ""
+    build_hash = ""
+    subversion = ""
+    custom_name = ""
+
+    ctime = re.search("build commit time: (.*)", version)
+    cdate = re.search("build commit date: (.*)", version)
+
+    if ctime is not None and cdate is not None:
+        strptime = time.strptime(
+            f"{cdate[1].rstrip()} {ctime[1].rstrip()}",
+            "%Y-%m-%d %H:%M",
+        )
+        commit_time = time.strftime("%d-%b-%y-%H:%M", strptime)
+
+    if s := re.search("build hash: (.*)", version):
+        build_hash = s[1].rstrip()
+
+    if s := re.search("Blender (.*)", version):
+
+        subversion = s[1].rstrip()
+    else:
+        s = version.splitlines()[0].strip()
+        custom_name, subversion = s.rsplit(" ", 1)
+
+    return (
+        commit_time,
+        build_hash,
+        subversion,
+        custom_name,
+    )
+
+
+def read_blender_version(
+    path: Path,
+    old_build_info: BuildInfo | None = None,
+    archive_name=None,
+    custom_exe=None,
+) -> BuildInfo:
     set_locale()
 
-    if old_build_info is not None and old_build_info.custom_executable:
+    if custom_exe is not None:
+        exe_path = path / custom_exe
+    elif old_build_info is not None and old_build_info.custom_executable:
         exe_path = path / old_build_info.custom_executable
     else:
         blender_exe = {
@@ -96,14 +139,7 @@ def read_blender_version(path: Path, old_build_info: BuildInfo | None = None, ar
 
         exe_path = path / blender_exe
 
-    version = _check_output([exe_path.as_posix(), "-v"]).decode("UTF-8")
-
-    ctime = re.search("build commit time: " + "(.*)", version)[1].rstrip()
-    cdate = re.search("build commit date: " + "(.*)", version)[1].rstrip()
-    strptime = time.strptime(cdate + " " + ctime, "%Y-%m-%d %H:%M")
-    commit_time = time.strftime("%d-%b-%y-%H:%M", strptime)
-    build_hash = re.search("build hash: " + "(.*)", version)[1].rstrip()
-    subversion = re.search("Blender " + "(.*)", version)[1].rstrip()
+    commit_time, build_hash, subversion, custom_name = get_blender_ver_info(exe_path)
 
     subfolder = path.parent.name
 
@@ -127,11 +163,13 @@ def read_blender_version(path: Path, old_build_info: BuildInfo | None = None, ar
             branch = match.group(1)
 
     # Recover user defined favorites builds information
-    custom_name = ""
     is_favorite = False
+
     if old_build_info is not None:
         custom_name = old_build_info.custom_name
         is_favorite = old_build_info.is_favorite
+    
+
 
     return BuildInfo(
         path.as_posix(),
@@ -141,6 +179,7 @@ def read_blender_version(path: Path, old_build_info: BuildInfo | None = None, ar
         branch,
         custom_name,
         is_favorite,
+        custom_executable=custom_exe
     )
 
 
@@ -161,7 +200,7 @@ class WriteBuildAction(Action):
             raise
 
 
-def read_build_info(path: Path, archive_name: str | None = None):
+def read_build_info(path: Path, archive_name: str | None = None, custom_exe: str | None = None, auto_write=True):
     blinfo = path / ".blinfo"
 
     # Check if build information is already present
@@ -177,29 +216,36 @@ def read_build_info(path: Path, archive_name: str | None = None):
                 path,
                 build_info,
                 archive_name,
+                custom_exe,
             )
             new_build_info.write_to(path)
             return new_build_info
         return build_info
 
     # Generating new build information
-    build_info = read_blender_version(path, archive_name=archive_name)
-    build_info.write_to(path)
+    build_info = read_blender_version(
+        path,
+        archive_name=archive_name,
+        custom_exe=custom_exe,
+    )
+    if auto_write:
+        build_info.write_to(path)
     return build_info
 
 
 @dataclass(frozen=True)
 class ReadBuildAction(Action):
     path: Path
-    build_info: str | None = None
     archive_name: str | None = None
+    custom_exe: str | None = None
+    auto_write: bool = True
 
     finished = pyqtSignal(BuildInfo)
     failure = pyqtSignal(Exception)
 
     def run(self):
         try:
-            build_info = read_build_info(self.path, self.archive_name)
+            build_info = read_build_info(self.path, self.archive_name, self.custom_exe, self.auto_write)
             self.finished.emit(build_info)
         except Exception as e:
             self.failure.emit(e)
