@@ -105,6 +105,8 @@ class CustomBuildDialogWindow(BaseWindow):
                 str(file.relative_to(path)) for file in path.iterdir() if file.is_file() and os.access(file, os.X_OK)
             ]
         completer = QCompleter(executables, self)
+        completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+
         logging.debug(f"Detected executables: {executables}")
 
         def _red_asterisk():
