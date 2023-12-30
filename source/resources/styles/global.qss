@@ -83,21 +83,6 @@ QHeaderView::section {
     border: none;
 }
 
-QFileDialog {
-    background-color: #232323;
-    color: #E6E6E6;
-}
-
-QHeaderView {
-    background-color: #282828;
-    color: #E6E6E6;
-}
-
-QHeaderView::section {
-    background-color: #282828;
-    border: none;
-}
-
 QLabel {
     color: #E6E6E6;
 }
@@ -292,8 +277,15 @@ QPushButton[CreateButton=true] {
     padding: 9px;
 }
 
+QPushButton[InstalledButton=true] {
+    background-color: #318CE7;
+    border: none;
+    padding: 9px;
+}
+
 QPushButton[CreateButton=true]:hover {
     background-color: white;
+    border: none;
     padding: 9px;
 }
 
@@ -346,7 +338,6 @@ QPushButton[ListHeader=true]:checked {
     border-top: 2px solid #FF7A00;
     padding: 0px 2px 2px 2px;
 }
-
 QScrollBar:vertical {
     background-color: #232323;
     width: 4px;
