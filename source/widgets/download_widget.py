@@ -135,7 +135,7 @@ class DownloadWidget(BaseBuildWidget):
         self.menu.trigger()
 
     def mouseDoubleClickEvent(self, event):
-        if self.state != DownloadState.DOWNLOADING:
+        if self.state != DownloadState.DOWNLOADING and not self.is_installed:
             self.init_downloader()
 
     def mouseReleaseEvent(self, event):
