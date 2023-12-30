@@ -61,9 +61,18 @@ QPushButton[LaunchButton=true]:disabled {
     padding: 9px;
 }
 
+QPushButton[CreateButton=true] {
+    background-color:  white;
+    color: black;
+    padding: 9px;
+}
+
 QPushButton[InstalledButton=true] {
     background-color: #318CE7;
     border: none;
+
+QPushButton[CreateButton=true]:hover {
+    background-color: white;
     padding: 9px;
 }
 
@@ -84,6 +93,8 @@ QPushButton[CancelButton=true]:disabled {
     border: none;
     padding: 9px;
 }
+
+
 
 QPushButton[Icon=true] {
     background-color: transparent;

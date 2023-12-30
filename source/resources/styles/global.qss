@@ -42,6 +42,17 @@ QComboBox::down-arrow {
     padding-right: 6px;
 }
 
+QDateTimeEdit {
+    background-color: #1F1F1F;
+    color: #E6E6E6;
+    border: 1px solid #444444;
+    padding: 1px;
+}
+
+QDateTimeEdit:disabled {
+    color: #828282;
+}
+
 QDoubleSpinBox {
     background-color: #1F1F1F;
     color: #E6E6E6;
@@ -55,6 +66,21 @@ QDoubleSpinBox:disabled {
 
 QDoubleSpinBox[text=\"\"] {
     color: #E6E6E6;
+}
+
+QFileDialog {
+    background-color: #232323;
+    color: #E6E6E6;
+}
+
+QHeaderView {
+    background-color: #282828;
+    color: #E6E6E6;
+}
+
+QHeaderView::section {
+    background-color: #282828;
+    border: none;
 }
 
 QFileDialog {
@@ -260,9 +286,14 @@ QPushButton[LaunchButton=true]:disabled {
     padding: 9px;
 }
 
-QPushButton[InstalledButton=true] {
-    background-color: #318CE7;
-    border: none;
+QPushButton[CreateButton=true] {
+    background-color:  white;
+    color: black;
+    padding: 9px;
+}
+
+QPushButton[CreateButton=true]:hover {
+    background-color: white;
     padding: 9px;
 }
 
@@ -283,6 +314,8 @@ QPushButton[CancelButton=true]:disabled {
     border: none;
     padding: 9px;
 }
+
+
 
 QPushButton[Icon=true] {
     background-color: transparent;

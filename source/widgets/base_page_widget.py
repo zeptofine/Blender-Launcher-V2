@@ -3,7 +3,13 @@ from enum import Enum
 from modules.settings import get_list_sorting_type, set_list_sorting_type
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 from widgets.base_list_widget import BaseListWidget
 
 
