@@ -359,7 +359,7 @@ class BlenderLauncher(BaseWindow):
         self.statusbarVersion = QPushButton(self.version)
         self.statusbarVersion.clicked.connect(self.show_changelog)
         self.statusbarVersion.setToolTip(
-            "The version of Blender Launcher that is currently run. " "Press to check changelog."
+            "The version of Blender Launcher that is currently run. Press to check changelog."
         )
         self.status_bar.addPermanentWidget(self.ForceCheckNewBuilds)
         self.status_bar.addPermanentWidget(QLabel("│"))
