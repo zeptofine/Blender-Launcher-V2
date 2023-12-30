@@ -7,39 +7,38 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from modules._platform import _check_output, get_platform, set_locale
+from modules.action import Action
 from PyQt5.QtCore import QThread, pyqtSignal
-
-from .action import Action
 
 if TYPE_CHECKING:
     from pathlib import Path
 
 
+@dataclass
 class BuildInfo:
-    file_version = "1.2"
+    # Class variables
+    file_version = "1.3"
     # https://www.blender.org/download/lts/
     lts_tags = ("2.83", "2.93", "3.3", "3.7")
 
-    def __init__(self, link, subversion, build_hash, commit_time, branch, custom_name="", is_favorite=False):
-        self.link = link
+    # Build variables
+    link: str
+    subversion: str
+    build_hash: str
+    commit_time: str
+    branch: str
+    custom_name: str = ""
+    is_favorite: bool = False
+    custom_executable: str | None = None
 
-        if any(w in subversion.lower() for w in ["release", "rc"]):
-            subversion = re.sub("[a-zA-Z ]+", " Candidate ", subversion).rstrip()
+    def __post_init__(self):
+        if any(w in self.subversion.lower() for w in ["release", "rc"]):
+            self.subversion = re.sub("[a-zA-Z ]+", " Candidate ", self.subversion).rstrip()
 
-        self.subversion = subversion
-        self.build_hash = build_hash
-        self.commit_time = commit_time
+        if self.branch == "stable" and self.subversion.startswith(self.lts_tags):
+            self.branch = "lts"
 
-        if branch == "stable" and subversion.startswith(self.lts_tags):
-            branch = "lts"
-
-        self.branch = branch
-        self.custom_name = custom_name
-        self.is_favorite = is_favorite
-
-        self.platform = get_platform()
-
-    def __eq__(self, other):
+    def __eq__(self, other: BuildInfo):
         if (self is None) or (other is None):
             return False
         if (self.build_hash is not None) and (other.build_hash is not None):
@@ -56,6 +55,7 @@ class BuildInfo:
             blinfo["branch"],
             blinfo["custom_name"],
             blinfo["is_favorite"],
+            blinfo.get("custom_executable", ""),
         )
 
     def to_dict(self):
@@ -69,37 +69,76 @@ class BuildInfo:
                     "commit_time": self.commit_time,
                     "custom_name": self.custom_name,
                     "is_favorite": self.is_favorite,
+                    "custom_executable": self.custom_executable,
                 }
             ],
         }
 
+    def write_to(self, path: Path):
+        data = self.to_dict()
+        blinfo = path / ".blinfo"
+        with blinfo.open("w", encoding="utf-8") as file:
+            json.dump(data, file)
+        return data
 
-def write_build_info(build_info: BuildInfo, dist: Path):
-    data = build_info.to_dict()
-    blinfo = dist / ".blinfo"
-    with blinfo.open("w", encoding="utf-8") as file:
-        json.dump(data, file)
-    return data
+
+def get_blender_ver_info(exe: Path) -> tuple[str, str, str, str]:
+    version = _check_output([exe.as_posix(), "-v"]).decode("UTF-8")
+
+    commit_time = ""
+    build_hash = ""
+    subversion = ""
+    custom_name = ""
+
+    ctime = re.search("build commit time: (.*)", version)
+    cdate = re.search("build commit date: (.*)", version)
+
+    if ctime is not None and cdate is not None:
+        strptime = time.strptime(
+            f"{cdate[1].rstrip()} {ctime[1].rstrip()}",
+            "%Y-%m-%d %H:%M",
+        )
+        commit_time = time.strftime("%d-%b-%y-%H:%M", strptime)
+
+    if s := re.search("build hash: (.*)", version):
+        build_hash = s[1].rstrip()
+
+    if s := re.search("Blender (.*)", version):
+        subversion = s[1].rstrip()
+    else:
+        s = version.splitlines()[0].strip()
+        custom_name, subversion = s.rsplit(" ", 1)
+
+    return (
+        commit_time,
+        build_hash,
+        subversion,
+        custom_name,
+    )
 
 
-def read_blender_version(path: Path, old_build_info: BuildInfo | None = None, archive_name=None):
+def read_blender_version(
+    path: Path,
+    old_build_info: BuildInfo | None = None,
+    archive_name=None,
+    custom_exe=None,
+) -> BuildInfo:
     set_locale()
 
-    blender_exe = {
-        "Windows": "blender.exe",
-        "Linux": "blender",
-        "macOS": "Blender/Blender.app/Contents/MacOS/Blender",
-    }.get(get_platform(), "blender")
+    if custom_exe is not None:
+        exe_path = path / custom_exe
+    elif old_build_info is not None and old_build_info.custom_executable:
+        exe_path = path / old_build_info.custom_executable
+    else:
+        blender_exe = {
+            "Windows": "blender.exe",
+            "Linux": "blender",
+            "macOS": "Blender/Blender.app/Contents/MacOS/Blender",
+        }.get(get_platform(), "blender")
 
-    exe_path = path / blender_exe
-    version = _check_output([exe_path.as_posix(), "-v"]).decode("UTF-8")
+        exe_path = path / blender_exe
 
-    ctime = re.search("build commit time: " + "(.*)", version)[1].rstrip()
-    cdate = re.search("build commit date: " + "(.*)", version)[1].rstrip()
-    strptime = time.strptime(cdate + " " + ctime, "%Y-%m-%d %H:%M")
-    commit_time = time.strftime("%d-%b-%y-%H:%M", strptime)
-    build_hash = re.search("build hash: " + "(.*)", version)[1].rstrip()
-    subversion = re.search("Blender " + "(.*)", version)[1].rstrip()
+    commit_time, build_hash, subversion, custom_name = get_blender_ver_info(exe_path)
 
     subfolder = path.parent.name
 
@@ -123,8 +162,8 @@ def read_blender_version(path: Path, old_build_info: BuildInfo | None = None, ar
             branch = match.group(1)
 
     # Recover user defined favorites builds information
-    custom_name = ""
     is_favorite = False
+
     if old_build_info is not None:
         custom_name = old_build_info.custom_name
         is_favorite = old_build_info.is_favorite
@@ -137,6 +176,7 @@ def read_blender_version(path: Path, old_build_info: BuildInfo | None = None, ar
         branch,
         custom_name,
         is_favorite,
+        custom_executable=custom_exe,
     )
 
 
@@ -150,14 +190,14 @@ class WriteBuildAction(Action):
 
     def run(self):
         try:
-            write_build_info(self.build_info, self.path)
+            self.build_info.write_to(self.path)
             self.written.emit()
         except Exception:
             self.error.emit()
             raise
 
 
-def read_build_info(path: Path, archive_name: str | None = None):
+def read_build_info(path: Path, archive_name: str | None = None, custom_exe: str | None = None, auto_write=True):
     blinfo = path / ".blinfo"
 
     # Check if build information is already present
@@ -173,29 +213,36 @@ def read_build_info(path: Path, archive_name: str | None = None):
                 path,
                 build_info,
                 archive_name,
+                custom_exe,
             )
-            write_build_info(new_build_info, path)
+            new_build_info.write_to(path)
             return new_build_info
         return build_info
 
     # Generating new build information
-    build_info = read_blender_version(path, archive_name=archive_name)
-    write_build_info(build_info, path)
+    build_info = read_blender_version(
+        path,
+        archive_name=archive_name,
+        custom_exe=custom_exe,
+    )
+    if auto_write:
+        build_info.write_to(path)
     return build_info
 
 
 @dataclass(frozen=True)
 class ReadBuildAction(Action):
     path: Path
-    build_info: str | None = None
     archive_name: str | None = None
+    custom_exe: str | None = None
+    auto_write: bool = True
 
     finished = pyqtSignal(BuildInfo)
     failure = pyqtSignal(Exception)
 
     def run(self):
         try:
-            build_info = read_build_info(self.path, self.archive_name)
+            build_info = read_build_info(self.path, self.archive_name, self.custom_exe, self.auto_write)
             self.finished.emit(build_info)
         except Exception as e:
             self.failure.emit(e)

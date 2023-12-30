@@ -13,34 +13,33 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
 
-def get_builds(folders: Iterable[str | Path]):
-    library_folder = Path(get_library_folder())
-    platform = get_platform()
-
-    blender_exe = {
-        "Windows": "blender.exe",
-        "Linux": "blender",
-        "macOS": "Blender/Blender.app/Contents/MacOS/Blender",
-    }.get(platform, "blender")
-
-    for folder in folders:
-        path = library_folder / folder
-
-        if path.is_dir():
-            for build in path.iterdir():
-                if (path / build / blender_exe).is_file():
-                    yield folder / build
-
-
 @dataclass(frozen=True)
 class DrawLibraryAction(Action):
     folders: Iterable[str | Path] = ("stable", "daily", "experimental", "custom")
     found = pyqtSignal(Path)
+    unrecognized = pyqtSignal(Path)
     finished = pyqtSignal()
 
     def run(self):
-        for build in get_builds(self.folders):
-            self.found.emit(build)
+        library_folder = Path(get_library_folder())
+        platform = get_platform()
+
+        blender_exe = {
+            "Windows": "blender.exe",
+            "Linux": "blender",
+            "macOS": "Blender/Blender.app/Contents/MacOS/Blender",
+        }.get(platform, "blender")
+
+        for folder in self.folders:
+            path = library_folder / folder
+
+            if path.is_dir():
+                for build in path.iterdir():
+                    if build.is_dir():
+                        if (folder / build / ".blinfo").is_file() or (path / build / blender_exe).is_file():
+                            self.found.emit(folder / build)
+                        else:
+                            self.unrecognized.emit(folder / build)
         self.finished.emit()
 
     def __str__(self):

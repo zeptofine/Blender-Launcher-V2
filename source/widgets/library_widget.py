@@ -310,6 +310,7 @@ class LibraryWidget(BaseBuildWidget):
         self.installTemplateAction.setEnabled(True)
 
     def launch(self, update_selection=False, exe=None):
+        assert self.build_info is not None
         if update_selection is True:
             self.list_widget.clearSelection()
             self.item.setSelected(True)
@@ -328,24 +329,29 @@ class LibraryWidget(BaseBuildWidget):
 
         proc = None
 
+        b3d_exe: Path
+
         if platform == "Windows":
             if exe is not None:
                 b3d_exe = library_folder / self.link / exe
                 proc = _popen(["cmd /C", b3d_exe.as_posix()])
             else:
-                if get_launch_blender_no_console():
-                    if Path.exists(library_folder / self.link / "blender-launcher.exe"):
+                cexe = self.build_info.custom_executable
+                if cexe:
+                    b3d_exe = library_folder / self.link / cexe
+                else:
+                    if (
+                        get_launch_blender_no_console()
+                        and (library_folder / self.link / "blender-launcher.exe").exists()
+                    ):
                         b3d_exe = library_folder / self.link / "blender-launcher.exe"
                     else:
                         b3d_exe = library_folder / self.link / "blender.exe"
-                else:
-                    b3d_exe = library_folder / self.link / "blender.exe"
 
                 if blender_args == "":
                     proc = _popen(b3d_exe.as_posix())
                 else:
-                    args = [b3d_exe.as_posix()]
-                    args.extend(blender_args.split(" "))
+                    args = [b3d_exe.as_posix(), *blender_args.split(" ")]
                     proc = _popen(args)
         elif platform == "Linux":
             bash_args = get_bash_arguments()
@@ -354,7 +360,12 @@ class LibraryWidget(BaseBuildWidget):
                 bash_args += " "
             bash_args += "nohup"
 
-            b3d_exe = library_folder / self.link / "blender"
+            cexe = self.build_info.custom_executable
+            if cexe:
+                b3d_exe = library_folder / self.link / cexe
+            else:
+                b3d_exe = library_folder / self.link / "blender"
+
             proc = _popen(f'{bash_args} "{b3d_exe.as_posix()}" {blender_args}')
 
         assert proc is not None
@@ -417,7 +428,8 @@ class LibraryWidget(BaseBuildWidget):
     def write_build_info(self):
         assert self.build_info is not None
         self.build_info_writer = WriteBuildAction(
-            self.link, self.build_info,
+            self.link,
+            self.build_info,
         )
         self.build_info_writer.written.connect(self.build_info_writer_finished)
         self.parent.action_queue.append(self.build_info_writer)

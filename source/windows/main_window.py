@@ -56,6 +56,7 @@ from widgets.base_menu_widget import BaseMenuWidget
 from widgets.base_page_widget import BasePageWidget
 from widgets.base_tool_box_widget import BaseToolBoxWidget
 from widgets.download_widget import DownloadState, DownloadWidget
+from widgets.foreign_build_widget import UnrecoBuildWidget
 from widgets.header import WHeaderButton, WindowHeader
 from widgets.library_widget import LibraryWidget
 from windows.base_window import BaseWindow
@@ -238,68 +239,68 @@ class BlenderLauncher(BaseWindow):
         self.DownloadsTabLayout.addWidget(self.DownloadsToolBox)
         self.UserTabLayout.addWidget(self.UserToolBox)
 
-        page = BasePageWidget(
+        self.LibraryStablePageWidget = BasePageWidget(
             parent=self,
             page_name="LibraryStableListWidget",
             time_label="Commit Time",
             info_text="Nothing to show yet",
             extended_selection=True)
         self.LibraryStableListWidget = \
-            self.LibraryToolBox.add_page_widget(page, "Stable")
+            self.LibraryToolBox.add_page_widget(self.LibraryStablePageWidget, "Stable")
 
-        page = BasePageWidget(
+        self.LibraryDailyPageWidget = BasePageWidget(
             parent=self,
             page_name="LibraryDailyListWidget",
             time_label="Commit Time",
             info_text="Nothing to show yet",
             extended_selection=True)
         self.LibraryDailyListWidget = \
-            self.LibraryToolBox.add_page_widget(page, "Daily")
+            self.LibraryToolBox.add_page_widget(self.LibraryDailyPageWidget, "Daily")
 
-        page = BasePageWidget(
+        self.LibraryExperimentalPageWidget = BasePageWidget(
             parent=self,
             page_name="LibraryExperimentalListWidget",
             time_label="Commit Time",
             info_text="Nothing to show yet",
             extended_selection=True)
         self.LibraryExperimentalListWidget = \
-            self.LibraryToolBox.add_page_widget(page, "Experimental")
+            self.LibraryToolBox.add_page_widget(self.LibraryExperimentalPageWidget, "Experimental")
 
-        page = BasePageWidget(
+        self.DownloadsStablePageWidget = BasePageWidget(
             parent=self,
             page_name="DownloadsStableListWidget",
             time_label="Upload Time",
             info_text="No new builds available")
         self.DownloadsStableListWidget = \
-            self.DownloadsToolBox.add_page_widget(page, "Stable")
+            self.DownloadsToolBox.add_page_widget(self.DownloadsStablePageWidget, "Stable")
 
-        page = BasePageWidget(
+        self.DownloadsDailyPageWidget = BasePageWidget(
             parent=self,
             page_name="DownloadsDailyListWidget",
             time_label="Upload Time",
             info_text="No new builds available")
         self.DownloadsDailyListWidget = \
-            self.DownloadsToolBox.add_page_widget(page, "Daily")
+            self.DownloadsToolBox.add_page_widget(self.DownloadsDailyPageWidget, "Daily")
 
-        page = BasePageWidget(
+        self.DownloadsExperimentalPageWidget = BasePageWidget(
             parent=self,
             page_name="DownloadsExperimentalListWidget",
             time_label="Upload Time",
             info_text="No new builds available")
         self.DownloadsExperimentalListWidget = \
             self.DownloadsToolBox.add_page_widget(
-                page, "Experimental")
+                self.DownloadsExperimentalPageWidget, "Experimental")
 
-        page = BasePageWidget(
+        self.UserFavoritesListWidget = BasePageWidget(
             parent=self,
             page_name="UserFavoritesListWidget",
             time_label="Commit Time",
             info_text="Nothing to show yet")
         self.UserFavoritesListWidget = \
             self.UserToolBox.add_page_widget(
-                page, "Favorites")
+                self.UserFavoritesListWidget, "Favorites")
 
-        page = BasePageWidget(
+        self.UserCustomPageWidget = BasePageWidget(
             parent=self,
             page_name="UserCustomListWidget",
             time_label="Commit Time",
@@ -307,7 +308,7 @@ class BlenderLauncher(BaseWindow):
             show_reload=True,
             extended_selection=True)
         self.UserCustomListWidget = \
-            self.UserToolBox.add_page_widget(page, "Custom")
+            self.UserToolBox.add_page_widget(self.UserCustomPageWidget, "Custom")
 
         self.TabWidget.setCurrentIndex(get_default_tab())
         self.LibraryToolBox.setCurrentIndex(get_default_library_page())
@@ -657,7 +658,7 @@ class BlenderLauncher(BaseWindow):
 
         self.library_drawer = DrawLibraryAction()
         self.library_drawer.found.connect(self.draw_to_library)
-
+        self.library_drawer.unrecognized.connect(self.draw_unrecognized)
         if "-offline" not in self.argv:
             self.library_drawer.finished.connect(self.draw_downloads)
 
@@ -667,6 +668,7 @@ class BlenderLauncher(BaseWindow):
 
         self.library_drawer = DrawLibraryAction(["custom"])
         self.library_drawer.found.connect(self.draw_to_library)
+        self.library_drawer.unrecognized.connect(self.draw_unrecognized)
         self.action_queue.append(self.library_drawer)
 
 
@@ -776,6 +778,26 @@ class BlenderLauncher(BaseWindow):
         item = BaseListWidgetItem()
         widget = LibraryWidget(self, item, path, list_widget,
                                show_new)
+        list_widget.insert_item(item, widget)
+
+
+    def draw_unrecognized(self, path):
+        branch = Path(path).parent.name
+
+        if branch in ("stable", "lts"):
+            list_widget = self.LibraryStableListWidget
+        elif branch == "daily":
+            list_widget = self.LibraryDailyListWidget
+        elif branch == "experimental":
+            list_widget = self.LibraryExperimentalListWidget
+        elif branch == "custom":
+            list_widget = self.UserCustomListWidget
+        else:
+            return
+
+        item = BaseListWidgetItem()
+        widget = UnrecoBuildWidget(self, path, list_widget, item)
+
         list_widget.insert_item(item, widget)
 
     def set_status(self, status=None, is_force_check_on=None):
