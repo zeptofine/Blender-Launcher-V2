@@ -277,8 +277,15 @@ QPushButton[CreateButton=true] {
     padding: 9px;
 }
 
+QPushButton[InstalledButton=true] {
+    background-color: #318CE7;
+    border: none;
+    padding: 9px;
+}
+
 QPushButton[CreateButton=true]:hover {
     background-color: white;
+    border: none;
     padding: 9px;
 }
 
@@ -331,7 +338,6 @@ QPushButton[ListHeader=true]:checked {
     border-top: 2px solid #FF7A00;
     padding: 0px 2px 2px 2px;
 }
-
 QScrollBar:vertical {
     background-color: #232323;
     width: 4px;

@@ -19,7 +19,7 @@ class BuildInfo:
     # Class variables
     file_version = "1.3"
     # https://www.blender.org/download/lts/
-    lts_tags = ("2.83", "2.93", "3.3", "3.7")
+    lts_tags = ("2.83", "2.93", "3.3", "3.6", "4.3", "4.6")
 
     # Build variables
     link: str

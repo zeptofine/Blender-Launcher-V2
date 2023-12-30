@@ -752,14 +752,19 @@ class BlenderLauncher(BaseWindow):
             downloads_list_widget = self.DownloadsExperimentalListWidget
             library_list_widget = self.LibraryExperimentalListWidget
 
-        if not library_list_widget.contains_build_info(build_info) and \
-                not downloads_list_widget.contains_build_info(build_info):
+        is_installed = library_list_widget.contains_build_info(build_info)
+
+        if is_installed:
+            show_new = True
+
+        if not downloads_list_widget.contains_build_info(build_info):
             item = BaseListWidgetItem(build_info.commit_time)
             widget = DownloadWidget(
                 self, downloads_list_widget, item,
-                build_info, show_new)
+                build_info, show_new, is_installed)
             downloads_list_widget.add_item(item, widget)
-            self.new_downloads = True
+            if is_installed:
+                self.new_downloads = True
 
     def draw_to_library(self, path, show_new=False):
         branch = Path(path).parent.name
