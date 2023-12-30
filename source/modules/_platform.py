@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import platform
 import sys
@@ -37,6 +39,10 @@ def set_locale():
 def get_environment():
     # Make a copy of the environment
     env = dict(os.environ)
+
+    if get_platform() == "Windows":
+        return env
+
     # For GNU/Linux and *BSD
     lp_key = "LD_LIBRARY_PATH"
     lp_orig = env.get(lp_key + "_ORIG")
@@ -52,7 +58,11 @@ def get_environment():
     return env
 
 
-def _popen(args):
+def _popen(args, env: dict | None = None):
+    e = get_environment()
+    if env is not None:
+        e.update(env)
+
     if get_platform() == "Windows":
         DETACHED_PROCESS = 0x00000008
         return Popen(
@@ -64,6 +74,7 @@ def _popen(args):
             close_fds=True,
             creationflags=DETACHED_PROCESS,
             start_new_session=True,
+            env=e,
         )
 
     return Popen(
@@ -73,7 +84,7 @@ def _popen(args):
         stderr=None,
         close_fds=True,
         preexec_fn=os.setpgrp,  # type: ignore
-        env=get_environment(),
+        env=e,
     )
 
 
