@@ -7,7 +7,7 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 from modules._platform import get_platform
-from modules.build_info import BuildInfo, ReadBuildAction
+from modules.build_info import BuildInfo, ReadBuildTask
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtWidgets import (
     QCheckBox,
@@ -236,10 +236,10 @@ class CustomBuildDialogWindow(BaseWindow):
         self.accept_button.setEnabled(is_chosen)
 
     def auto_detect_info(self):
-        a = ReadBuildAction(self.path, custom_exe=self.executable_choice.text(), auto_write=False)
+        a = ReadBuildTask(self.path, custom_exe=self.executable_choice.text(), auto_write=False)
         a.finished.connect(self.load_from_build_info)
         a.failure.connect(self.auto_detect_failed)
-        self.parent_.action_queue.append(a)
+        self.parent_.task_queue.append(a)
         self.auto_detect_button.setEnabled(False)
 
     def load_from_build_info(self, binfo: BuildInfo):

@@ -6,11 +6,11 @@ from typing import TypedDict
 
 import distro
 from modules._platform import _popen, get_cwd, get_platform
-from modules.actions import ActionQueue
+from modules.tasks import TaskQueue
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QLabel, QVBoxLayout, QWidget
-from threads.downloader import DownloadAction
-from threads.extractor import ExtractAction
+from threads.downloader import DownloadTask
+from threads.extractor import ExtractTask
 from widgets.base_progress_bar_widget import BaseProgressBarWidget
 from windows.base_window import BaseWindow
 
@@ -58,7 +58,7 @@ class BlenderLauncherUpdater(BaseWindow):
         self.platform = get_platform()
         self.cwd = get_cwd()
 
-        self.queue = ActionQueue(parent=self, worker_count=1)
+        self.queue = TaskQueue(parent=self, worker_count=1)
         self.queue.start()
 
         self.show()
@@ -103,14 +103,14 @@ class BlenderLauncherUpdater(BaseWindow):
 
         assert self.manager is not None
         self.ProgressBar.set_title("Downloading")
-        a = DownloadAction(self.manager, link)
+        a = DownloadTask(self.manager, link)
         a.progress.connect(self.ProgressBar.set_progress)
         a.finished.connect(self.extract)
         self.queue.append(a)
 
     def extract(self, source):
         self.ProgressBar.set_title("Extracting")
-        a = ExtractAction(source, self.cwd)
+        a = ExtractTask(source, self.cwd)
         a.progress.connect(self.ProgressBar.set_progress)
         a.finished.connect(self.finish)
         self.queue.append(a)
