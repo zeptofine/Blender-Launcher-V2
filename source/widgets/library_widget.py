@@ -22,7 +22,8 @@ from modules.settings import (
 from modules.shortcut import create_shortcut
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt, pyqtSlot
-from PyQt5.QtWidgets import QAction, QApplication, QHBoxLayout, QLabel
+from PyQt5.QtGui import QDragEnterEvent, QDragLeaveEvent, QDragMoveEvent, QDropEvent
+from PyQt5.QtWidgets import QAction, QApplication, QHBoxLayout, QLabel, QWidget
 from threads.observer import Observer
 from threads.register import Register
 from threads.remover import RemoveAction
@@ -43,6 +44,7 @@ if TYPE_CHECKING:
 class LibraryWidget(BaseBuildWidget):
     def __init__(self, parent: BlenderLauncher, item, link, list_widget, show_new=False, parent_widget=None):
         super().__init__(parent=parent)
+        self.setAcceptDrops(True)
 
         self.parent: BlenderLauncher = parent
         self.item = item
@@ -58,10 +60,18 @@ class LibraryWidget(BaseBuildWidget):
         self.parent.quit_signal.connect(self.list_widget_deleted)
         self.destroyed.connect(lambda: self._destroyed())
 
-        self.layout = QHBoxLayout()
+        self.outer_layout = QHBoxLayout()
+        self.outer_layout.setContentsMargins(0, 0, 0, 0)
+        self.outer_layout.setSpacing(0)
+
+        # box should highlight when dragged over
+        self.layout_widget = QWidget(self)
+        self.layout: QHBoxLayout = QHBoxLayout()
         self.layout.setContentsMargins(2, 2, 0, 2)
         self.layout.setSpacing(0)
-        self.setLayout(self.layout)
+        self.layout_widget.setLayout(self.layout)
+        self.outer_layout.addWidget(self.layout_widget)
+        self.setLayout(self.outer_layout)
 
         if self.parent_widget is None:
             self.setEnabled(False)
@@ -294,6 +304,31 @@ class LibraryWidget(BaseBuildWidget):
 
         event.ignore()
 
+    def dragEnterEvent(self, e: QDragEnterEvent):
+        mime_data = e.mimeData()
+        if (
+            mime_data is not None
+            and mime_data.hasUrls()
+            and mime_data.hasFormat("text/uri-list")
+            and all(
+                url.isLocalFile() and Path(url.fileName()).suffix in (".blend", ".blend1") for url in mime_data.urls()
+            )
+        ):
+            self.setStyleSheet("background-color: #4EA13A")
+            e.accept()
+        else:
+            e.ignore()
+
+    def dragLeaveEvent(self, e: QDragLeaveEvent):
+        self.setStyleSheet("background-color:")
+
+    def dropEvent(self, e: QDropEvent):
+        mime_data = e.mimeData()
+        assert mime_data is not None
+        for file in mime_data.urls():
+            self.launch(True, blendfile=Path(file.toLocalFile()))
+        self.setStyleSheet("background-color:")
+
     def install_template(self):
         self.launchButton.set_text("Updating")
         self.launchButton.setEnabled(False)
@@ -309,7 +344,7 @@ class LibraryWidget(BaseBuildWidget):
         self.deleteAction.setEnabled(True)
         self.installTemplateAction.setEnabled(True)
 
-    def launch(self, update_selection=False, exe=None):
+    def launch(self, update_selection=False, exe=None, blendfile: Path | None=None):
         assert self.build_info is not None
         if update_selection is True:
             self.list_widget.clearSelection()
@@ -330,11 +365,11 @@ class LibraryWidget(BaseBuildWidget):
         proc = None
 
         b3d_exe: Path
-
+        args: str | list[str] = ""
         if platform == "Windows":
             if exe is not None:
                 b3d_exe = library_folder / self.link / exe
-                proc = _popen(["cmd /C", b3d_exe.as_posix()])
+                args = ["cmd /C", b3d_exe.as_posix()]
             else:
                 cexe = self.build_info.custom_executable
                 if cexe:
@@ -349,10 +384,10 @@ class LibraryWidget(BaseBuildWidget):
                         b3d_exe = library_folder / self.link / "blender.exe"
 
                 if blender_args == "":
-                    proc = _popen(b3d_exe.as_posix())
+                    args = b3d_exe.as_posix()
                 else:
                     args = [b3d_exe.as_posix(), *blender_args.split(" ")]
-                    proc = _popen(args)
+
         elif platform == "Linux":
             bash_args = get_bash_arguments()
 
@@ -366,8 +401,15 @@ class LibraryWidget(BaseBuildWidget):
             else:
                 b3d_exe = library_folder / self.link / "blender"
 
-            proc = _popen(f'{bash_args} "{b3d_exe.as_posix()}" {blender_args}')
+            args = f'{bash_args} "{b3d_exe.as_posix()}" {blender_args}'
 
+        if blendfile is not None:
+            if isinstance(args, list):
+                args.append(blendfile.as_posix())
+            else:
+                args += f'"{blendfile.as_posix()}"'
+
+        proc = _popen(args)
         assert proc is not None
         if self.observer is None:
             self.observer = Observer(self)
@@ -540,7 +582,7 @@ class LibraryWidget(BaseBuildWidget):
 
         self.removeFromFavoritesAction.setVisible(True)
         self.addToFavoritesAction.setVisible(False)
-
+        assert self.build_info is not None
         if self.build_info.is_favorite is False:
             self.build_info.is_favorite = True
             self.write_build_info()
@@ -548,7 +590,7 @@ class LibraryWidget(BaseBuildWidget):
     @QtCore.pyqtSlot()
     def remove_from_favorites(self):
         widget = self.parent_widget or self
-
+        assert widget.child_widget is not None
         self.parent.UserFavoritesListWidget.remove_item(widget.child_widget.item)
 
         widget.child_widget = None
