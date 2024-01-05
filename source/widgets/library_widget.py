@@ -407,7 +407,7 @@ class LibraryWidget(BaseBuildWidget):
             if isinstance(args, list):
                 args.append(blendfile.as_posix())
             else:
-                args += f'"{blendfile.as_posix()}"'
+                args += f' "{blendfile.as_posix()}"'
 
         proc = _popen(args)
         assert proc is not None
