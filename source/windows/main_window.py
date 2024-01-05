@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import re
 import webbrowser
@@ -35,7 +36,6 @@ from modules.settings import (
     is_library_folder_valid,
     set_library_folder,
 )
-from pynput import keyboard
 from PyQt5.QtCore import QSize, Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtNetwork import QLocalServer
 from PyQt5.QtWidgets import (
@@ -63,6 +63,14 @@ from windows.base_window import BaseWindow
 from windows.dialog_window import DialogIcon, DialogWindow
 from windows.file_dialog_window import FileDialogWindow
 from windows.settings_window import SettingsWindow
+
+try:
+    from pynput import keyboard
+    HOTKEYS_AVAILABLE = True
+except Exception as e:
+    logging.error(f"Error importing pynput: {e}\nGlobal hotkeys not supported.")
+    HOTKEYS_AVAILABLE = False
+
 
 if TYPE_CHECKING:
     from PyQt5.QtGui import QDragEnterEvent, QDragMoveEvent
@@ -402,25 +410,25 @@ class BlenderLauncher(BaseWindow):
     def setup_global_hotkeys_listener(self):
         if self.hk_listener is not None:
             self.hk_listener.stop()
+        if HOTKEYS_AVAILABLE:
+            key_seq = get_quick_launch_key_seq()
+            keys = key_seq.split("+")
 
-        key_seq = get_quick_launch_key_seq()
-        keys = key_seq.split("+")
+            for key in keys:
+                if len(key) > 1:
+                    key_seq = key_seq.replace(key, "<" + key + ">")
 
-        for key in keys:
-            if len(key) > 1:
-                key_seq = key_seq.replace(key, "<" + key + ">")
+            try:
+                self.hk_listener = keyboard.GlobalHotKeys({
+                    key_seq: self.on_activate_quick_launch})
+            except Exception:
+                self.dlg = DialogWindow(
+                    parent=self, title="Warning",
+                    text="Global hotkey sequence was not recognized!<br>Try to use another combination of keys",
+                    accept_text="OK", cancel_text=None)
+                return
 
-        try:
-            self.hk_listener = keyboard.GlobalHotKeys({
-                key_seq: self.on_activate_quick_launch})
-        except Exception:
-            self.dlg = DialogWindow(
-                parent=self, title="Warning",
-                text="Global hotkey sequence was not recognized!<br>Try to use another combination of keys",
-                accept_text="OK", cancel_text=None)
-            return
-
-        self.hk_listener.start()
+            self.hk_listener.start()
 
     def on_activate_quick_launch(self):
         if self.settings_window is None:
