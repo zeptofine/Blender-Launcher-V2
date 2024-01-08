@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from modules._platform import _check_output, get_platform, set_locale
-from modules.action import Action
+from modules.task import Task
 from PyQt5.QtCore import QThread, pyqtSignal
 
 if TYPE_CHECKING:
@@ -181,7 +181,7 @@ def read_blender_version(
 
 
 @dataclass(frozen=True)
-class WriteBuildAction(Action):
+class WriteBuildTask(Task):
     written = pyqtSignal()
     error = pyqtSignal()
 
@@ -231,7 +231,7 @@ def read_build_info(path: Path, archive_name: str | None = None, custom_exe: str
 
 
 @dataclass(frozen=True)
-class ReadBuildAction(Action):
+class ReadBuildTask(Task):
     path: Path
     archive_name: str | None = None
     custom_exe: str | None = None

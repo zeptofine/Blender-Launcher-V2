@@ -13,7 +13,6 @@ from typing import TYPE_CHECKING
 import resources_rc
 from items.base_list_widget_item import BaseListWidgetItem
 from modules._platform import _popen, get_cwd, get_platform, is_frozen, set_locale
-from modules.actions import Action, ActionQueue
 from modules.connection_manager import ConnectionManager
 from modules.enums import MessageType
 from modules.settings import (
@@ -35,6 +34,7 @@ from modules.settings import (
     is_library_folder_valid,
     set_library_folder,
 )
+from modules.tasks import Task, TaskQueue
 from pynput import keyboard
 from PyQt5.QtCore import QSize, Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtNetwork import QLocalServer
@@ -49,8 +49,8 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from threads.library_drawer import DrawLibraryAction
-from threads.remover import RemoveAction
+from threads.library_drawer import DrawLibraryTask
+from threads.remover import RemovalTask
 from threads.scraper import Scraper
 from widgets.base_menu_widget import BaseMenuWidget
 from widgets.base_page_widget import BasePageWidget
@@ -100,14 +100,14 @@ class BlenderLauncher(BaseWindow):
         self.quick_launch_fail_signal.connect(self.quick_launch_fail)
         self.server.newConnection.connect(self.new_connection)
 
-        # Action queue
-        self.action_queue = ActionQueue(
+        # task queue
+        self.task_queue = TaskQueue(
             worker_count=get_worker_thread_count(),
             parent=self,
             on_spawn=lambda w: w.error.connect(self.message_from_error),
         )
-        self.action_queue.start()
-        self.quit_signal.connect(self.action_queue.fullstop)
+        self.task_queue.start()
+        self.quit_signal.connect(self.task_queue.fullstop)
 
         # Global scope
         self.app = app
@@ -584,12 +584,12 @@ class BlenderLauncher(BaseWindow):
         self.quit_()
 
     def quit_(self):
-        busy = self.action_queue.get_busy_threads()
+        busy = self.task_queue.get_busy_threads()
         if any(busy):
             self.dlg = DialogWindow(
                 parent=self, title="Warning",
                 text=(
-                    "Some actions are still in progress!<br>"
+                    "Some tasks are still in progress!<br>"
                     + "\n".join([f" - {item}<br>" for worker, item in busy.items()])
                     + "Are you sure you want to quit?"
                 ),
@@ -600,7 +600,7 @@ class BlenderLauncher(BaseWindow):
 
         self.destroy()
 
-    def kill_thread_with_action(self, action: Action):
+    def kill_thread_with_task(self, task: Task):
         """
         Kills a thread listener using the current action.
 
@@ -614,7 +614,7 @@ class BlenderLauncher(BaseWindow):
         bool
             success.
         """
-        thread = self.action_queue.thread_with_action(action)
+        thread = self.task_queue.thread_with_task(task)
         if thread is not None:
             thread.fullstop()
             return True
@@ -656,20 +656,20 @@ class BlenderLauncher(BaseWindow):
         self.LibraryExperimentalListWidget.clear_()
         self.UserCustomListWidget.clear_()
 
-        self.library_drawer = DrawLibraryAction()
+        self.library_drawer = DrawLibraryTask()
         self.library_drawer.found.connect(self.draw_to_library)
         self.library_drawer.unrecognized.connect(self.draw_unrecognized)
         if "-offline" not in self.argv:
             self.library_drawer.finished.connect(self.draw_downloads)
 
-        self.action_queue.append(self.library_drawer)
+        self.task_queue.append(self.library_drawer)
     def reload_custom_builds(self):
         self.UserCustomListWidget.clear_()
 
-        self.library_drawer = DrawLibraryAction(["custom"])
+        self.library_drawer = DrawLibraryTask(["custom"])
         self.library_drawer.found.connect(self.draw_to_library)
         self.library_drawer.unrecognized.connect(self.draw_unrecognized)
-        self.action_queue.append(self.library_drawer)
+        self.task_queue.append(self.library_drawer)
 
 
     def draw_downloads(self):
@@ -838,8 +838,8 @@ class BlenderLauncher(BaseWindow):
     def clear_temp(self, path=None):
         if path is None:
             path = Path(get_library_folder()) / ".temp"
-        a = RemoveAction(path)
-        self.action_queue.append(a)
+        a = RemovalTask(path)
+        self.task_queue.append(a)
 
     @pyqtSlot()
     def attempt_close(self):
