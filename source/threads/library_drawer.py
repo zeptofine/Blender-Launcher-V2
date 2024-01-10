@@ -5,8 +5,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from modules._platform import get_platform
-from modules.action import Action
 from modules.settings import get_library_folder
+from modules.task import Task
 from PyQt5.QtCore import pyqtSignal
 
 if TYPE_CHECKING:
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 @dataclass(frozen=True)
-class DrawLibraryAction(Action):
+class DrawLibraryTask(Task):
     folders: Iterable[str | Path] = ("stable", "daily", "experimental", "custom")
     found = pyqtSignal(Path)
     unrecognized = pyqtSignal(Path)
