@@ -3,8 +3,8 @@ from pathlib import Path
 from re import match
 from shutil import copytree
 
-from modules.action import Action
 from modules.settings import get_library_folder
+from modules.task import Task
 from PyQt5.QtCore import pyqtSignal
 
 
@@ -25,7 +25,7 @@ def install_template(dist: Path):
 
 
 @dataclass(frozen=True)
-class TemplateAction(Action):
+class TemplateTask(Task):
     destination: Path
 
     finished = pyqtSignal()

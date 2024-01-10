@@ -3,15 +3,15 @@ from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from modules.build_info import BuildInfo, ReadBuildAction
+from modules.build_info import BuildInfo, ReadBuildTask
 from modules.enums import MessageType
 from modules.settings import get_install_template, get_library_folder
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout
-from threads.downloader import DownloadAction
-from threads.extractor import ExtractAction
-from threads.renamer import RenameAction
-from threads.template_installer import TemplateAction
+from threads.downloader import DownloadTask
+from threads.extractor import ExtractTask
+from threads.renamer import RenameTask
+from threads.template_installer import TemplateTask
 from widgets.base_build_widget import BaseBuildWidget
 from widgets.base_progress_bar_widget import BaseProgressBarWidget
 from widgets.build_state_widget import BuildStateWidget
@@ -153,13 +153,13 @@ class DownloadWidget(BaseBuildWidget):
         assert self.parent.manager is not None
         self.state = DownloadState.DOWNLOADING
         self.progressBar.set_title("Downloading")
-        self.dl_action = DownloadAction(
+        self.dl_task = DownloadTask(
             manager=self.parent.manager,
             link=self.build_info.link,
         )
-        self.dl_action.progress.connect(self.progressBar.set_progress)
-        self.dl_action.finished.connect(self.init_extractor)
-        self.parent.action_queue.append(self.dl_action)
+        self.dl_task.progress.connect(self.progressBar.set_progress)
+        self.dl_task.finished.connect(self.init_extractor)
+        self.parent.task_queue.append(self.dl_task)
         self.download_started()
 
     def init_extractor(self, source):
@@ -178,10 +178,10 @@ class DownloadWidget(BaseBuildWidget):
             dist = library_folder / "experimental"
 
         self.source_file = source
-        a = ExtractAction(file=source, destination=dist)
+        a = ExtractTask(file=source, destination=dist)
         a.progress.connect(self.progressBar.set_progress)
         a.finished.connect(self.init_template_installer)
-        self.parent.action_queue.append(a)
+        self.parent.task_queue.append(a)
 
     def init_template_installer(self, dist: Path):
         self.build_state_widget.setExtract(False)
@@ -189,9 +189,9 @@ class DownloadWidget(BaseBuildWidget):
 
         if get_install_template():
             self.progressBar.set_title("Copying data...")
-            a = TemplateAction(destination=self.build_dir)
-            a.finished.connect(self.download_get_info)
-            self.parent.action_queue.append(a)
+            t = TemplateTask(destination=self.build_dir)
+            t.finished.connect(self.download_get_info)
+            self.parent.task_queue.append(t)
         else:
             self.download_get_info()
 
@@ -206,8 +206,8 @@ class DownloadWidget(BaseBuildWidget):
         self.state = DownloadState.IDLE
         self.progressBar.hide()
         self.cancelButton.hide()
-        if not self.parent.kill_thread_with_action(self.dl_action):  # killing failed
-            self.parent.action_queue.remove(self.dl_action)
+        if not self.parent.kill_thread_with_task(self.dl_task):  # killing failed
+            self.parent.task_queue.remove(self.dl_task)
         self.downloadButton.show()
         self.build_state_widget.setDownload(False)
 
@@ -219,25 +219,25 @@ class DownloadWidget(BaseBuildWidget):
             archive_name = Path(self.build_info.link).stem
 
         assert self.build_dir is not None
-        a = ReadBuildAction(
+        a = ReadBuildTask(
             self.build_dir,
             archive_name=archive_name,
         )
         a.finished.connect(self.download_rename)
         a.failure.connect(lambda: print("Reading failed"))
-        self.parent.action_queue.append(a)
+        self.parent.task_queue.append(a)
 
     def download_rename(self, build_info: BuildInfo):
         self.state = DownloadState.RENAMING
         new_name = f"blender-{build_info.subversion}+{build_info.branch}.{build_info.build_hash}"
         assert self.build_dir is not None
-        a = RenameAction(
+        t = RenameTask(
             src=self.build_dir,
             dst_name=new_name,
         )
-        a.finished.connect(self.download_finished)
-        a.failure.connect(lambda: print("Renaming failed"))
-        self.parent.action_queue.append(a)
+        t.finished.connect(self.download_finished)
+        t.failure.connect(lambda: print("Renaming failed"))
+        self.parent.task_queue.append(t)
 
     def download_finished(self, path):
         self.state = DownloadState.IDLE

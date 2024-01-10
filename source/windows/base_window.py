@@ -91,7 +91,7 @@ class BaseWindow(QMainWindow):
                 x = (size.width() - self.width()) * 0.5
                 y = (size.height() - self.height()) * 0.5
 
-            self.move(x, y)
+            self.move(int(x), int(y))
             event.accept()
 
     def _destroyed(self):
