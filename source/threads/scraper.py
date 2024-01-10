@@ -107,7 +107,7 @@ class Scraper(QThread):
             build_var = build["branch"]
         if build_var:
             subversion = f"{subversion} {build_var}"
-
+        print(build)
         return BuildInfo(
             build["url"],
             subversion,

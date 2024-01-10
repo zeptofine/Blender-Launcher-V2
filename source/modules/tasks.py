@@ -4,34 +4,34 @@ import logging
 from collections import deque
 from typing import TYPE_CHECKING, Any
 
-from modules.action import Action
+from modules.task import Task
 from PyQt5.QtCore import QThread, pyqtSignal, pyqtSlot
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
 
-class ActionQueue(deque[Action]):
+class TaskQueue(deque[Task]):
     def __init__(
         self,
         worker_count=4,
         parent=None,
         maxlen=None,
         new_workers_on_crash=True,
-        on_spawn: Callable[[ActionWorker], Any] | None = None,
+        on_spawn: Callable[[TaskWorker], Any] | None = None,
     ):
         if maxlen:
             super().__init__(maxlen=maxlen)
         else:
             super().__init__()
         self.parent = parent
-        self.workers: dict[ActionWorker, Action | None] = {}
-        self.on_spawn: Callable[[ActionWorker], Any] | None = on_spawn
+        self.workers: dict[TaskWorker, Task | None] = {}
+        self.on_spawn: Callable[[TaskWorker], Any] | None = on_spawn
         for i in range(worker_count):
             self.spawn_new_worker(readd_on_crash=new_workers_on_crash, name=str(i))
 
     def spawn_new_worker(self, start=False, readd_on_crash=False, name: str | None = None):
-        w = ActionWorker(queue=self, parent=self.parent)
+        w = TaskWorker(queue=self, parent=self.parent)
         if self.on_spawn is not None:
             self.on_spawn(w)
 
@@ -54,9 +54,9 @@ class ActionQueue(deque[Action]):
         if start:
             w.start()
 
-    def thread_with_action(self, action: Action):
+    def thread_with_task(self, task: Task):
         for listener, a in self.workers.items():
-            if a == action:
+            if a == task:
                 return listener
         return None
 
@@ -74,14 +74,14 @@ class ActionQueue(deque[Action]):
                 logging.debug(f"Stopped {worker} {item}")
 
 
-class ActionWorker(QThread):
-    item_changed = pyqtSignal(object)  # Action | None
+class TaskWorker(QThread):
+    item_changed = pyqtSignal(object)  # Task | None
     error = pyqtSignal(Exception)
 
-    def __init__(self, queue: ActionQueue, parent=None):
+    def __init__(self, queue: TaskQueue, parent=None):
         super().__init__(parent)
         self.queue = queue
-        self.item: Action | None = None
+        self.item: Task | None = None
 
     def run(self):
         empty = False

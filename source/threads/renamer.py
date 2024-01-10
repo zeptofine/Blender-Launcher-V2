@@ -1,12 +1,12 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-from modules.action import Action
+from modules.task import Task
 from PyQt5.QtCore import pyqtSignal
 
 
 @dataclass(frozen=True)
-class RenameAction(Action):
+class RenameTask(Task):
     src: Path
     dst_name: str
 

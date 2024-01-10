@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from modules._platform import _check_call
-from modules.action import Action
+from modules.task import Task
 from PyQt5.QtCore import pyqtSignal
 
 
@@ -55,7 +55,7 @@ def extract(source: Path, destination: Path, progress_callback: Callable[[int, i
 
 
 @dataclass(frozen=True)
-class ExtractAction(Action):
+class ExtractTask(Task):
     file: Path
     destination: Path
 

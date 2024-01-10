@@ -2,12 +2,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from shutil import rmtree
 
-from modules.action import Action
+from modules.task import Task
 from PyQt5.QtCore import pyqtSignal
 
 
 @dataclass
-class RemoveAction(Action):
+class RemovalTask(Task):
     path: Path
     finished = pyqtSignal(bool)
 

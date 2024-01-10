@@ -106,7 +106,7 @@ class BuildStateWidget(QWidget):
         self.anim.setStartValue(
             QRect(geometry.x(), geometry.y() - geometry.height(), geometry.width(), geometry.height())
         )
-        self.anim.setEndValue(QRect(geometry.x(), geometry.height() * 1.25, geometry.width(), geometry.height()))
+        self.anim.setEndValue(QRect(geometry.x(), int(geometry.height() * 1.25), geometry.width(), geometry.height()))
 
         self.start_anim()
 
@@ -116,17 +116,17 @@ class BuildStateWidget(QWidget):
         self.anim.setLoopCount(-1)
         self.anim.setEasingCurve(QEasingCurve.OutCubic)
         geometry = self.extractIcon.geometry()
-        self.anim.setStartValue(QRect(geometry.x(), geometry.height() * 1.25, geometry.width(), geometry.height()))
+        self.anim.setStartValue(QRect(geometry.x(), int(geometry.height() * 1.25), geometry.width(), geometry.height()))
         self.anim.setKeyValueAt(
-            0.3, QRect(geometry.x(), geometry.y() + geometry.height() * 0.15, geometry.width(), geometry.height())
+            0.3, QRect(geometry.x(), int(geometry.y() + geometry.height() * 0.15), geometry.width(), geometry.height())
         )
         self.anim.setKeyValueAt(
-            0.7, QRect(geometry.x(), geometry.y() + geometry.height() * 0.15, geometry.width(), geometry.height())
+            0.7, QRect(geometry.x(), int(geometry.y() + geometry.height() * 0.15), geometry.width(), geometry.height())
         )
         self.anim.setEndValue(
             QRect(
-                geometry.x() + geometry.width() * 1.25,
-                geometry.y() + geometry.height() * 0.15,
+                int(geometry.x() + geometry.width() * 1.25),
+                int(geometry.y() + geometry.height() * 0.15),
                 geometry.width(),
                 geometry.height(),
             )

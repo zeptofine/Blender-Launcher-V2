@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from modules._copyfileobj import copyfileobj
-from modules.action import Action
+from modules.task import Task
 from modules.connection_manager import REQUEST_MANAGER
 from modules.settings import get_library_folder
 from PyQt5.QtCore import pyqtSignal
@@ -33,7 +33,7 @@ def download(
 
 
 @dataclass(frozen=True)
-class DownloadAction(Action):
+class DownloadTask(Task):
     manager: REQUEST_MANAGER
     link: str
     progress = pyqtSignal(int, int)

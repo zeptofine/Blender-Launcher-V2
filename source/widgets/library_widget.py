@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 
 from items.base_list_widget_item import BaseListWidgetItem
 from modules._platform import _call, _popen, get_platform
-from modules.build_info import BuildInfo, ReadBuildAction, WriteBuildAction
+from modules.build_info import BuildInfo, ReadBuildTask, WriteBuildTask
 from modules.settings import (
     get_bash_arguments,
     get_blender_startup_arguments,
@@ -25,8 +25,8 @@ from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtWidgets import QAction, QApplication, QHBoxLayout, QLabel
 from threads.observer import Observer
 from threads.register import Register
-from threads.remover import RemoveAction
-from threads.template_installer import TemplateAction
+from threads.remover import RemovalTask
+from threads.template_installer import TemplateTask
 from widgets.base_build_widget import BaseBuildWidget
 from widgets.base_line_edit import BaseLineEdit
 from widgets.base_menu_widget import BaseMenuWidget
@@ -75,11 +75,11 @@ class LibraryWidget(BaseBuildWidget):
             self.layout.addWidget(self.launchButton)
             self.layout.addWidget(self.infoLabel, stretch=1)
 
-            a = ReadBuildAction(link)
+            a = ReadBuildTask(link)
             a.finished.connect(self.draw)
             a.failure.connect(self.trigger_damaged)
 
-            self.parent.action_queue.append(a)
+            self.parent.task_queue.append(a)
 
         else:
             self.draw(self.parent_widget.build_info)
@@ -299,9 +299,9 @@ class LibraryWidget(BaseBuildWidget):
         self.launchButton.setEnabled(False)
         self.deleteAction.setEnabled(False)
         self.installTemplateAction.setEnabled(False)
-        a = TemplateAction(self.link)
+        a = TemplateTask(self.link)
         a.finished.connect(self.install_template_finished)
-        self.parent.action_queue.append(a)
+        self.parent.task_queue.append(a)
 
     def install_template_finished(self):
         self.launchButton.set_text("Launch")
@@ -427,12 +427,12 @@ class LibraryWidget(BaseBuildWidget):
 
     def write_build_info(self):
         assert self.build_info is not None
-        self.build_info_writer = WriteBuildAction(
+        self.build_info_writer = WriteBuildTask(
             self.link,
             self.build_info,
         )
         self.build_info_writer.written.connect(self.build_info_writer_finished)
-        self.parent.action_queue.append(self.build_info_writer)
+        self.parent.task_queue.append(self.build_info_writer)
 
     def build_info_writer_finished(self):
         self.build_info_writer = None
@@ -466,9 +466,9 @@ class LibraryWidget(BaseBuildWidget):
             return
 
         path = Path(get_library_folder()) / self.link
-        a = RemoveAction(path)
+        a = RemovalTask(path)
         a.finished.connect(self.remover_completed)
-        self.parent.action_queue.append(a)
+        self.parent.task_queue.append(a)
         self.remover_started()
 
     # TODO Clear icon if build in quick launch
@@ -557,8 +557,8 @@ class LibraryWidget(BaseBuildWidget):
 
         assert self.build_info is not None
         self.build_info.is_favorite = False
-        self.build_info_writer = WriteBuildAction(self.link, self.build_info)
-        self.parent.action_queue.append(self.build_info_writer)
+        self.build_info_writer = WriteBuildTask(self.link, self.build_info)
+        self.parent.task_queue.append(self.build_info_writer)
 
     @QtCore.pyqtSlot()
     def register_extension(self):
