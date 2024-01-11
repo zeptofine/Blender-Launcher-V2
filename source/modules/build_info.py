@@ -24,7 +24,7 @@ class BuildInfo:
     # Build variables
     link: str
     subversion: str
-    build_hash: str
+    build_hash: str | None
     commit_time: datetime
     branch: str
     custom_name: str = ""
