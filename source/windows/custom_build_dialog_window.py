@@ -208,7 +208,7 @@ class CustomBuildDialogWindow(BaseWindow):
             str(self.path),
             self.subversion_edit.text(),
             self.hash_edit.text(),
-            self.commit_time.dateTime().toPyDateTime().strftime("%d-%b-%y-%H:%M"),
+            self.commit_time.dateTime().toPyDateTime(),
             self.branch_edit.text(),
             self.custom_name.text(),
             self.favorite.isChecked(),
@@ -253,8 +253,7 @@ class CustomBuildDialogWindow(BaseWindow):
         if not self.hash_edit.text():
             self.hash_edit.setText(binfo.build_hash)
 
-        dt = datetime.datetime.strptime(binfo.commit_time, "%d-%b-%y-%H:%M").astimezone(datetime.timezone.utc)
-        self.commit_time.setDateTime(dt)
+        self.commit_time.setDateTime(binfo.commit_time)
 
         if not self.branch_edit.text():
             self.branch_edit.setText(binfo.branch)

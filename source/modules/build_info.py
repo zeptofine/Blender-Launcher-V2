@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import json
 import re
-import time
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 from modules._platform import _check_output, get_platform, set_locale
@@ -24,8 +24,8 @@ class BuildInfo:
     # Build variables
     link: str
     subversion: str
-    build_hash: str
-    commit_time: str
+    build_hash: str | None
+    commit_time: datetime
     branch: str
     custom_name: str = ""
     is_favorite: bool = False
@@ -51,7 +51,7 @@ class BuildInfo:
             path.as_posix(),
             blinfo["subversion"],
             blinfo["build_hash"],
-            blinfo["commit_time"],
+            datetime.strptime(blinfo["commit_time"], "%d-%b-%y-%H:%M").astimezone(),
             blinfo["branch"],
             blinfo["custom_name"],
             blinfo["is_favorite"],
@@ -66,7 +66,7 @@ class BuildInfo:
                     "branch": self.branch,
                     "subversion": self.subversion,
                     "build_hash": self.build_hash,
-                    "commit_time": self.commit_time,
+                    "commit_time": self.commit_time.strftime("%d-%b-%y-%H:%M"),
                     "custom_name": self.custom_name,
                     "is_favorite": self.is_favorite,
                     "custom_executable": self.custom_executable,
@@ -82,10 +82,10 @@ class BuildInfo:
         return data
 
 
-def get_blender_ver_info(exe: Path) -> tuple[str, str, str, str]:
+def get_blender_ver_info(exe: Path) -> tuple[datetime, str, str, str]:
     version = _check_output([exe.as_posix(), "-v"]).decode("UTF-8")
 
-    commit_time = ""
+    strptime = datetime.now(tz=timezone.utc)
     build_hash = ""
     subversion = ""
     custom_name = ""
@@ -94,12 +94,10 @@ def get_blender_ver_info(exe: Path) -> tuple[str, str, str, str]:
     cdate = re.search("build commit date: (.*)", version)
 
     if ctime is not None and cdate is not None:
-        strptime = time.strptime(
+        strptime = datetime.strptime(
             f"{cdate[1].rstrip()} {ctime[1].rstrip()}",
             "%Y-%m-%d %H:%M",
-        )
-        commit_time = time.strftime("%d-%b-%y-%H:%M", strptime)
-
+        ).astimezone()
     if s := re.search("build hash: (.*)", version):
         build_hash = s[1].rstrip()
 
@@ -110,7 +108,7 @@ def get_blender_ver_info(exe: Path) -> tuple[str, str, str, str]:
         custom_name, subversion = s.rsplit(" ", 1)
 
     return (
-        commit_time,
+        strptime,
         build_hash,
         subversion,
         custom_name,
@@ -197,7 +195,12 @@ class WriteBuildTask(Task):
             raise
 
 
-def read_build_info(path: Path, archive_name: str | None = None, custom_exe: str | None = None, auto_write=True):
+def read_build_info(
+    path: Path,
+    archive_name: str | None = None,
+    custom_exe: str | None = None,
+    auto_write=True,
+):
     blinfo = path / ".blinfo"
 
     # Check if build information is already present

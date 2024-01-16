@@ -94,7 +94,6 @@ class Scraper(QThread):
 
     def new_build_from_dict(self, build, branch_type):
         self.strptime = datetime.fromtimestamp(build["file_mtime"], tz=timezone.utc)
-        commit_time = self.strptime.strftime("%d-%b-%y-%H:%M")
         subversion = build["version"]
         build_var = ""
         if build["patch"] is not None and branch_type != "daily":
@@ -107,12 +106,12 @@ class Scraper(QThread):
             build_var = build["branch"]
         if build_var:
             subversion = f"{subversion} {build_var}"
-        print(build)
+
         return BuildInfo(
             build["url"],
             subversion,
             build["hash"],
-            commit_time,
+            self.strptime,
             branch_type,
         )
 
@@ -147,10 +146,7 @@ class Scraper(QThread):
             return None
 
         info = r.headers
-
-        commit_time = None
-        build_hash = None
-
+        build_hash: str | None = None
         stem = Path(link).stem
         match = re.findall(self.hash, stem)
 
@@ -180,10 +176,9 @@ class Scraper(QThread):
                 branch = "daily"
                 subversion = f"{subversion} {build_var}"
 
-        if commit_time is None:
-            set_locale()
-            self.strptime = time.strptime(info["last-modified"], "%a, %d %b %Y %H:%M:%S %Z")
-            commit_time = time.strftime("%d-%b-%y-%H:%M", self.strptime)
+        set_locale()
+        self.strptime = datetime.strptime(info["last-modified"], "%a, %d %b %Y %H:%M:%S %Z").astimezone()
+        commit_time = self.strptime
 
         r.release_conn()
         r.close()

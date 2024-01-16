@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import re
-from time import strptime
 
 from modules._platform import set_locale
 from PyQt5.QtWidgets import QListWidgetItem
@@ -24,10 +25,8 @@ class BaseListWidgetItem(QListWidgetItem):
             return False
 
         set_locale()
-        this_datetime = strptime(self.date, "%d-%b-%y-%H:%M")
-        other_datetime = strptime(other.date, "%d-%b-%y-%H:%M")
 
-        return this_datetime > other_datetime
+        return self.date > other.date
 
     def compare_version(self, other):
         list_widget = self.listWidget()
