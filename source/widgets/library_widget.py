@@ -133,7 +133,7 @@ class LibraryWidget(BaseBuildWidget):
         self.branchLabel = ElidedTextLabel(branch_name)
         self.commitTimeLabel = DateTimeWidget(self.build_info.commit_time, self.build_info.build_hash)
 
-        self.build_state_widget = BuildStateWidget(self.parent, self.list_widget)
+        self.build_state_widget = BuildStateWidget(self.parent)
 
         self.layout.addWidget(self.launchButton)
         self.layout.addWidget(self.subversionLabel)
