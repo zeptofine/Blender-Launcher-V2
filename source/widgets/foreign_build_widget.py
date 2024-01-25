@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -21,7 +22,7 @@ class UnrecoBuildWidget(BaseBuildWidget):
         self.path = path
         self.list_widget = list_widget
         self.item = item
-        self.build_info = BuildInfo(str(path), "0.0.0", "", "", "", str(path.name), False, None)
+        self.build_info = BuildInfo(str(path), "0.0.0", "", datetime.now(tz=timezone.utc), "", str(path.name), False, None)
 
         self.init_button = QPushButton("Initialize")
         self.init_button.setFixedWidth(85)
