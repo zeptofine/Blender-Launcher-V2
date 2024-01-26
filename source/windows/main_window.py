@@ -62,6 +62,7 @@ from widgets.download_widget import DownloadState, DownloadWidget
 from widgets.foreign_build_widget import UnrecoBuildWidget
 from widgets.header import WHeaderButton, WindowHeader
 from widgets.library_widget import LibraryWidget
+from widgets.preference_factory_widget import PreferenceFactoryWidget
 from windows.base_window import BaseWindow
 from windows.dialog_window import DialogIcon, DialogWindow
 from windows.file_dialog_window import FileDialogWindow
@@ -330,15 +331,15 @@ class BlenderLauncher(BaseWindow):
         )
         self.UserCustomListWidget = self.UserToolBox.add_page_widget(self.UserCustomPageWidget, "Custom")
 
-        self.PreferancesPageWidget = BasePageWidget(
+        self.PreferencesPageWidget = BasePageWidget(
             parent=self,
-            page_name="PreferancesPageWidget",
+            page_name="PreferencesPageWidget",
             time_label="Commit Time",
             info_text="Nothing to show yet",
             show_reload=True,
             extended_selection=True,
         )
-        self.PreferancesListWidget = self.PreferencesToolBox.add_page_widget(self.PreferancesPageWidget, "Versions")
+        self.PreferencesListWidget = self.PreferencesToolBox.add_page_widget(self.PreferencesPageWidget, "Versions")
 
         self.TabWidget.setCurrentIndex(get_default_tab())
         self.LibraryToolBox.setCurrentIndex(get_default_library_page())
@@ -371,6 +372,9 @@ class BlenderLauncher(BaseWindow):
 
         # Draw library
         self.draw_library()
+
+        # Draw preferences
+        self.draw_preferences_factory()
 
         # Setup tray icon context Menu
         quit_action = QAction("Quit", self)
@@ -698,7 +702,7 @@ class BlenderLauncher(BaseWindow):
         self.LibraryDailyListWidget.clear_()
         self.LibraryExperimentalListWidget.clear_()
         self.UserCustomListWidget.clear_()
-        self.PreferancesListWidget.clear_()
+        self.PreferencesListWidget.clear_()
 
         self.library_drawer = DrawLibraryTask()
         self.library_drawer.found.connect(self.draw_to_library)
@@ -842,6 +846,10 @@ class BlenderLauncher(BaseWindow):
         widget = UnrecoBuildWidget(self, path, list_widget, item)
 
         list_widget.insert_item(item, widget)
+
+    def draw_preferences_factory(self):
+        item = BaseListWidgetItem()
+        self.PreferencesListWidget.add_item(item, PreferenceFactoryWidget(self, self.PreferencesListWidget))
 
     def set_status(self, status=None, is_force_check_on=None):
         if status is not None:
