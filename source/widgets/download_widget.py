@@ -95,7 +95,7 @@ class DownloadWidget(BaseBuildWidget):
         self.subversionLabel.setIndent(20)
         self.branchLabel = ElidedTextLabel(branch_name)
         self.commitTimeLabel = DateTimeWidget(self.build_info.commit_time, self.build_info.build_hash)
-        self.build_state_widget = BuildStateWidget(parent, self.list_widget)
+        self.build_state_widget = BuildStateWidget(parent)
 
         self.build_info_hl.addWidget(self.subversionLabel)
         self.build_info_hl.addWidget(self.branchLabel, stretch=1)
@@ -207,7 +207,8 @@ class DownloadWidget(BaseBuildWidget):
         self.progressBar.hide()
         self.cancelButton.hide()
         if not self.parent.kill_thread_with_task(self.dl_task):  # killing failed
-            self.parent.task_queue.remove(self.dl_task)
+            if self.dl_task in self.parent.task_queue:
+                self.parent.task_queue.remove(self.dl_task)
         self.downloadButton.show()
         self.build_state_widget.setDownload(False)
 

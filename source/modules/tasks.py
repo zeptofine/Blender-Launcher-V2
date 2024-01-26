@@ -4,6 +4,7 @@ import logging
 from collections import deque
 from typing import TYPE_CHECKING, Any
 
+from modules.enums import MessageType
 from modules.task import Task
 from PyQt5.QtCore import QThread, pyqtSignal, pyqtSlot
 
@@ -12,6 +13,8 @@ if TYPE_CHECKING:
 
 
 class TaskQueue(deque[Task]):
+    message = pyqtSignal(str, MessageType)
+
     def __init__(
         self,
         worker_count=4,
@@ -76,6 +79,7 @@ class TaskQueue(deque[Task]):
 
 class TaskWorker(QThread):
     item_changed = pyqtSignal(object)  # Task | None
+    message = pyqtSignal(str, MessageType)
     error = pyqtSignal(Exception)
 
     def __init__(self, queue: TaskQueue, parent=None):
@@ -98,11 +102,18 @@ class TaskWorker(QThread):
 
             empty = False
             self.item_changed.emit(self.item)
+
+            self.item.message.connect(self.send_message)
             try:
                 self.item.run()
             except Exception as e:
                 logging.exception(e)
                 self.error.emit(e)
+            self.item.message.disconnect(self.send_message)
+
+    @pyqtSlot(str, MessageType)
+    def send_message(self, s, mtp):
+        self.message.emit(s, mtp)
 
     @pyqtSlot()
     def fullstop(self):

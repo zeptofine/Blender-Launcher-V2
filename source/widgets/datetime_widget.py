@@ -1,8 +1,12 @@
-from datetime import datetime
+from __future__ import annotations
 
-from PyQt5 import QtCore
-from PyQt5.QtCore import Qt
+from typing import TYPE_CHECKING
+
+from PyQt5.QtCore import QEvent, Qt
 from PyQt5.QtWidgets import QHBoxLayout, QLabel, QPushButton, QSizePolicy
+
+if TYPE_CHECKING:
+    from datetime import datetime
 
 
 class DateTimeWidget(QPushButton):
@@ -10,7 +14,7 @@ class DateTimeWidget(QPushButton):
     right_arrow = "▸"
     str_format = "%d %b %Y, %H:%M"
 
-    def __init__(self, dt: datetime, build_hash: str):
+    def __init__(self, dt: datetime, build_hash: str | None):
         super().__init__()
         self.build_hash = build_hash
 
@@ -58,14 +62,14 @@ class DateTimeWidget(QPushButton):
         else:
             self.setToolTip("Press to show build hash number")
 
-    def enterEvent(self, event: QtCore.QEvent) -> None:
+    def enterEvent(self, event: QEvent) -> None:
         if self.build_hash is not None:
             self.LeftArrowLabel.setVisible(True)
             self.RightArrowLabel.setVisible(True)
 
         return super().enterEvent(event)
 
-    def leaveEvent(self, event: QtCore.QEvent) -> None:
+    def leaveEvent(self, event: QEvent) -> None:
         if self.build_hash is not None:
             self.LeftArrowLabel.setVisible(False)
             self.RightArrowLabel.setVisible(False)
