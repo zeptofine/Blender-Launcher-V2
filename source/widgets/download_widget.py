@@ -207,7 +207,8 @@ class DownloadWidget(BaseBuildWidget):
         self.progressBar.hide()
         self.cancelButton.hide()
         if not self.parent.kill_thread_with_task(self.dl_task):  # killing failed
-            self.parent.task_queue.remove(self.dl_task)
+            if self.dl_task in self.parent.task_queue:
+                self.parent.task_queue.remove(self.dl_task)
         self.downloadButton.show()
         self.build_state_widget.setDownload(False)
 
