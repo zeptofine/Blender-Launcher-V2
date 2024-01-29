@@ -105,9 +105,10 @@ class ConnectionManager(QObject):
                         num_pools=50, maxsize=10,
                         headers=self._headers, proxy_headers=auth_headers)
 
-    def request(self, _method, _url):
+    def request(self, _method, _url, fields=None, headers=None, **urlopen_kw):
         try:
-            return self.manager.request(_method, _url)
+            assert self.manager is not None
+            return self.manager.request(_method, _url, fields, headers, **urlopen_kw)
         except Exception:
             self.error.emit()
             return None

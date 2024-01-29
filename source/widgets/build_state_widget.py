@@ -1,12 +1,13 @@
+import time
+
 from PyQt5.QtCore import QEasingCurve, QPropertyAnimation, QRect, QSize
 from PyQt5.QtWidgets import QHBoxLayout, QPushButton, QWidget
 
 
 class BuildStateWidget(QWidget):
-    def __init__(self, parent, list_widget):
-        super().__init__()
+    def __init__(self, parent):
+        super().__init__(parent)
         self.parent = parent
-        self.list_widget = list_widget
         self.anim = None
 
         self.layout = QHBoxLayout(self)
@@ -135,12 +136,9 @@ class BuildStateWidget(QWidget):
         self.start_anim()
 
     def start_anim(self):
-        for widget in self.list_widget.widgets:
-            build_state_widget = widget.build_state_widget
-
-            if (build_state_widget.anim is not None) and (build_state_widget != self):
-                self.anim.start()
-                self.anim.setCurrentTime(build_state_widget.anim.currentTime())
-                return
-
+        assert self.anim is not None
         self.anim.start()
+        duration = self.anim.duration()
+        current_time = (time.time() * 1000) % duration
+
+        self.anim.setCurrentTime(int(current_time))

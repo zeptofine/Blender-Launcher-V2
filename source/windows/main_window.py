@@ -5,6 +5,7 @@ import os
 import re
 import webbrowser
 from enum import Enum
+from functools import partial
 from pathlib import Path
 from platform import version
 from shutil import copyfileobj
@@ -35,7 +36,7 @@ from modules.settings import (
     is_library_folder_valid,
     set_library_folder,
 )
-from modules.tasks import Task, TaskQueue
+from modules.tasks import Task, TaskQueue, TaskWorker
 from PyQt5.QtCore import QSize, Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtNetwork import QLocalServer
 from PyQt5.QtWidgets import (
@@ -79,7 +80,7 @@ if TYPE_CHECKING:
 if get_platform() == "Windows":
     from PyQt5.QtWinExtras import QWinThumbnailToolBar, QWinThumbnailToolButton
 
-
+logger = logging.getLogger()
 class AppState(Enum):
     IDLE = 1
     CHECKINGBUILDS = 2
@@ -112,7 +113,7 @@ class BlenderLauncher(BaseWindow):
         self.task_queue = TaskQueue(
             worker_count=get_worker_thread_count(),
             parent=self,
-            on_spawn=lambda w: w.error.connect(self.message_from_error),
+            on_spawn=self.on_worker_creation,
         )
         self.task_queue.start()
         self.quit_signal.connect(self.task_queue.fullstop)
@@ -157,7 +158,7 @@ class BlenderLauncher(BaseWindow):
                     text="Passed path is not a valid folder or<br>\
                     it doesn't have write permissions!",
                     accept_text="Quit", cancel_text=None)
-                self.dlg.accepted.connect(lambda: self.app.quit())
+                self.dlg.accepted.connect(self.app.quit)
 
             return
 
@@ -440,10 +441,8 @@ class BlenderLauncher(BaseWindow):
 
     def toggle_sync_library_and_downloads_pages(self, is_sync):
         if is_sync:
-            self.LibraryToolBox.tab_changed.connect(
-                lambda i: self.DownloadsToolBox.setCurrentIndex(i))
-            self.DownloadsToolBox.tab_changed.connect(
-                lambda i: self.LibraryToolBox.setCurrentIndex(i))
+            self.LibraryToolBox.tab_changed.connect(self.DownloadsToolBox.setCurrentIndex)
+            self.DownloadsToolBox.tab_changed.connect(self.LibraryToolBox.setCurrentIndex)
         else:
             if self.isSignalConnected(self.LibraryToolBox, "tab_changed()"):
                 self.LibraryToolBox.tab_changed.disconnect()
@@ -548,6 +547,7 @@ class BlenderLauncher(BaseWindow):
         if (
             (message_type == MessageType.DOWNLOADFINISHED and not get_enable_download_notifications())
             or (message_type == MessageType.NEWBUILDS and not get_enable_new_builds_notifications())
+            or (message_type == MessageType.ERROR and not get_make_error_popup())
         ):
             return
 
@@ -557,9 +557,17 @@ class BlenderLauncher(BaseWindow):
             self.tray_icon.showMessage("Blender Launcher", message, self.icons.taskbar, 10000)
 
     def message_from_error(self, err: Exception):
-        if get_make_error_popup():
-            self.show_message(f"An error has occurred: {err}\nSee the logs for more details.", MessageType.ERROR)
+        self.show_message(f"An error has occurred: {err}\nSee the logs for more details.", MessageType.ERROR)
+        logger.error(err)
 
+    def message_from_worker(self, w, message, message_type=None):
+        logger.debug(f"{w} ({message_type}): {message}")
+        self.show_message(f"{w}: {message}", message_type)
+
+    @pyqtSlot(TaskWorker)
+    def on_worker_creation(self, w: TaskWorker):
+        w.error.connect(self.message_from_error)
+        w.message.connect(partial(self.message_from_worker, w))
 
     def show_favorites(self):
         self.TabWidget.setCurrentWidget(self.UserTab)

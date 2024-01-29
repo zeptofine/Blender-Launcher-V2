@@ -146,14 +146,12 @@ class Scraper(QThread):
             return None
 
         info = r.headers
-        build_hash = None
+        build_hash: str | None = None
         stem = Path(link).stem
         match = re.findall(self.hash, stem)
 
         if match:
             build_hash = match[-1].replace("-", "")
-        else:
-            build_hash = "00000000"
 
         match = re.search(self.subversion, stem)
         subversion = match.group(0).replace("-", "")
