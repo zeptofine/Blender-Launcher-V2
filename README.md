@@ -1,6 +1,5 @@
 
 # Blender Launcher V2
-# [Discussions](https://github.com/DotBow/Blender-Launcher/discussions) │ [Documentation](https://dotbow.github.io/Blender-Launcher) │ [Latest Release](https://github.com/DotBow/Blender-Launcher/releases/latest)
 
 ![Blender Launcher Logo](docs/mkdocs/imgs/bl_logo.png)
 ## Join the [Discord](https://discord.gg/3jrTZFJkTd) if you want to discuss about the project 
