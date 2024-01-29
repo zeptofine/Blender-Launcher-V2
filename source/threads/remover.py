@@ -1,33 +1,27 @@
+from dataclasses import dataclass
+from pathlib import Path
 from shutil import rmtree
 
-from PyQt5.QtCore import QThread, pyqtSignal
+from modules.task import Task
+from PyQt5.QtCore import pyqtSignal
 
 
-class Remover(QThread):
-    started = pyqtSignal()
-    finished = pyqtSignal('PyQt_PyObject')
-
-    def __init__(self, path, parent=None):
-        QThread.__init__(self)
-        self.path = path
-        self.parent = parent
+@dataclass
+class RemovalTask(Task):
+    path: Path
+    finished = pyqtSignal(bool)
 
     def run(self):
-        self.started.emit()
-
-        if self.parent is not None:
-            while self.parent.remover_count > 0:
-                QThread.msleep(250)
-
-            self.parent.remover_count += 1
-
         try:
-            rmtree(self.path.as_posix())
+            if self.path.is_dir():
+                rmtree(self.path.as_posix())
+            else:
+                self.path.unlink()
+
             self.finished.emit(0)
-        except OSError as e:
+        except OSError:
             self.finished.emit(1)
+            raise
 
-        if self.parent is not None:
-            self.parent.remover_count -= 1
-
-        return
+    def __str__(self):
+        return f"Remove {self.path}"

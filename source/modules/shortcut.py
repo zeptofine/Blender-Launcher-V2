@@ -6,26 +6,24 @@ from shutil import copyfile
 from modules._platform import get_platform
 from modules.settings import get_library_folder
 
-if get_platform() == 'Windows':
-    import win32com.client
-    from win32com.shell import shell, shellcon
-
 
 def create_shortcut(folder, name):
     platform = get_platform()
     library_folder = Path(get_library_folder())
 
-    if platform == 'Windows':
+    if platform == "Windows":
+        import win32com.client
+        from win32comext.shell import shell, shellcon
+
         targetpath = library_folder / folder / "blender.exe"
         workingdir = library_folder / folder
         desktop = shell.SHGetFolderPath(0, shellcon.CSIDL_DESKTOP, None, 0)
         dist = Path(desktop) / (name + ".lnk")
 
-        if getattr(sys, 'frozen', False):
-            icon = sys._MEIPASS + "/files/winblender.ico"
+        if getattr(sys, "frozen", False):
+            icon = sys._MEIPASS + "/files/winblender.ico"  # noqa: SLF001
         else:
-            icon = Path(
-                "./resources/icons/winblender.ico").resolve().as_posix()
+            icon = Path("./resources/icons/winblender.ico").resolve().as_posix()
 
         icon_location = library_folder / folder / "winblender.ico"
         copyfile(icon, icon_location.as_posix())
@@ -37,26 +35,35 @@ def create_shortcut(folder, name):
         wscript.WindowStyle = 0
         wscript.IconLocation = icon_location.as_posix()
         wscript.save()
-    elif platform == 'Linux':
+    elif platform == "Linux":
         _exec = library_folder / folder / "blender"
         icon = library_folder / folder / "blender.svg"
         desktop = Path.home() / "Desktop"
-        filename = name.replace(' ', '-')
+        filename = name.replace(" ", "-")
         dist = desktop / (filename + ".desktop")
 
-        desktop_entry = \
-            "[Desktop Entry]\n" + \
-            "Name={0}\n".format(name) + \
-            "Comment=3D modeling, animation, rendering and post-production\n" + \
-            "Keywords=3d;cg;modeling;animation;painting;sculpting;texturing;video editing;video tracking;rendering;render engine;cycles;game engine;python;\n" + \
-            "Icon={0}\n".format(icon.as_posix().replace(' ', r'\ ')) + \
-            "Terminal=false\n" + \
-            "Type=Application\n" + \
-            "Categories=Graphics;3DGraphics;\n" + \
-            "MimeType=application/x-blender;\n" + \
-            "Exec={0} %f".format(_exec.as_posix().replace(' ', r'\ '))
+        kws = (
+            "3d;cg;modeling;animation;painting;"
+            "sculpting;texturing;video editing;"
+            "video tracking;rendering;render engine;"
+            "cycles;game engine;python;"
+        )
 
-        with open(dist, 'w', encoding='utf-8') as file:
+        desktop_entry = "\n".join(
+            [
+                "[Desktop Entry]",
+                f"Name={name}",
+                "Comment=3D modeling, animation, rendering and post-production",
+                f"Keywords={kws}",
+                "Icon={}".format(icon.as_posix().replace(" ", r"\ ")),
+                "Terminal=false",
+                "Type=Application",
+                "Categories=Graphics;3DGraphics;",
+                "MimeType=application/x-blender;",
+                "Exec={} %f".format(_exec.as_posix().replace(" ", r"\ ")),
+            ]
+        )
+        with open(dist, "w", encoding="utf-8") as file:
             file.write(desktop_entry)
 
         os.chmod(dist, 0o744)

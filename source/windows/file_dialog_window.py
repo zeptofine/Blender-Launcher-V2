@@ -5,11 +5,11 @@ class FileDialogWindow(QFileDialog):
     def __init__(self):
         super().__init__()
 
-    def _getExistingDirectory(self, parent, title, dir):
+    def get_directory(self, parent, title, directory):
         options = (
-            QFileDialog.DontUseNativeDialog |
-            QFileDialog.ShowDirsOnly |
-            QFileDialog.HideNameFilterDetails |
-            QFileDialog.DontUseCustomDirectoryIcons)
-        return self.getExistingDirectory(
-            parent, title, dir, options)
+            QFileDialog.DontUseNativeDialog
+            | QFileDialog.ShowDirsOnly
+            | QFileDialog.HideNameFilterDetails
+            | QFileDialog.DontUseCustomDirectoryIcons
+        )
+        return QFileDialog.getExistingDirectory(parent, title, directory, options)

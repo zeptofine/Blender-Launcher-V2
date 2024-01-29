@@ -1,20 +1,15 @@
-import os
 from pathlib import Path
 
-from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtCore import QThread
 
 
 class FolderObserver(QThread):
-    started = pyqtSignal()
-    finished = pyqtSignal()
-
     def __init__(self, parent, folder):
         QThread.__init__(self)
         self.parent = parent
         self.folder = Path(folder)
 
     def run(self):
-        self.started.emit()
         subfolders = self.get_subfolders()
 
         while self.parent:
@@ -38,13 +33,5 @@ class FolderObserver(QThread):
 
             QThread.sleep(3)
 
-        return
-
     def get_subfolders(self):
-        subfolders = []
-
-        for sub in self.folder.iterdir():
-            if sub.is_dir():
-                subfolders.append(sub.name)
-
-        return subfolders
+        return [sub.name for sub in self.folder.iterdir() if sub.is_dir()]

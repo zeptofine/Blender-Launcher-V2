@@ -58,7 +58,8 @@ def _copyfileobj_readinto(fsrc, fdst, callback, length=0):
             n = fsrc_readinto(mv)
             if not n:
                 break
-            elif n < length:
+
+            if n < length:
                 with mv[:n] as smv:
                     fdst.write(smv)
             else:

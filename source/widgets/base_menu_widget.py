@@ -13,10 +13,9 @@ class BaseMenuWidget(QMenu):
         self.screen_size = QDesktopWidget().screenGeometry()
         self.setToolTipsVisible(True)
 
-    def _show(self):
+    def trigger(self):
         actions = self.actions()
-        actions_count = sum((a.isVisible() and not a.isSeparator())
-                            for a in actions)
+        actions_count = sum((a.isVisible() and not a.isSeparator()) for a in actions)
 
         if actions_count == 0:
             return
@@ -25,16 +24,16 @@ class BaseMenuWidget(QMenu):
         reverse = False
 
         cursor = QCursor.pos()
-        cursor.setX(cursor.x() - self.action_height * 0.5)
+        cursor.setX(int(cursor.x() - self.action_height * 0.5))
 
         if cursor.y() > (self.screen_size.height() - menu_height):
             reverse = True
 
         if reverse:
             actions.reverse()
-            cursor.setY(cursor.y() - actions_count * self.action_height + 15)
+            cursor.setY(int(cursor.y() - actions_count * self.action_height + 15))
         else:
-            cursor.setY(cursor.y() - self.action_height * 0.5)
+            cursor.setY(int(cursor.y() - self.action_height * 0.5))
 
         i = 0
 
@@ -42,9 +41,7 @@ class BaseMenuWidget(QMenu):
             if action.isVisible() and not action.isSeparator():
                 if action.isEnabled():
                     self.setActiveAction(action)
-                    cursor.setY(cursor.y() + i *
-                                (self.action_height if reverse
-                                 else (- self.action_height)))
+                    cursor.setY(cursor.y() + i * (self.action_height if reverse else (-self.action_height)))
                     break
 
                 i = i + 1

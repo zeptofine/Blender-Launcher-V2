@@ -3,9 +3,13 @@ from enum import Enum
 from modules.settings import get_list_sorting_type, set_list_sorting_type
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import (QHBoxLayout, QLabel, QPushButton, QVBoxLayout,
-                             QWidget)
-
+from PyQt5.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 from widgets.base_list_widget import BaseListWidget
 
 
@@ -15,8 +19,7 @@ class SortingType(Enum):
 
 
 class BasePageWidget(QWidget):
-    def __init__(self, parent, page_name, time_label, info_text,
-                 show_reload=False, extended_selection=False):
+    def __init__(self, parent, page_name, time_label, info_text, show_reload=False, extended_selection=False):
         super().__init__()
         self.name = page_name
 
@@ -41,8 +44,7 @@ class BasePageWidget(QWidget):
         self.InfoLabel = QLabel(info_text)
         self.InfoLabelLayout.addWidget(self.InfoLabel)
 
-        self.list_widget = BaseListWidget(
-            self, extended_selection=extended_selection)
+        self.list_widget = BaseListWidget(self, extended_selection=extended_selection)
         self.list_widget.hide()
 
         self.InfoLayout = QHBoxLayout()
@@ -58,8 +60,7 @@ class BasePageWidget(QWidget):
 
         if show_reload is True:
             self.ReloadBtn = QPushButton("Reload")
-            self.ReloadBtn.setToolTip(
-                "Reload Custom builds from disk")
+            self.ReloadBtn.setToolTip("Reload Custom builds from disk")
             self.ReloadBtn.clicked.connect(parent.reload_custom_builds)
 
             self.ReloadBtnLayout = QHBoxLayout()
@@ -81,8 +82,7 @@ class BasePageWidget(QWidget):
 
         if show_reload is True:
             self.fakeLabel = QPushButton("Reload")
-            self.fakeLabel.setToolTip(
-                "Reload Custom builds from disk")
+            self.fakeLabel.setToolTip("Reload Custom builds from disk")
             self.fakeLabel.setProperty("ListHeader", True)
             self.fakeLabel.clicked.connect(parent.reload_custom_builds)
         else:
@@ -94,16 +94,14 @@ class BasePageWidget(QWidget):
         self.subversionLabel.setFixedWidth(75)
         self.subversionLabel.setProperty("ListHeader", True)
         self.subversionLabel.setCheckable(True)
-        self.subversionLabel.clicked.connect(
-            lambda: self.set_sorting_type(SortingType.VERSION))
+        self.subversionLabel.clicked.connect(lambda: self.set_sorting_type(SortingType.VERSION))
         self.branchLabel = QLabel("Branch")
-        self.branchLabel.setAlignment(Qt.AlignCenter)
+        self.branchLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.commitTimeLabel = QPushButton(time_label)
         self.commitTimeLabel.setFixedWidth(118)
         self.commitTimeLabel.setProperty("ListHeader", True)
         self.commitTimeLabel.setCheckable(True)
-        self.commitTimeLabel.clicked.connect(
-            lambda: self.set_sorting_type(SortingType.DATETIME))
+        self.commitTimeLabel.clicked.connect(lambda: self.set_sorting_type(SortingType.DATETIME))
 
         self.HeaderLayout.addWidget(self.fakeLabel)
         self.HeaderLayout.addWidget(self.subversionLabel)

@@ -15,10 +15,10 @@ class LeftIconButtonWidget(QPushButton):
 
         self.label = QLabel(text)
         self.label.setStyleSheet("padding-left: -4px;")
-        self.label.setAlignment(Qt.AlignCenter)
-        self.label.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+        self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
 
         self.layout().addWidget(self.label)
 
-    def _setText(self, text):
+    def set_text(self, text):
         self.label.setText(text)

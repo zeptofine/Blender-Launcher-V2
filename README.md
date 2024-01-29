@@ -1,8 +1,15 @@
-# [Blender Launcher v2 development](https://github.com/Victor-IX/Blender-Launcher-V2)
 
+# Blender Launcher V2
 # [Discussions](https://github.com/DotBow/Blender-Launcher/discussions) │ [Documentation](https://dotbow.github.io/Blender-Launcher) │ [Latest Release](https://github.com/DotBow/Blender-Launcher/releases/latest)
 
 ![Blender Launcher Logo](docs/mkdocs/imgs/bl_logo.png)
+## Join the [Discord](https://discord.gg/3jrTZFJkTd) if you want to discuss about the project 
+
+# [Discussions](https://github.com/Victor-IX/Blender-Launcher-V2/discussions) │ [Documentation](https://Victor-IX.github.io/Blender-Launcher-V2) │ [Latest Release](https://github.com/Victor-IX/Blender-Launcher-V2/releases/latest)
+
+# Original [Project](https://github.com/DotBow/Blender-Launcher) By [DotBow](https://github.com/DotBow)
+
+> This project exists because DotBow/Blender-Launcher has been inactive since October of 2022. It was archived on the 28th of Nov, 2023 and will no longer be receiving updates.
 
 <details>
 <summary>Screenshots</summary>
@@ -31,12 +38,15 @@ The goal of Blender Launcher is to make it easier to stay up to date with the la
 
 ## What features does it have?
 
-Compared to its [predecessor](https://github.com/DotBow/Blender-Version-Manager) Blender Launcher introduces a number of major improvements:
+First program [version](https://github.com/DotBow/Blender-Version-Manager)
+Seconde program [version](https://github.com/DotBow/Blender-Launcher)
+
+Blender Launcher introduces a number of major improvements:
 
 * Rewritten from the ground up for better stability and extensibility
 * All official builds are available:
     * [Stable releases](https://download.blender.org/release/)
-    * [Daily builds](https://builder.blender.org/download/)
+    * [Daily builds](https://builder.blender.org/download/daily/)
     * [Experimental branches](https://builder.blender.org/download/branches/)
 * Faster starting times by caching data
 * Support for high DPI displays
@@ -52,9 +62,9 @@ Core features:
 
 ## How to start using it?
 
-* :floppy_disk: Download [latest version](https://github.com/DotBow/Blender-Launcher/releases/latest) from [releases page](https://github.com/DotBow/Blender-Launcher/releases)
-* :rocket: Follow [Installation](https://dotbow.github.io/Blender-Launcher/installation/#installing-blender-launcher) instructions on [Documentation](https://dotbow.github.io/Blender-Launcher) site
-* :speech_balloon: Use Blender Artists Community [thread](https://blenderartists.org/t/blender-launcher-standalone-software-client) to ask questions and make proposals
+* :floppy_disk: Download [latest version](https://github.com/Victor-IX/Blender-Launcher-V2/releases/latest) from [releases page](https://github.com/Victor-IX/Blender-Launcher-V2/releases)
+* :rocket: Follow [Installation](https://Victor-IX.github.io/Blender-Launcher-V2/installation/#installing-blender-launcher) instructions on [Documentation](https://Victor-IX.github.io/Blender-Launcher-V2) site
+* :speech_balloon: Use Blender Artists Community [thread](https://blenderartists.org/t/blender-launcher-standalone-software-client) to ask questions and make proposals or [Discord](https://discord.gg/3jrTZFJkTd) 
 
 ## How to thank the developer?
 

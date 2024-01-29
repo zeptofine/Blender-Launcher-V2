@@ -1,22 +1,25 @@
 import re
 from enum import Enum
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from modules.build_info import BuildInfoReader
+from modules.build_info import BuildInfo, ReadBuildTask
 from modules.enums import MessageType
 from modules.settings import get_install_template, get_library_folder
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout
-from threads.downloader import Downloader
-from threads.extractor import Extractor
-from threads.renamer import Renamer
-from threads.template_installer import TemplateInstaller
-
+from threads.downloader import DownloadTask
+from threads.extractor import ExtractTask
+from threads.renamer import RenameTask
+from threads.template_installer import TemplateTask
 from widgets.base_build_widget import BaseBuildWidget
 from widgets.base_progress_bar_widget import BaseProgressBarWidget
 from widgets.build_state_widget import BuildStateWidget
 from widgets.datetime_widget import DateTimeWidget
 from widgets.elided_text_label import ElidedTextLabel
+
+if TYPE_CHECKING:
+    from windows.main_window import BlenderLauncher
 
 
 class DownloadState(Enum):
@@ -28,16 +31,17 @@ class DownloadState(Enum):
 
 
 class DownloadWidget(BaseBuildWidget):
-    def __init__(self, parent, list_widget, item, build_info,
-                 show_new=False):
-        super(DownloadWidget, self).__init__(parent=parent)
-        self.parent = parent
+    def __init__(self, parent: "BlenderLauncher", list_widget, item, build_info, is_installed, show_new=False):
+        super().__init__(parent=parent)
+        self.parent: "BlenderLauncher" = parent
         self.list_widget = list_widget
         self.item = item
         self.build_info = build_info
         self.show_new = show_new
+        self.is_installed = is_installed
         self.state = DownloadState.IDLE
         self.build_dir = None
+        self.source_file = None
 
         self.progressBar = BaseProgressBarWidget()
         self.progressBar.setFont(self.parent.font_8)
@@ -48,13 +52,17 @@ class DownloadWidget(BaseBuildWidget):
         self.downloadButton.setFixedWidth(85)
         self.downloadButton.setProperty("LaunchButton", True)
         self.downloadButton.clicked.connect(self.init_downloader)
-        self.downloadButton.setCursor(Qt.PointingHandCursor)
+        self.downloadButton.setCursor(Qt.CursorShape.PointingHandCursor)
+
+        self.installedButton = QPushButton("Installed")
+        self.installedButton.setFixedWidth(85)
+        self.installedButton.setProperty("InstalledButton", True)
 
         self.cancelButton = QPushButton("Cancel")
         self.cancelButton.setFixedWidth(85)
         self.cancelButton.setProperty("CancelButton", True)
         self.cancelButton.clicked.connect(self.download_cancelled)
-        self.cancelButton.setCursor(Qt.PointingHandCursor)
+        self.cancelButton.setCursor(Qt.CursorShape.PointingHandCursor)
         self.cancelButton.hide()
 
         self.main_hl = QHBoxLayout()
@@ -73,29 +81,27 @@ class DownloadWidget(BaseBuildWidget):
         self.progress_bar_hl.setContentsMargins(16, 0, 8, 0)
         self.main_hl.setSpacing(0)
 
-        if self.build_info.branch == 'lts':
+        if self.build_info.branch == "lts":
             branch_name = "LTS"
-        elif self.build_info.branch == 'daily':
-            branch_name = self.build_info.subversion.split(" ", 1)[1]
+        elif self.build_info.branch == "daily":
+            branch_name = self.build_info.subversion.split(" ", 1)[-1].title()
         else:
-            branch_name = re.sub(
-                r'(\-|\_)', ' ', self.build_info.branch).title()
+            branch_name = self.build_info.subversion.split(" ", 1)[-1]
+            # branch_name = re.sub(
+            #     r"(\-|\_)", " ", self.build_info.branch).title()
 
-        self.subversionLabel = QLabel(
-            self.build_info.subversion.split(" ", 1)[0])
+        self.subversionLabel = QLabel(self.build_info.subversion.split(" ", 1)[0])
         self.subversionLabel.setFixedWidth(85)
         self.subversionLabel.setIndent(20)
         self.branchLabel = ElidedTextLabel(branch_name)
-        self.commitTimeLabel = DateTimeWidget(
-            self.build_info.commit_time, self.build_info.build_hash)
-        self.build_state_widget = BuildStateWidget(
-            self.parent, self.list_widget)
+        self.commitTimeLabel = DateTimeWidget(self.build_info.commit_time, self.build_info.build_hash)
+        self.build_state_widget = BuildStateWidget(parent)
 
         self.build_info_hl.addWidget(self.subversionLabel)
         self.build_info_hl.addWidget(self.branchLabel, stretch=1)
         self.build_info_hl.addWidget(self.commitTimeLabel)
 
-        if self.show_new:
+        if self.show_new and not self.is_installed:
             self.build_state_widget.setNewBuild(True)
 
         self.progress_bar_hl.addWidget(self.progressBar)
@@ -103,27 +109,33 @@ class DownloadWidget(BaseBuildWidget):
         self.sub_vl.addLayout(self.build_info_hl)
         self.sub_vl.addLayout(self.progress_bar_hl)
 
-        self.main_hl.addWidget(self.downloadButton)
-        self.main_hl.addWidget(self.cancelButton)
-        self.main_hl.addLayout(self.sub_vl)
-        self.main_hl.addWidget(self.build_state_widget)
+        if self.is_installed:
+            self.downloadButton.hide()
+            self.main_hl.addWidget(self.installedButton)
+            self.main_hl.addLayout(self.sub_vl)
+            self.main_hl.addWidget(self.build_state_widget)
+        else:
+            self.main_hl.addWidget(self.downloadButton)
+            self.main_hl.addWidget(self.cancelButton)
+            self.main_hl.addLayout(self.sub_vl)
+            self.main_hl.addWidget(self.build_state_widget)
 
         self.setLayout(self.main_hl)
 
         if self.build_info.branch in "stable lts":
             self.menu.addAction(self.showReleaseNotesAction)
         else:
-            regexp = re.compile(r'D\d{5}')
+            regexp = re.compile(r"D\d{5}")
 
             if regexp.search(self.build_info.branch):
                 self.showReleaseNotesAction.setText("Show Patch Details")
                 self.menu.addAction(self.showReleaseNotesAction)
 
     def context_menu(self):
-        self.menu._show()
+        self.menu.trigger()
 
     def mouseDoubleClickEvent(self, event):
-        if self.state != DownloadState.DOWNLOADING:
+        if self.state != DownloadState.DOWNLOADING and not self.is_installed:
             self.init_downloader()
 
     def mouseReleaseEvent(self, event):
@@ -138,48 +150,48 @@ class DownloadWidget(BaseBuildWidget):
             self.build_state_widget.setNewBuild(False)
             self.show_new = False
 
+        assert self.parent.manager is not None
         self.state = DownloadState.DOWNLOADING
-        self.downloader = Downloader(self.parent.manager, self.build_info.link)
-        self.downloader.started.connect(self.download_started)
-        self.downloader.progress_changed.connect(self.progressBar.set_progress)
-        self.downloader.finished.connect(self.init_extractor)
-
-        self.progress_start = 0
-        self.progress_end = 0.5
-
-        self.downloader.start()
+        self.progressBar.set_title("Downloading")
+        self.dl_task = DownloadTask(
+            manager=self.parent.manager,
+            link=self.build_info.link,
+        )
+        self.dl_task.progress.connect(self.progressBar.set_progress)
+        self.dl_task.finished.connect(self.init_extractor)
+        self.parent.task_queue.append(self.dl_task)
+        self.download_started()
 
     def init_extractor(self, source):
         self.state = DownloadState.EXTRACTING
+        self.progressBar.set_title("Extracting")
+        self.build_state_widget.setExtract()
+
         self.cancelButton.setEnabled(False)
         library_folder = Path(get_library_folder())
 
-        if (self.build_info.branch == 'stable') or \
-                (self.build_info.branch == 'lts'):
-            dist = library_folder / 'stable'
-        elif self.build_info.branch == 'daily':
-            dist = library_folder / 'daily'
+        if self.build_info.branch in ("stable", "lts"):
+            dist = library_folder / "stable"
+        elif self.build_info.branch == "daily":
+            dist = library_folder / "daily"
         else:
-            dist = library_folder / 'experimental'
+            dist = library_folder / "experimental"
 
-        self.extractor = Extractor(self.parent.manager, source, dist)
-        self.extractor.progress_changed.connect(self.progressBar.set_progress)
-        self.extractor.finished.connect(self.init_template_installer)
-        self.extractor.start()
-        self.build_state_widget.setExtract()
+        self.source_file = source
+        a = ExtractTask(file=source, destination=dist)
+        a.progress.connect(self.progressBar.set_progress)
+        a.finished.connect(self.init_template_installer)
+        self.parent.task_queue.append(a)
 
-    def init_template_installer(self, dist):
+    def init_template_installer(self, dist: Path):
         self.build_state_widget.setExtract(False)
         self.build_dir = dist
 
         if get_install_template():
-            self.template_installer = TemplateInstaller(
-                self.parent.manager, self.build_dir)
-            self.template_installer.progress_changed.connect(
-                self.progressBar.set_progress)
-            self.template_installer.finished.connect(
-                lambda: self.download_get_info())
-            self.template_installer.start()
+            self.progressBar.set_title("Copying data...")
+            t = TemplateTask(destination=self.build_dir)
+            t.finished.connect(self.download_get_info)
+            self.parent.task_queue.append(t)
         else:
             self.download_get_info()
 
@@ -194,34 +206,39 @@ class DownloadWidget(BaseBuildWidget):
         self.state = DownloadState.IDLE
         self.progressBar.hide()
         self.cancelButton.hide()
-        self.downloader.terminate()
-        self.downloader.wait()
+        if not self.parent.kill_thread_with_task(self.dl_task):  # killing failed
+            if self.dl_task in self.parent.task_queue:
+                self.parent.task_queue.remove(self.dl_task)
         self.downloadButton.show()
         self.build_state_widget.setDownload(False)
 
     def download_get_info(self):
         self.state = DownloadState.READING
-        if self.parent.platform == 'Linux':
-            archive_name = Path(self.build_info.link).with_suffix('').stem
-        elif self.parent.platform in {'Windows', 'macOS'}:
+        if self.parent.platform == "Linux":
+            archive_name = Path(self.build_info.link).with_suffix("").stem
+        else:
             archive_name = Path(self.build_info.link).stem
 
-        self.build_info_reader = BuildInfoReader(
-            self.build_dir, archive_name=archive_name)
-        self.build_info_reader.finished.connect(self.download_rename)
-        self.build_info_reader.start()
-
-    def download_rename(self, build_info):
-        self.state = DownloadState.RENAMING
-        new_name = 'blender-{}+{}.{}'.format(
-            build_info.subversion,
-            build_info.branch,
-            build_info.build_hash
+        assert self.build_dir is not None
+        a = ReadBuildTask(
+            self.build_dir,
+            archive_name=archive_name,
         )
+        a.finished.connect(self.download_rename)
+        a.failure.connect(lambda: print("Reading failed"))
+        self.parent.task_queue.append(a)
 
-        self.build_renamer = Renamer(self.build_dir, new_name)
-        self.build_renamer.finished.connect(self.download_finished)
-        self.build_renamer.start()
+    def download_rename(self, build_info: BuildInfo):
+        self.state = DownloadState.RENAMING
+        new_name = f"blender-{build_info.subversion}+{build_info.branch}.{build_info.build_hash}"
+        assert self.build_dir is not None
+        t = RenameTask(
+            src=self.build_dir,
+            dst_name=new_name,
+        )
+        t.finished.connect(self.download_finished)
+        t.failure.connect(lambda: print("Renaming failed"))
+        self.parent.task_queue.append(t)
 
     def download_finished(self, path):
         self.state = DownloadState.IDLE
@@ -231,18 +248,23 @@ class DownloadWidget(BaseBuildWidget):
 
         if path is not None:
             self.parent.draw_to_library(path, True)
-            self.parent.clear_temp()
-            name = "{0} {1} {2}".format(
-                self.subversionLabel.text(),
-                self.branchLabel.text,
-                self.build_info.commit_time)
+
+            assert self.source_file is not None
+            self.parent.clear_temp(self.source_file)
+
+            name = f"{self.subversionLabel.text()} {self.branchLabel.text} {self.build_info.commit_time}"
             self.parent.show_message(
-                "Blender {0} download finished!".format(name),
-                type=MessageType.DOWNLOADFINISHED)
-            self.destroy()
+                f"Blender {name} download finished!",
+                message_type=MessageType.DOWNLOADFINISHED,
+            )
+            self.setInstalled()
 
         self.build_state_widget.setExtract(False)
 
-    def destroy(self):
+    def setInstalled(self):
         if self.state == DownloadState.IDLE:
-            self.list_widget.remove_item(self.item)
+            self.downloadButton.hide()
+            self.cancelButton.hide()
+            self.progressBar.hide()
+            self.main_hl.insertWidget(0, self.installedButton)  # Add installedButton at the beginning
+            self.is_installed = True

@@ -1,47 +1,44 @@
+import logging
+from dataclasses import dataclass
 from pathlib import Path
 
 from modules._copyfileobj import copyfileobj
+from modules.connection_manager import REQUEST_MANAGER
+from modules.enums import MessageType
 from modules.settings import get_library_folder
-from PyQt5.QtCore import QThread, pyqtSignal
+from modules.task import Task
+from PyQt5.QtCore import pyqtSignal
+from urllib3.exceptions import MaxRetryError
 
 
-class Downloader(QThread):
-    started = pyqtSignal()
-    progress_changed = pyqtSignal(
-        'PyQt_PyObject', 'PyQt_PyObject', 'PyQt_PyObject')
-    finished = pyqtSignal('PyQt_PyObject')
-
-    def __init__(self, manager, link):
-        QThread.__init__(self)
-        self.manager = manager
-        self.link = link
-        self.size = 0
+@dataclass(frozen=True)
+class DownloadTask(Task):
+    manager: REQUEST_MANAGER
+    link: str
+    progress = pyqtSignal(int, int)
+    finished = pyqtSignal(Path)
 
     def run(self):
-        self.progress_changed.emit(0, 0, "Downloading")
-        self.started.emit()
-
+        self.progress.emit(0, 0)
         temp_folder = Path(get_library_folder()) / ".temp"
-
-        # Create temp directory
-        if not temp_folder.is_dir():
-            temp_folder.mkdir()
-
+        temp_folder.mkdir(exist_ok=True)
         dist = temp_folder / Path(self.link).name
 
-        with self.manager.request('GET',
-                                  self.link,
-                                  preload_content=False) as r:
-            self.size = int(r.headers['Content-Length'])
-
-            with open(dist, 'wb') as f:
-                copyfileobj(r, f, self.set_progress)
-
-        r.release_conn()
-        r.close()
+        try:
+            with self.manager.request("GET", self.link, preload_content=False, timeout=10) as r:
+                self._download(r, dist)
+        except MaxRetryError as e:
+            logging.error(e)
+            self.message.emit("Requesting is taking longer than usual! see debug logs for more.", MessageType.ERROR)
+            with self.manager.request("GET", self.link, preload_content=False) as r:
+                self._download(r, dist)
 
         self.finished.emit(dist)
-        return
 
-    def set_progress(self, obtained):
-        self.progress_changed.emit(obtained, self.size, "Downloading")
+    def _download(self, r, dist: Path):
+        size = int(r.headers["Content-Length"])
+        with dist.open("wb") as f:
+            copyfileobj(r, f, lambda x: self.progress.emit(x, size))
+
+    def __str__(self):
+        return f"Download {self.link}"

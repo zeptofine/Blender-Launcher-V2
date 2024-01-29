@@ -1,28 +1,38 @@
-from PyQt5.QtCore import Qt, pyqtSignal
+from __future__ import annotations
+
+from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import QProgressBar
 
 
 class BaseProgressBarWidget(QProgressBar):
-    progress_updated = pyqtSignal('PyQt_PyObject', 'PyQt_PyObject')
+    progress_updated = pyqtSignal(int, int)
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
+        self.title = ""
 
-        self.setAlignment(Qt.AlignCenter)
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.setMinimum(0)
         self.set_progress(0, 0)
 
-    def set_progress(self, obtained, total, title=""):
+    def set_title(self, title: str):
+        self.title = title
+        self.setFormat(f"{self.title}: {self.last_progress[0]:.1f} of {self.last_progress[1]:.1f} MB")
+
+    @pyqtSlot(int, int)
+    def set_progress(self, obtained: int | float, total: int | float, title: str | None = None):
+        if title is not None and title != self.title:
+            self.title = title
+
+        # Update appearance
+        self.setMaximum(int(total))
+        self.setValue(int(obtained))
+
         # Convert bytes to megabytes
         obtained = obtained / 1048576
         total = total / 1048576
 
-        # Update appearance
-        self.setMaximum(total)
-        self.setValue(obtained)
-
         # Repaint and call signal
-        self.repaint()
-        self.setFormat(
-            "{}: {:.1f} of {:.1f} MB".format(title, obtained, total))
+        self.setFormat(f"{self.title}: {obtained:.1f} of {total:.1f} MB")
         self.progress_updated.emit(obtained, total)
+        self.last_progress = (obtained, total)
