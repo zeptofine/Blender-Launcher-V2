@@ -782,7 +782,7 @@ class BlenderLauncher(BaseWindow):
             if is_installed:
                 self.new_downloads = True
 
-    def draw_to_library(self, path, show_new=False):
+    def draw_to_library(self, path: Path, show_new=False):
         branch = Path(path).parent.name
 
         if branch in ("stable", "lts"):

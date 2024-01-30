@@ -24,6 +24,7 @@ from PyQt5 import QtCore
 from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtGui import QDragEnterEvent, QDragLeaveEvent, QDragMoveEvent, QDropEvent
 from PyQt5.QtWidgets import QAction, QApplication, QHBoxLayout, QLabel, QWidget
+from source.windows.custom_build_dialog_window import CustomBuildDialogWindow
 from threads.observer import Observer
 from threads.register import Register
 from threads.remover import RemovalTask
@@ -162,6 +163,10 @@ class LibraryWidget(BaseBuildWidget):
         self.deleteAction.setIcon(self.parent.icons.delete)
         self.deleteAction.triggered.connect(self.ask_remove_from_drive)
 
+        self.editAction = QAction("Edit build...", self)
+        self.editAction.setIcon(self.parent.icons.settings)
+        self.editAction.triggered.connect(self.edit_build)
+
         self.addToQuickLaunchAction = QAction("Add To Quick Launch", self)
         self.addToQuickLaunchAction.setIcon(self.parent.icons.quick_launch)
         self.addToQuickLaunchAction.triggered.connect(self.add_to_quick_launch)
@@ -244,6 +249,7 @@ class LibraryWidget(BaseBuildWidget):
                 self.menu.addAction(self.showReleaseNotesAction)
 
         self.menu.addAction(self.showFolderAction)
+        self.menu.addAction(self.editAction)
         self.menu.addAction(self.deleteAction)
 
         self.menu_extended.addAction(self.deleteAction)
@@ -344,7 +350,7 @@ class LibraryWidget(BaseBuildWidget):
         self.deleteAction.setEnabled(True)
         self.installTemplateAction.setEnabled(True)
 
-    def launch(self, update_selection=False, exe=None, blendfile: Path | None=None):
+    def launch(self, update_selection=False, exe=None, blendfile: Path | None = None):
         assert self.build_info is not None
         if update_selection is True:
             self.list_widget.clearSelection()
@@ -537,6 +543,18 @@ class LibraryWidget(BaseBuildWidget):
         self.launchButton.set_text("Launch")
         self.setEnabled(True)
         return
+
+    @QtCore.pyqtSlot()
+    def edit_build(self):
+        assert self.build_info is not None
+        dlg = CustomBuildDialogWindow(self.parent, Path(self.build_info.link), self.build_info)
+        dlg.accepted.connect(self.build_info_edited)
+
+    @QtCore.pyqtSlot(BuildInfo)
+    def build_info_edited(self, blinfo: BuildInfo):
+        self.list_widget.remove_item(self.item)
+        blinfo.write_to(Path(blinfo.link))
+        self.parent.draw_to_library(Path(blinfo.link), show_new=True)
 
     @QtCore.pyqtSlot()
     def add_to_quick_launch(self):
