@@ -7,6 +7,8 @@ from modules._platform import get_cwd, get_platform
 from PyQt5.QtCore import QSettings
 from semver import Version
 
+from .build_info import parse_blender_ver
+
 tabs = {
     "Library": 0,
     "Downloads": 1,
@@ -365,8 +367,8 @@ def set_new_builds_check_frequency(frequency):
 def get_minimum_blender_stable_version() -> Version:
     settings = get_settings()
     try:
-        v = settings.value("minimum_blender_stable_version", defaultValue="3.0.0", type=str)
-        return Version.parse(v)
+        v = parse_blender_ver(settings.value("minimum_blender_stable_version", defaultValue="3.0.0", type=str))
+        return Version(min(v.major, 100), min(v.minor, 100), min(v.patch, 100))
     except TypeError:
         v = settings.value("minimum_blender_stable_version", defaultValue=3.0, type=float)
         return Version(int(v), int(v * 100), 0)
