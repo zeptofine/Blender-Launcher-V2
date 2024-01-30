@@ -119,8 +119,10 @@ class BuildInfo:
         v = parse_blender_ver(subversion)
         if not s:
             return v
-
-        prerelease = ".".join(s_ for s_ in (v.prerelease, *s) if s_)
+        prerelease = ""
+        if v.prerelease:
+            prerelease = f"{v.prerelease}+"
+        prerelease += ".".join(s_ for s_ in s if s_)
         return v.replace(prerelease=prerelease)
 
     @classmethod
