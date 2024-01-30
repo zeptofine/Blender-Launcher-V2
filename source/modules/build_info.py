@@ -22,7 +22,7 @@ matchers = tuple(
         (
             r"(?P<ma>\d+)\.(?P<mi>\d+)\.(?P<pa>\d+) (?P<pre>.*)",  # <major>.<minor>.<patch> <Prerelease>
             r"(?P<ma>\d+)\.(?P<mi>\d+) \(sub (?P<pa>\d+)\)",  # <major>.<minor> (sub <patch>)
-            r"(?P<ma>\d+)\.(?P<mi>\d+)(?P<pre>[^\.\d\s])",  # <major>.<minor><patch>
+            r"(?P<ma>\d+)\.(?P<mi>\d+)(?P<pre>[^\.\s]+)",  # <major>.<minor><patch>
             r"(?P<ma>\d+)\.(?P<mi>\d+)",  # <major>.<minor>
         ),
     )
@@ -94,8 +94,6 @@ class BuildInfo:
     custom_executable: str | None = None
 
     def __post_init__(self):
-        if any(w in self.subversion.lower() for w in ["release", "rc"]):
-            self.subversion = re.sub("[a-zA-Z ]+", " Candidate ", self.subversion).rstrip()
 
         if self.branch == "stable" and self.subversion.startswith(self.lts_tags):
             self.branch = "lts"

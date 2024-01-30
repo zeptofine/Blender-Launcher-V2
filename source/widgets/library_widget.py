@@ -130,6 +130,7 @@ class LibraryWidget(BaseBuildWidget):
         self.subversionLabel = QLabel(sub[0])
         self.subversionLabel.setFixedWidth(85)
         self.subversionLabel.setIndent(20)
+        self.subversionLabel.setToolTip(str(self.build_info.semversion))
         self.branchLabel = ElidedTextLabel(branch_name)
         self.commitTimeLabel = DateTimeWidget(self.build_info.commit_time, self.build_info.build_hash)
 
