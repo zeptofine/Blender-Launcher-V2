@@ -330,8 +330,10 @@ class ReadBuildTask(Task):
             build_info = read_build_info(self.path, self.archive_name, self.custom_exe, auto_write)
             if self.version is not None:
                 build_info.subversion = str(self.version)
-                build_info.write_to(self.path)
+                if self.auto_write:
+                    build_info.write_to(self.path)
             self.finished.emit(build_info)
+
         except Exception as e:
             self.failure.emit(e)
             raise
