@@ -115,19 +115,28 @@ class LibraryWidget(BaseBuildWidget):
         self.launchButton.setFixedWidth(85)
         self.launchButton.setProperty("LaunchButton", True)
 
+        prerelease = self.build_info.semversion.prerelease
+
         if self.branch == "lts":
             branch_name = "LTS"
         elif (self.parent_widget is not None) and self.build_info.custom_name:
             branch_name = self.build_info.custom_name
         elif self.branch == "daily":
-            s = self.build_info.subversion.split(" ", 1)
-            branch_name = s[len(s) > 1]  # if there is a second one, select it. otherwise select the old one
-
+            s = prerelease
+            if s is None:
+                s = self.build_info.subversion.split("-", 1)[-1]
+            branch_name = s.title()
         else:
             branch_name = re.sub(r"(\-|\_)", " ", self.build_info.branch).title()
 
-        sub = self.build_info.subversion.split(" ", 1)
-        self.subversionLabel = QLabel(sub[0])
+
+        if (
+            prerelease is not None
+            and prerelease not in branch_name.casefold()
+        ):
+            branch_name = f"({prerelease.title()}) {branch_name}"
+
+        self.subversionLabel = QLabel(str(self.build_info.semversion.finalize_version()))
         self.subversionLabel.setFixedWidth(85)
         self.subversionLabel.setIndent(20)
         self.subversionLabel.setToolTip(str(self.build_info.semversion))
@@ -345,7 +354,7 @@ class LibraryWidget(BaseBuildWidget):
         self.deleteAction.setEnabled(True)
         self.installTemplateAction.setEnabled(True)
 
-    def launch(self, update_selection=False, exe=None, blendfile: Path | None=None):
+    def launch(self, update_selection=False, exe=None, blendfile: Path | None = None):
         assert self.build_info is not None
         if update_selection is True:
             self.list_widget.clearSelection()

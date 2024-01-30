@@ -3,7 +3,7 @@ from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from modules.build_info import BuildInfo, ReadBuildTask
+from modules.build_info import BuildInfo, ReadBuildTask, parse_blender_ver
 from modules.enums import MessageType
 from modules.settings import get_install_template, get_library_folder
 from PyQt5.QtCore import Qt
@@ -30,13 +30,16 @@ class DownloadState(Enum):
     RENAMING = 5
 
 
+non_basic_blendver = re.compile(r"(?P<ma>\d+)\.(?P<mi>\d+)(?P<pre>\D[^\.\s+]*)")
+
+
 class DownloadWidget(BaseBuildWidget):
     def __init__(self, parent: "BlenderLauncher", list_widget, item, build_info, is_installed, show_new=False):
         super().__init__(parent=parent)
         self.parent: "BlenderLauncher" = parent
         self.list_widget = list_widget
         self.item = item
-        self.build_info = build_info
+        self.build_info: BuildInfo = build_info
         self.show_new = show_new
         self.is_installed = is_installed
         self.state = DownloadState.IDLE
@@ -83,14 +86,26 @@ class DownloadWidget(BaseBuildWidget):
 
         if self.build_info.branch == "lts":
             branch_name = "LTS"
+            subversion = self.build_info.semversion
         elif self.build_info.branch == "daily":
-            branch_name = self.build_info.subversion.split(" ", 1)[-1].title()
+            branch = self.build_info.semversion.prerelease
+            if branch is not None:
+                branch = branch.rsplit(".", 1)[0].title()
+            else:
+                branch = self.build_info.subversion.split("-", 1)[-1].title()
+            branch_name = branch
+            subversion = self.build_info.semversion.finalize_version()
+        elif self.build_info.branch == "stable":
+            branch_name = self.build_info.branch.title()
+            subversion = self.build_info.semversion
         else:
-            branch_name = self.build_info.subversion.split(" ", 1)[-1]
-            # branch_name = re.sub(
-            #     r"(\-|\_)", " ", self.build_info.branch).title()
+            branch = self.build_info.semversion.prerelease
+            if branch is None:
+                branch = str(self.build_info.semversion.finalize_version())
+            branch_name = branch.title()
+            subversion = self.build_info.semversion.finalize_version()
 
-        self.subversionLabel = QLabel(self.build_info.subversion.split(" ", 1)[0])
+        self.subversionLabel = QLabel(str(subversion))
         self.subversionLabel.setFixedWidth(85)
         self.subversionLabel.setIndent(20)
         self.subversionLabel.setToolTip(str(self.build_info.semversion))
@@ -222,9 +237,16 @@ class DownloadWidget(BaseBuildWidget):
             archive_name = Path(self.build_info.link).stem
 
         assert self.build_dir is not None
+
+        # If the returned version from the executable is invalid it might break loading.
+        ver = non_basic_blendver.search(self.build_dir.name)
+        if ver is not None:
+            ver = parse_blender_ver(self.build_dir.name[ver.start() : ver.end()])
+
         a = ReadBuildTask(
             self.build_dir,
             archive_name=archive_name,
+            version=ver,
         )
         a.finished.connect(self.download_rename)
         a.failure.connect(lambda: print("Reading failed"))
@@ -232,7 +254,7 @@ class DownloadWidget(BaseBuildWidget):
 
     def download_rename(self, build_info: BuildInfo):
         self.state = DownloadState.RENAMING
-        new_name = f"blender-{build_info.subversion}+{build_info.branch}.{build_info.build_hash}"
+        new_name = f"blender-{build_info.full_semversion}"
         assert self.build_dir is not None
         t = RenameTask(
             src=self.build_dir,

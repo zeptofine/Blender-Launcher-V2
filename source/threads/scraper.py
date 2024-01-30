@@ -94,22 +94,22 @@ class Scraper(QThread):
 
     def new_build_from_dict(self, build, branch_type):
         self.strptime = datetime.fromtimestamp(build["file_mtime"], tz=timezone.utc)
-        subversion = build["version"]
+
+        subversion = parse_blender_ver(build["version"])
         build_var = ""
         if build["patch"] is not None and branch_type != "daily":
             build_var = build["patch"]
-
         if build["release_cycle"] is not None and branch_type == "daily":
             build_var = build["release_cycle"]
-
         if build["branch"] and branch_type == "experimental":
             build_var = build["branch"]
+
         if build_var:
-            subversion = f"{subversion} {build_var}"
+            subversion = subversion.replace(prerelease=build_var)
 
         return BuildInfo(
             build["url"],
-            subversion,
+            str(subversion),
             build["hash"],
             self.strptime,
             branch_type,
@@ -154,7 +154,7 @@ class Scraper(QThread):
             build_hash = match[-1].replace("-", "")
 
         match = re.search(self.subversion, stem)
-        subversion = match.group(0).replace("-", "")
+        subversion = parse_blender_ver(match.group(0).replace("-", ""))
         branch = branch_type
         if branch_type != "stable":
             build_var = ""
@@ -174,7 +174,7 @@ class Scraper(QThread):
                 branch = build_var
             elif branch_type == "daily":
                 branch = "daily"
-                subversion = f"{subversion} {build_var}"
+                subversion = subversion.replace(prerelease=build_var)
 
         set_locale()
         self.strptime = datetime.strptime(info["last-modified"], "%a, %d %b %Y %H:%M:%S %Z").astimezone()
@@ -182,7 +182,7 @@ class Scraper(QThread):
 
         r.release_conn()
         r.close()
-        return BuildInfo(link, subversion, build_hash, commit_time, branch)
+        return BuildInfo(link, str(subversion), build_hash, commit_time, branch)
 
     def scrap_stable_releases(self):
         url = "https://download.blender.org/release/"
