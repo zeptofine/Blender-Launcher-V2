@@ -4,14 +4,67 @@ import json
 import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from functools import cache
 from typing import TYPE_CHECKING
 
 from modules._platform import _check_output, get_platform, set_locale
 from modules.task import Task
-from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtCore import pyqtSignal
+from semver import Version
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+# TODO: Combine some of these
+matchers = tuple(
+    map(
+        re.compile,
+        (
+            r"(?P<ma>\d+)\.(?P<mi>\d+)\.(?P<pa>\d+) (?P<pre>.*)",  # <major>.<minor>.<patch> <Prerelease>
+            r"(?P<ma>\d+)\.(?P<mi>\d+) \(sub (?P<pa>\d+)\)",  # <major>.<minor> (sub <patch>)
+            r"(?P<ma>\d+)\.(?P<mi>\d+)(?P<pre>[^\.\d\s])",  # <major>.<minor><patch>
+            r"(?P<ma>\d+)\.(?P<mi>\d+)",  # <major>.<minor>
+        ),
+    )
+)
+
+
+@cache
+def old_version_to_semver(s: str) -> Version:
+    """
+    Converts Blender's different styles of versioning to a semver Version.
+    Assumes s is either a semantic version or a blender style version. Otherwise things might get messy
+    Versions ending with 'a' and 'b' will have a patch of 1 and 2.
+
+
+    Arguments:
+        s -- a blender version.
+
+    Returns:
+        Version
+    """
+    try:
+        return Version.parse(s)
+    except ValueError as e:
+        major = 0
+        minor = 0
+        patch = 0
+        prerelease = None
+
+        try:
+            g = next(m for matcher in matchers if (m := matcher.match(s)) is not None)
+        except StopIteration:
+            """No matcher gave any valid version"""
+            raise ValueError("No valid version found") from e
+
+        major = int(g.group("ma"))
+        minor = int(g.group("mi"))
+        if "pa" in g.groupdict():
+            patch = int(g.group("pa"))
+        if "pre" in g.groupdict():
+            prerelease = g.group("pre")
+
+        return Version(major=major, minor=minor, patch=patch, prerelease=prerelease)
 
 
 @dataclass
@@ -44,6 +97,10 @@ class BuildInfo:
         if (self.build_hash is not None) and (other.build_hash is not None):
             return self.build_hash == other.build_hash
         return self.subversion == other.subversion
+
+    @property
+    def semversion(self):
+        return old_version_to_semver(self.subversion)
 
     @classmethod
     def from_dict(cls, path: Path, blinfo: dict):
