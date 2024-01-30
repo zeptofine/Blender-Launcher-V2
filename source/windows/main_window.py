@@ -838,6 +838,10 @@ class BlenderLauncher(BaseWindow):
         latest_ver = re.sub(r"\D", "", latest_tag)
         current_ver = re.sub(r"\D", "", self.version)
 
+        # Adding temp fix to handle version 2 of the launcher
+        if current_ver == "200":
+            current_ver = "20000"
+
         if int(latest_ver) > int(current_ver):
             if latest_tag not in self.notification_pool:
                 self.NewVersionButton.setText(f"Update to version {latest_tag.replace('v', '')}")
