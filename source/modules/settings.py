@@ -5,6 +5,7 @@ from pathlib import Path
 
 from modules._platform import get_cwd, get_platform
 from PyQt5.QtCore import QSettings
+from semver import Version
 
 tabs = {
     "Library": 0,
@@ -361,11 +362,17 @@ def set_new_builds_check_frequency(frequency):
     get_settings().setValue("new_builds_check_frequency", frequency)
 
 
-def get_minimum_blender_stable_version() -> float:
-    return get_settings().value("minimum_blender_stable_version", defaultValue=3.0, type=float)
+def get_minimum_blender_stable_version() -> Version:
+    settings = get_settings()
+    try:
+        v = settings.value("minimum_blender_stable_version", defaultValue="3.0.0", type=str)
+        return Version.parse(v)
+    except TypeError:
+        v = settings.value("minimum_blender_stable_version", defaultValue=3.0, type=float)
+        return Version(int(v), int(v * 100), 0)
 
-def set_minimum_blender_stable_version(v: float):
-    get_settings().setValue("minimum_blender_stable_version", v)
+def set_minimum_blender_stable_version(v: Version):
+    get_settings().setValue("minimum_blender_stable_version", str(v))
 
 
 def get_make_error_popup():

@@ -21,6 +21,7 @@ from modules.settings import (
 from PyQt5 import QtGui
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox, QHBoxLayout, QLineEdit
+from widgets.sem_version_edit import SemVersionEdit
 from widgets.settings_form_widget import SettingsFormWidget
 
 
@@ -29,11 +30,9 @@ class BlenderBuildsTabWidget(SettingsFormWidget):
         super().__init__()
 
         # Minimum stable blender download version (this is mainly for cleanliness and speed)
-        self.MinStableBlenderVer = QDoubleSpinBox()
-        self.MinStableBlenderVer.setMinimum(2.4)
-        self.MinStableBlenderVer.setValue(get_minimum_blender_stable_version())
-        self.MinStableBlenderVer.setSingleStep(0.1)
-        self.MinStableBlenderVer.valueChanged.connect(set_minimum_blender_stable_version)
+        self.MinStableBlenderVer = SemVersionEdit(get_minimum_blender_stable_version(), self)
+        self.MinStableBlenderVer.version_changed.connect(set_minimum_blender_stable_version)
+        self.MinStableBlenderVer.major.setMinimum(2)
 
         # Mark As Favorite
         self.MarkAsFavorite = QComboBox()

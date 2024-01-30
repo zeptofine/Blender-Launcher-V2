@@ -26,13 +26,6 @@ class SettingsFormWidget(QWidget):
         label.setFixedWidth(self.label_width)
         label.setFixedHeight(height)
 
-        # Check if widget is a sub layout
-        if widget.isWidgetType():
-            widget.setFixedHeight(height)
-        else:
-            for w in widget.children():
-                w.setFixedHeight(height)
-
         if new_line:
             self.layout.addRow(label)
             self.layout.addRow(widget)
