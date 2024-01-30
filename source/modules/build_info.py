@@ -22,7 +22,7 @@ matchers = tuple(
         (
             r"(?P<ma>\d+)\.(?P<mi>\d+)\.(?P<pa>\d+) (?P<pre>.*)",  # <major>.<minor>.<patch> <Prerelease>
             r"(?P<ma>\d+)\.(?P<mi>\d+) \(sub (?P<pa>\d+)\)",  # <major>.<minor> (sub <patch>)
-            r"(?P<ma>\d+)\.(?P<mi>\d+)(?P<pre>[^\.\s]+)",  # <major>.<minor><patch>
+            r"(?P<ma>\d+)\.(?P<mi>\d+)(?P<pre>\D[^\.\s]+)",  # <major>.<minor><patch>
             r"(?P<ma>\d+)\.(?P<mi>\d+)",  # <major>.<minor>
         ),
     )
@@ -39,7 +39,7 @@ def print_output(func):
 
 
 @cache
-def parse_blender_ver(s: str) -> Version:
+def parse_blender_ver(s: str, name_and_hash: str | None = None) -> Version:
     """
     Converts Blender's different styles of versioning to a semver Version.
     Assumes s is either a semantic version or a blender style version. Otherwise things might get messy
@@ -52,6 +52,14 @@ def parse_blender_ver(s: str) -> Version:
     Returns:
         Version
     """
+    v = _parse(s)
+    if name_and_hash is not None:
+        v = v.bump_build(name_and_hash)
+    return v
+
+
+@cache
+def _parse(s: str):
     try:
         return Version.parse(s)
     except ValueError as e:
@@ -71,7 +79,7 @@ def parse_blender_ver(s: str) -> Version:
         if "pa" in g.groupdict():
             patch = int(g.group("pa"))
         if "pre" in g.groupdict():
-            prerelease = g.group("pre")
+            prerelease = g.group("pre").casefold()
 
         return Version(major=major, minor=minor, patch=patch, prerelease=prerelease)
 
@@ -94,7 +102,7 @@ class BuildInfo:
     custom_executable: str | None = None
 
     def __post_init__(self):
-
+        print(f"({self.branch})[{self.subversion}] {self.link} -> {self.semversion}")
         if self.branch == "stable" and self.subversion.startswith(self.lts_tags):
             self.branch = "lts"
 
@@ -107,7 +115,12 @@ class BuildInfo:
 
     @property
     def semversion(self):
-        return parse_blender_ver(self.subversion)
+        return BuildInfo.get_semver(self.subversion, self.branch, self.build_hash)
+
+    @staticmethod
+    @cache
+    def get_semver(subversion, *s: str):
+        return parse_blender_ver(subversion, ".".join(s_ for s_ in s if s_))
 
     @classmethod
     def from_dict(cls, path: Path, blinfo: dict):
