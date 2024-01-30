@@ -29,8 +29,17 @@ matchers = tuple(
 )
 
 
+def print_output(func):
+    def p_o(*args, **kwargs):
+        v = func(*args, **kwargs)
+        print(f"{func}({', '.join(args)}, **{kwargs}) -> {v!r}")
+        return v
+
+    return p_o
+
+
 @cache
-def old_version_to_semver(s: str) -> Version:
+def parse_blender_ver(s: str) -> Version:
     """
     Converts Blender's different styles of versioning to a semver Version.
     Assumes s is either a semantic version or a blender style version. Otherwise things might get messy
@@ -100,7 +109,7 @@ class BuildInfo:
 
     @property
     def semversion(self):
-        return old_version_to_semver(self.subversion)
+        return parse_blender_ver(self.subversion)
 
     @classmethod
     def from_dict(cls, path: Path, blinfo: dict):

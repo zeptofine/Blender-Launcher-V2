@@ -11,7 +11,7 @@ from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup, SoupStrainer
 from modules._platform import get_platform, set_locale
-from modules.build_info import BuildInfo, old_version_to_semver
+from modules.build_info import BuildInfo, parse_blender_ver
 from modules.settings import get_minimum_blender_stable_version
 from PyQt5.QtCore import QThread, pyqtSignal
 
@@ -209,7 +209,7 @@ class Scraper(QThread):
             if match is None:
                 continue
 
-            ver = old_version_to_semver(match.group(0))
+            ver = parse_blender_ver(match.group(0))
             if ver >= minimum_version:
                 self.scrap_download_links(urljoin(url, href), "stable", stable=True)
 
