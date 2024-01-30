@@ -842,6 +842,9 @@ class BlenderLauncher(BaseWindow):
         if current_ver == "200":
             current_ver = "20000"
 
+        if latest_ver == "200":
+            latest_ver = "20000"
+
         if int(latest_ver) > int(current_ver):
             if latest_tag not in self.notification_pool:
                 self.NewVersionButton.setText(f"Update to version {latest_tag.replace('v', '')}")
