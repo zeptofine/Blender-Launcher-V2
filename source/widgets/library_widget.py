@@ -161,7 +161,7 @@ class LibraryWidget(BaseBuildWidget):
         self.layout.addWidget(self.commitTimeLabel)
         self.layout.addWidget(self.build_state_widget)
 
-        self.launchButton.clicked.connect(lambda: self.launch(True))
+        self.launchButton.clicked.connect(lambda: self.launch(update_selection=True, open_last=self.hovering_and_shifting))
         self.launchButton.setCursor(Qt.CursorShape.PointingHandCursor)
 
         # Context menu
@@ -297,7 +297,7 @@ class LibraryWidget(BaseBuildWidget):
 
     def mouseDoubleClickEvent(self, event):
         if self.build_info is not None:
-            self.launch()
+            self.launch(update_selection=True, open_last=self.hovering_and_shifting)
 
     def mouseReleaseEvent(self, event):
         if event.button == Qt.MouseButton.LeftButton:
@@ -340,9 +340,9 @@ class LibraryWidget(BaseBuildWidget):
         self.setStyleSheet("background-color:")
 
     def eventFilter(self, obj, event):
-        # For detecting ALT
+        # For detecting SHIFT
         if isinstance(event, QHoverEvent):
-            if self._hovered and event.modifiers() & Qt.Modifier.ALT:
+            if self._hovered and event.modifiers() & Qt.Modifier.SHIFT:
                 self.hovering_and_shifting = True
             else:
                 self.hovering_and_shifting = False
@@ -388,7 +388,7 @@ class LibraryWidget(BaseBuildWidget):
         self.deleteAction.setEnabled(True)
         self.installTemplateAction.setEnabled(True)
 
-    def launch(self, update_selection=False, exe=None, blendfile: Path | None = None):
+    def launch(self, update_selection=False, exe=None, blendfile: Path | None = None, open_last=False):
         assert self.build_info is not None
         if update_selection is True:
             self.list_widget.clearSelection()
@@ -453,7 +453,7 @@ class LibraryWidget(BaseBuildWidget):
             else:
                 args += f' "{blendfile.as_posix()}"'
 
-        if self.hovering_and_shifting:
+        if open_last:
             if isinstance(args, list):
                 args.append("--open-last")
             else:
