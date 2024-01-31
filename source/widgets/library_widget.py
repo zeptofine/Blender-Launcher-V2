@@ -178,8 +178,10 @@ class LibraryWidget(BaseBuildWidget):
         self.openRecentAction = QAction("Open Previous File", self)
         self.openRecentAction.setIcon(self.parent.icons.file)
         self.openRecentAction.triggered.connect(lambda: self.launch(open_last=True))
-        self.openRecentAction.setToolTip("This action opens the last file used in this build."
-                                        "<br>(Appends `--open-last` to the execution arguments)")
+        self.openRecentAction.setToolTip(
+            "This action opens the last file used in this build."
+            "<br>(Appends `--open-last` to the execution arguments)"
+        )
 
         self.addToQuickLaunchAction = QAction("Add To Quick Launch", self)
         self.addToQuickLaunchAction.setIcon(self.parent.icons.quick_launch)
@@ -363,7 +365,6 @@ class LibraryWidget(BaseBuildWidget):
         self._launch_icon = self.launchButton.icon()
         self.launchButton.setIcon(self.parent.icons.file)
         self.launchButton.setFont(self.parent.font_8)
-
 
     def _stopped_shift_hovering(self):
         self.launchButton.set_text("Launch")
