@@ -374,7 +374,7 @@ def get_minimum_blender_stable_version() -> Version:
         return Version(int(v), int(v * 100), 0)
 
 def set_minimum_blender_stable_version(v: Version):
-    get_settings().setValue("minimum_blender_stable_version", str(v))
+    get_settings().setValue("minimum_blender_stable_version", f"{v.major}.{v.minor}")
 
 
 def get_make_error_popup():

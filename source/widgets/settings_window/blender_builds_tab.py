@@ -30,7 +30,7 @@ class BlenderBuildsTabWidget(SettingsFormWidget):
         super().__init__()
 
         # Minimum stable blender download version (this is mainly for cleanliness and speed)
-        self.MinStableBlenderVer = SemVersionEdit(get_minimum_blender_stable_version(), self)
+        self.MinStableBlenderVer = SemVersionEdit(v=get_minimum_blender_stable_version(), parent=self, use_patch=False)
         self.MinStableBlenderVer.version_changed.connect(set_minimum_blender_stable_version)
         self.MinStableBlenderVer.major.setMinimum(2)
 

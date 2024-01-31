@@ -11,7 +11,7 @@ class SemVersionEdit(QWidget):
     patch_changed = pyqtSignal(int)
     version_changed = pyqtSignal(Version)
 
-    def __init__(self, v: Version | None = None, parent=None):
+    def __init__(self, v: Version | None = None, parent=None, use_patch=True):
         super().__init__(parent)
         if v is None:
             v = Version(3, 0, 0)
@@ -31,6 +31,10 @@ class SemVersionEdit(QWidget):
         self.patch = QSpinBox(self)
         self.patch.setValue(v.patch)
         self.patch.valueChanged.connect(self.patch_changed.emit)
+        if not use_patch:
+            self.patch.hide()
+
+
 
         layout.addWidget(self.major)
         layout.addWidget(self.minor)
