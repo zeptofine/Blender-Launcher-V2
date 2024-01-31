@@ -180,7 +180,8 @@ class LibraryWidget(BaseBuildWidget):
         self.openRecentAction.triggered.connect(lambda: self.launch(open_last=True))
         self.openRecentAction.setToolTip(
             "This action opens the last file used in this build."
-            "<br>(Appends `--open-last` to the execution arguments)"
+            "\n(Appends `--open-last` to the execution arguments)"
+            "\nSHORTCUT: Shift + Launch or Doubleclick"
         )
 
         self.addToQuickLaunchAction = QAction("Add To Quick Launch", self)
