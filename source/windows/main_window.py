@@ -38,7 +38,6 @@ from modules.settings import (
     set_library_folder,
 )
 from modules.tasks import Task, TaskQueue, TaskWorker
-from pynput import keyboard
 from PyQt5.QtCore import QSize, Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtNetwork import QLocalServer
 from PyQt5.QtWidgets import (
@@ -67,6 +66,15 @@ from windows.base_window import BaseWindow
 from windows.dialog_window import DialogIcon, DialogWindow
 from windows.file_dialog_window import FileDialogWindow
 from windows.settings_window import SettingsWindow
+
+try:
+    from pynput import keyboard
+
+    HOTKEYS_AVAILABLE = True
+except Exception as e:
+    logging.error(f"Error importing pynput: {e}\nGlobal hotkeys not supported.")
+    HOTKEYS_AVAILABLE = False
+
 
 if TYPE_CHECKING:
     from PyQt5.QtGui import QDragEnterEvent, QDragMoveEvent
@@ -346,6 +354,10 @@ class BlenderLauncher(BaseWindow):
         self.DownloadsToolBox.setCurrentIndex(get_default_downloads_page())
         self.PreferencesToolBox.setCurrentIndex(get_default_preferences_tab())
 
+        version_status = self.version
+        if not is_frozen():  # Add an asterisk to the statusbar version if running from source
+            version_status = f"*{version_status}"
+
         # Status bar
         self.status_bar = QStatusBar(self)
         self.setStatusBar(self.status_bar)
@@ -358,7 +370,7 @@ class BlenderLauncher(BaseWindow):
         self.NewVersionButton = QPushButton()
         self.NewVersionButton.hide()
         self.NewVersionButton.clicked.connect(self.show_update_window)
-        self.statusbarVersion = QPushButton(self.version)
+        self.statusbarVersion = QPushButton(version_status)
         self.statusbarVersion.clicked.connect(self.show_changelog)
         self.statusbarVersion.setToolTip(
             "The version of Blender Launcher that is currently run. Press to check changelog."
@@ -439,27 +451,27 @@ class BlenderLauncher(BaseWindow):
     def setup_global_hotkeys_listener(self):
         if self.hk_listener is not None:
             self.hk_listener.stop()
+        if HOTKEYS_AVAILABLE:
+            key_seq = get_quick_launch_key_seq()
+            keys = key_seq.split("+")
 
-        key_seq = get_quick_launch_key_seq()
-        keys = key_seq.split("+")
+            for key in keys:
+                if len(key) > 1:
+                    key_seq = key_seq.replace(key, "<" + key + ">")
 
-        for key in keys:
-            if len(key) > 1:
-                key_seq = key_seq.replace(key, "<" + key + ">")
+            try:
+                self.hk_listener = keyboard.GlobalHotKeys({key_seq: self.on_activate_quick_launch})
+            except Exception:
+                self.dlg = DialogWindow(
+                    parent=self,
+                    title="Warning",
+                    text="Global hotkey sequence was not recognized!<br>Try to use another combination of keys",
+                    accept_text="OK",
+                    cancel_text=None,
+                )
+                return
 
-        try:
-            self.hk_listener = keyboard.GlobalHotKeys({key_seq: self.on_activate_quick_launch})
-        except Exception:
-            self.dlg = DialogWindow(
-                parent=self,
-                title="Warning",
-                text="Global hotkey sequence was not recognized!<br>Try to use another combination of keys",
-                accept_text="OK",
-                cancel_text=None,
-            )
-            return
-
-        self.hk_listener.start()
+            self.hk_listener.start()
 
     def on_activate_quick_launch(self):
         if self.settings_window is None:

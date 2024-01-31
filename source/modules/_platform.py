@@ -3,11 +3,13 @@ from __future__ import annotations
 import os
 import platform
 import sys
+from functools import cache
 from locale import LC_ALL, setlocale
 from pathlib import Path
 from subprocess import DEVNULL, PIPE, STDOUT, Popen, call, check_call, check_output
 
 
+@cache
 def get_platform():
     platforms = {
         "linux": "Linux",
@@ -22,7 +24,7 @@ def get_platform():
 
     return platforms[sys.platform]
 
-
+@cache
 def get_platform_full():
     return f"{get_platform()} {os.name} {platform.release()}"
 
@@ -120,11 +122,17 @@ def _check_output(args):
 
     return check_output(args, shell=False, stderr=DEVNULL, stdin=DEVNULL)
 
-
+@cache
 def is_frozen():
+    """
+    This function checks if the application is running as a bundled executable
+    using a package like PyInstaller. It returns True if the application is "frozen"
+    (i.e., bundled as an executable) and False otherwise.
+    """
+
     return bool(getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"))
 
-
+@cache
 def get_cwd():
     if is_frozen():
         return Path(os.path.dirname(sys.executable))
