@@ -175,7 +175,7 @@ class LibraryWidget(BaseBuildWidget):
         self.deleteAction.setIcon(self.parent.icons.delete)
         self.deleteAction.triggered.connect(self.ask_remove_from_drive)
 
-        self.openRecentAction = QAction("Open previous file", self)
+        self.openRecentAction = QAction("Open Previous File", self)
         self.openRecentAction.setIcon(self.parent.icons.file)
         self.openRecentAction.triggered.connect(lambda: self.launch(open_last=True))
         self.openRecentAction.setToolTip("This action opens the last file used in this build."
