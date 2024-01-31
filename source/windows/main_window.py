@@ -76,6 +76,7 @@ except Exception as e:
 if TYPE_CHECKING:
     from PyQt5.QtGui import QDragEnterEvent, QDragMoveEvent
     from widgets.base_build_widget import BaseBuildWidget
+    from widgets.base_list_widget import BaseListWidget
 
 if get_platform() == "Windows":
     from PyQt5.QtWinExtras import QWinThumbnailToolBar, QWinThumbnailToolButton
@@ -768,18 +769,19 @@ class BlenderLauncher(BaseWindow):
             downloads_list_widget = self.DownloadsExperimentalListWidget
             library_list_widget = self.LibraryExperimentalListWidget
 
-        is_installed = library_list_widget.contains_build_info(build_info)
+        installed = library_list_widget.widget_with_blinfo(build_info)
 
-        if is_installed:
+        if installed is not None:
             show_new = True
 
         if not downloads_list_widget.contains_build_info(build_info):
             item = BaseListWidgetItem(build_info.commit_time)
             widget = DownloadWidget(
                 self, downloads_list_widget, item,
-                build_info, show_new, is_installed)
+                build_info, installed=installed, show_new=show_new)
+            widget.focus_installed_widget.connect(self.focus_widget)
             downloads_list_widget.add_item(item, widget)
-            if is_installed:
+            if installed is not None:
                 self.new_downloads = True
 
     def draw_to_library(self, path, show_new=False):
@@ -800,7 +802,7 @@ class BlenderLauncher(BaseWindow):
         widget = LibraryWidget(self, item, path, list_widget,
                                show_new)
         list_widget.insert_item(item, widget)
-
+        return widget
 
     def draw_unrecognized(self, path):
         branch = Path(path).parent.name
@@ -820,6 +822,22 @@ class BlenderLauncher(BaseWindow):
         widget = UnrecoBuildWidget(self, path, list_widget, item)
 
         list_widget.insert_item(item, widget)
+
+    def focus_widget(self, widget: BaseBuildWidget):
+        tab: QWidget | None= None
+        lst: BaseListWidget | None = None
+        item: BaseListWidgetItem | None = None
+
+        if isinstance(widget, LibraryWidget):
+            tab = self.LibraryTab
+            item = widget.item
+            assert item is not None
+            lst = item.listWidget()
+
+        assert tab and lst and item
+        self.TabWidget.setCurrentWidget(tab)
+        lst.setFocus(Qt.FocusReason.ShortcutFocusReason)
+        widget.setFocus(Qt.FocusReason.ShortcutFocusReason)
 
     def set_status(self, status=None, is_force_check_on=None):
         if status is not None:

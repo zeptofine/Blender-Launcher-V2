@@ -42,12 +42,12 @@ if TYPE_CHECKING:
 
 
 class LibraryWidget(BaseBuildWidget):
-    def __init__(self, parent: BlenderLauncher, item, link, list_widget, show_new=False, parent_widget=None):
+    def __init__(self, parent: BlenderLauncher, item: BaseListWidgetItem, link, list_widget, show_new=False, parent_widget=None):
         super().__init__(parent=parent)
         self.setAcceptDrops(True)
 
         self.parent: BlenderLauncher = parent
-        self.item = item
+        self.item: BaseListWidgetItem = item
         self.link = link
         self.list_widget = list_widget
         self.show_new = show_new
