@@ -111,6 +111,12 @@ def _check_output(args):
 
 
 def is_frozen():
+    """
+    This function checks if the application is running as a bundled executable
+    using a package like PyInstaller. It returns True if the application is "frozen"
+    (i.e., bundled as an executable) and False otherwise.
+    """
+
     return bool(getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"))
 
 
