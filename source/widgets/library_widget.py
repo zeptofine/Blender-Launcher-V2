@@ -22,7 +22,12 @@ from modules.settings import (
 from modules.shortcut import create_shortcut
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt, pyqtSlot
-from PyQt5.QtGui import QDragEnterEvent, QDragLeaveEvent, QDragMoveEvent, QDropEvent
+from PyQt5.QtGui import (
+    QDragEnterEvent,
+    QDragLeaveEvent,
+    QDropEvent,
+    QHoverEvent,
+)
 from PyQt5.QtWidgets import QAction, QApplication, QHBoxLayout, QLabel, QWidget
 from threads.observer import Observer
 from threads.register import Register
@@ -45,6 +50,11 @@ class LibraryWidget(BaseBuildWidget):
     def __init__(self, parent: BlenderLauncher, item, link, list_widget, show_new=False, parent_widget=None):
         super().__init__(parent=parent)
         self.setAcceptDrops(True)
+        self.setAttribute(Qt.WidgetAttribute.WA_Hover)
+        self.setMouseTracking(True)
+        self.installEventFilter(self)
+        self._hovering_and_shifting = False
+        self._hovered = False
 
         self.parent: BlenderLauncher = parent
         self.item = item
@@ -329,6 +339,40 @@ class LibraryWidget(BaseBuildWidget):
             self.launch(True, blendfile=Path(file.toLocalFile()))
         self.setStyleSheet("background-color:")
 
+    def eventFilter(self, obj, event):
+        # For detecting ALT
+        if isinstance(event, QHoverEvent):
+            if self._hovered and event.modifiers() & Qt.Modifier.ALT:
+                self.hovering_and_shifting = True
+            else:
+                self.hovering_and_shifting = False
+        return super().eventFilter(obj, event)
+
+    def _shift_hovering(self):
+        self.launchButton.set_text("Last?")
+
+    def _stopped_shift_hovering(self):
+        self.launchButton.set_text("Launch")
+
+    def enterEvent(self, e):
+        self._hovered = True
+
+    def leaveEvent(self, e):
+        self._hovered = False
+
+    @property
+    def hovering_and_shifting(self):
+        return self._hovering_and_shifting
+
+    @hovering_and_shifting.setter
+    def hovering_and_shifting(self, v: bool):
+        if v and not self._hovering_and_shifting:
+            self._hovering_and_shifting = True
+            self._shift_hovering()
+        elif not v and self._hovering_and_shifting:
+            self._hovering_and_shifting = False
+            self._stopped_shift_hovering()
+
     def install_template(self):
         self.launchButton.set_text("Updating")
         self.launchButton.setEnabled(False)
@@ -344,7 +388,7 @@ class LibraryWidget(BaseBuildWidget):
         self.deleteAction.setEnabled(True)
         self.installTemplateAction.setEnabled(True)
 
-    def launch(self, update_selection=False, exe=None, blendfile: Path | None=None):
+    def launch(self, update_selection=False, exe=None, blendfile: Path | None = None):
         assert self.build_info is not None
         if update_selection is True:
             self.list_widget.clearSelection()
@@ -408,6 +452,12 @@ class LibraryWidget(BaseBuildWidget):
                 args.append(blendfile.as_posix())
             else:
                 args += f' "{blendfile.as_posix()}"'
+
+        if self.hovering_and_shifting:
+            if isinstance(args, list):
+                args.append("--open-last")
+            else:
+                args += " --open-last"
 
         proc = _popen(args)
         assert proc is not None
