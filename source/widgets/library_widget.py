@@ -124,6 +124,7 @@ class LibraryWidget(BaseBuildWidget):
         self.launchButton = LeftIconButtonWidget("Launch")
         self.launchButton.setFixedWidth(85)
         self.launchButton.setProperty("LaunchButton", True)
+        self._launch_icon = None
 
         if self.branch == "lts":
             branch_name = "LTS"
@@ -161,7 +162,9 @@ class LibraryWidget(BaseBuildWidget):
         self.layout.addWidget(self.commitTimeLabel)
         self.layout.addWidget(self.build_state_widget)
 
-        self.launchButton.clicked.connect(lambda: self.launch(update_selection=True, open_last=self.hovering_and_shifting))
+        self.launchButton.clicked.connect(
+            lambda: self.launch(update_selection=True, open_last=self.hovering_and_shifting)
+        )
         self.launchButton.setCursor(Qt.CursorShape.PointingHandCursor)
 
         # Context menu
@@ -171,6 +174,12 @@ class LibraryWidget(BaseBuildWidget):
         self.deleteAction = QAction("Delete From Drive", self)
         self.deleteAction.setIcon(self.parent.icons.delete)
         self.deleteAction.triggered.connect(self.ask_remove_from_drive)
+
+        self.openRecentAction = QAction("Open previous file", self)
+        self.openRecentAction.setIcon(self.parent.icons.file)
+        self.openRecentAction.triggered.connect(lambda: self.launch(open_last=True))
+        self.openRecentAction.setToolTip("This action opens the last file used in this build."
+                                        "<br>(Appends `--open-last` to the execution arguments)")
 
         self.addToQuickLaunchAction = QAction("Add To Quick Launch", self)
         self.addToQuickLaunchAction.setIcon(self.parent.icons.quick_launch)
@@ -224,6 +233,7 @@ class LibraryWidget(BaseBuildWidget):
         self.debugMenu.addAction(self.debugGpuTemplateAction)
         self.debugMenu.addAction(self.debugGpuGWTemplateAction)
 
+        self.menu.addAction(self.openRecentAction)
         self.menu.addAction(self.addToQuickLaunchAction)
         self.menu.addAction(self.addToFavoritesAction)
         self.menu.addAction(self.removeFromFavoritesAction)
@@ -297,7 +307,7 @@ class LibraryWidget(BaseBuildWidget):
 
     def mouseDoubleClickEvent(self, event):
         if self.build_info is not None:
-            self.launch(update_selection=True, open_last=self.hovering_and_shifting)
+            self.launch(open_last=self.hovering_and_shifting)
 
     def mouseReleaseEvent(self, event):
         if event.button == Qt.MouseButton.LeftButton:
@@ -349,10 +359,16 @@ class LibraryWidget(BaseBuildWidget):
         return super().eventFilter(obj, event)
 
     def _shift_hovering(self):
-        self.launchButton.set_text("Last?")
+        self.launchButton.set_text("  Previous")
+        self._launch_icon = self.launchButton.icon()
+        self.launchButton.setIcon(self.parent.icons.file)
+        self.launchButton.setFont(self.parent.font_8)
+
 
     def _stopped_shift_hovering(self):
         self.launchButton.set_text("Launch")
+        self.launchButton.setIcon(self._launch_icon or self.parent.icons.none)
+        self.launchButton.setFont(self.parent.font_10)
 
     def enterEvent(self, e):
         self._hovered = True
