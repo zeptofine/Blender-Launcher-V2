@@ -30,9 +30,6 @@ class DownloadState(Enum):
     RENAMING = 5
 
 
-non_basic_blendver = re.compile(r"(?P<ma>\d+)\.(?P<mi>\d+)(?P<pre>\D[^\.\s+]*)")
-
-
 class DownloadWidget(BaseBuildWidget):
     def __init__(self, parent: "BlenderLauncher", list_widget, item, build_info, is_installed, show_new=False):
         super().__init__(parent=parent)
@@ -239,9 +236,7 @@ class DownloadWidget(BaseBuildWidget):
         assert self.build_dir is not None
 
         # If the returned version from the executable is invalid it might break loading.
-        ver = non_basic_blendver.search(self.build_dir.name)
-        if ver is not None:
-            ver = parse_blender_ver(self.build_dir.name[ver.start() : ver.end()])
+        ver = parse_blender_ver(self.build_dir.name, search=True)
 
         a = ReadBuildTask(
             self.build_dir,
