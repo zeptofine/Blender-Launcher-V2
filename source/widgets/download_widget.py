@@ -44,10 +44,11 @@ class DownloadWidget(BaseBuildWidget):
         self.item = item
         self.build_info = build_info
         self.show_new = show_new
-        self.installed: LibraryWidget | None = installed
+        self.installed: LibraryWidget | None = None
         self.state = DownloadState.IDLE
         self.build_dir = None
         self.source_file = None
+
 
         self.progressBar = BaseProgressBarWidget()
         self.progressBar.setFont(self.parent.font_8)
@@ -116,17 +117,16 @@ class DownloadWidget(BaseBuildWidget):
         self.sub_vl.addLayout(self.build_info_hl)
         self.sub_vl.addLayout(self.progress_bar_hl)
 
-        if self.installed is not None:
-            self.installed.destroyed.connect(self.uninstalled)
-            self.downloadButton.hide()
-        else:
-            self.installedButton.hide()
-
         self.main_hl.addWidget(self.downloadButton)
         self.main_hl.addWidget(self.cancelButton)
         self.main_hl.addWidget(self.installedButton)
         self.main_hl.addLayout(self.sub_vl)
         self.main_hl.addWidget(self.build_state_widget)
+
+        if installed:
+            self.setInstalled(installed)
+        else:
+            self.installedButton.hide()
 
         self.setLayout(self.main_hl)
 
@@ -290,6 +290,7 @@ class DownloadWidget(BaseBuildWidget):
 
     def setInstalled(self, build_widget: BaseBuildWidget):
         if self.state == DownloadState.IDLE:
+            build_widget.destroyed.connect(self.uninstalled)
             self.downloadButton.hide()
             self.installedButton.show()
             self.cancelButton.hide()

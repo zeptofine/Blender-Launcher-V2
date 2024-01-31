@@ -753,6 +753,8 @@ class BlenderLauncher(BaseWindow):
     def draw_to_downloads(self, build_info, show_new=True):
         if self.started:
             show_new = False
+        else:
+            show_new = True
 
         if build_info not in self.cashed_builds:
             self.cashed_builds.append(build_info)
@@ -772,7 +774,7 @@ class BlenderLauncher(BaseWindow):
         installed = library_list_widget.widget_with_blinfo(build_info)
 
         if installed is not None:
-            show_new = True
+            show_new = False
 
         if not downloads_list_widget.contains_build_info(build_info):
             item = BaseListWidgetItem(build_info.commit_time)
@@ -781,7 +783,7 @@ class BlenderLauncher(BaseWindow):
                 build_info, installed=installed, show_new=show_new)
             widget.focus_installed_widget.connect(self.focus_widget)
             downloads_list_widget.add_item(item, widget)
-            if installed is not None:
+            if show_new:
                 self.new_downloads = True
 
     def draw_to_library(self, path, show_new=False):
