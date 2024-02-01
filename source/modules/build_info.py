@@ -29,15 +29,6 @@ matchers = tuple(
 )
 
 
-def print_output(func):
-    def p_o(*args, **kwargs):
-        v = func(*args, **kwargs)
-        print(f"{func}({', '.join(args)}, **{kwargs}) -> {v!r}")
-        return v
-
-    return p_o
-
-
 @cache
 def parse_blender_ver(s: str, search=False) -> Version:
     """
@@ -97,7 +88,6 @@ class BuildInfo:
     custom_executable: str | None = None
 
     def __post_init__(self):
-        print(f"({self.branch})[{self.subversion}] -> {self.semversion} or {self.full_semversion} from {self.link}")
         if self.branch == "stable" and self.subversion.startswith(self.lts_tags):
             self.branch = "lts"
 
