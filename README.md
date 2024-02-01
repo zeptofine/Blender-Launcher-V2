@@ -1,10 +1,11 @@
 
 # Blender Launcher V2
 
-![Blender Launcher Logo](docs/mkdocs/imgs/bl_logo.png)
-## Join the [Discord](https://discord.gg/3jrTZFJkTd) if you want to discuss about the project 
+<p align="center">
+<img src="docs/mkdocs/imgs/bl_logo.png">
+</p>
 
-# [Discussions](https://github.com/Victor-IX/Blender-Launcher-V2/discussions) │ [Documentation](https://Victor-IX.github.io/Blender-Launcher-V2) │ [Latest Release](https://github.com/Victor-IX/Blender-Launcher-V2/releases/latest)
+# [Discussions](https://github.com/Victor-IX/Blender-Launcher-V2/discussions) │ [Discord](https://discord.gg/3jrTZFJkTd) | [Documentation](https://Victor-IX.github.io/Blender-Launcher-V2) │ [Latest Release](https://github.com/Victor-IX/Blender-Launcher-V2/releases/latest)
 
 # Original [Project](https://github.com/DotBow/Blender-Launcher) By [DotBow](https://github.com/DotBow)
 
@@ -44,9 +45,9 @@ Blender Launcher introduces a number of major improvements:
 
 * Rewritten from the ground up for better stability and extensibility
 * All official builds are available:
-    * [Stable releases](https://download.blender.org/release/)
-    * [Daily builds](https://builder.blender.org/download/daily/)
-    * [Experimental branches](https://builder.blender.org/download/branches/)
+  * [Stable releases](https://download.blender.org/release/)
+  * [Daily builds](https://builder.blender.org/download/daily/)
+  * [Experimental branches](https://builder.blender.org/download/branches/)
 * Faster starting times by caching data
 * Support for high DPI displays
 
@@ -63,7 +64,7 @@ Core features:
 
 * :floppy_disk: Download [latest version](https://github.com/Victor-IX/Blender-Launcher-V2/releases/latest) from [releases page](https://github.com/Victor-IX/Blender-Launcher-V2/releases)
 * :rocket: Follow [Installation](https://Victor-IX.github.io/Blender-Launcher-V2/installation/#installing-blender-launcher) instructions on [Documentation](https://Victor-IX.github.io/Blender-Launcher-V2) site
-* :speech_balloon: Use Blender Artists Community [thread](https://blenderartists.org/t/blender-launcher-standalone-software-client) to ask questions and make proposals or [Discord](https://discord.gg/3jrTZFJkTd) 
+* :speech_balloon: Use Blender Artists Community [thread](https://blenderartists.org/t/blender-launcher-standalone-software-client) to ask questions and make proposals or [Discord](https://discord.gg/3jrTZFJkTd)
 
 ## How to thank the developer?
 
