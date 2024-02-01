@@ -323,6 +323,10 @@ class BlenderLauncher(BaseWindow):
         self.LibraryToolBox.setCurrentIndex(get_default_library_page())
         self.DownloadsToolBox.setCurrentIndex(get_default_downloads_page())
 
+        version_status = self.version
+        if not is_frozen(): # Add an asterisk to the statusbar version if running from source
+            version_status = f"*{version_status}"
+
         # Status bar
         self.status_bar = QStatusBar(self)
         self.setStatusBar(self.status_bar)
@@ -335,7 +339,7 @@ class BlenderLauncher(BaseWindow):
         self.NewVersionButton = QPushButton()
         self.NewVersionButton.hide()
         self.NewVersionButton.clicked.connect(self.show_update_window)
-        self.statusbarVersion = QPushButton(self.version)
+        self.statusbarVersion = QPushButton(version_status)
         self.statusbarVersion.clicked.connect(self.show_changelog)
         self.statusbarVersion.setToolTip(
             "The version of Blender Launcher that is currently run. "
@@ -837,13 +841,6 @@ class BlenderLauncher(BaseWindow):
 
         latest_ver = re.sub(r"\D", "", latest_tag)
         current_ver = re.sub(r"\D", "", self.version)
-
-        # Adding temp fix to handle version 2 of the launcher
-        if current_ver == "200":
-            current_ver = "20000"
-
-        if latest_ver == "200":
-            latest_ver = "20000"
 
         if int(latest_ver) > int(current_ver):
             if latest_tag not in self.notification_pool:
