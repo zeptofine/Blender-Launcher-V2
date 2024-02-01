@@ -22,6 +22,7 @@ class Icons:
     download: QIcon
     file: QIcon
     taskbar: QIcon
+    none: QIcon
 
     @classmethod
     def get(cls, color=WHITE):
@@ -39,6 +40,7 @@ class Icons:
             load_icon(color, "download"),
             load_icon(color, "file"),
             QIcon(base_path + "bl/bl.ico"),
+            QIcon(),
         )
 
 
