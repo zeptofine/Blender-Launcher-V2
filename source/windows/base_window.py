@@ -53,6 +53,14 @@ class BaseWindow(QMainWindow):
         self.destroyed.connect(lambda: self._destroyed())
 
     def set_system_titlebar(self, b: bool):
+        """
+        Changes window flags so frameless is enabled (custom headers) or disabled (system).
+
+        This is called during initialization. use update_system_titlebar(b: bool) to update window components.
+
+        Arguments:
+            b -- bool
+        """
         if not b:
             self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
             if self.using_system_bar:
@@ -60,13 +68,20 @@ class BaseWindow(QMainWindow):
                 self.show()
             self.using_system_bar = False
         else:
-            self.setWindowFlags(self.windowFlags() & ~Qt.WindowType.FramelessWindowHint) # type: ignore
+            self.setWindowFlags(self.windowFlags() & ~Qt.WindowType.FramelessWindowHint)  # type: ignore
             if not self.using_system_bar:
                 self.hide()
                 self.show()
             self.using_system_bar = True
 
     def update_system_titlebar(self, b: bool):
+        """
+        Used to update window components, such as the header, when swapping between the system title bar and
+        the custom one
+
+        Arguments:
+            b -- bool
+        """
         ...
 
     def mousePressEvent(self, event):
