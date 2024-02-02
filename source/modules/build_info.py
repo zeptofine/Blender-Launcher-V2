@@ -19,11 +19,12 @@ if TYPE_CHECKING:
 matchers = tuple(
     map(
         re.compile,
-        (  #                                                       # format                                 examples
-            r"(?P<ma>\d+)\.(?P<mi>\d+)\.(?P<pa>\d+) (?P<pre>.*)",  # <major>.<minor>.<patch> <Prerelease>   2.80 Alpha    -> 2.80.0-alpha
-            r"(?P<ma>\d+)\.(?P<mi>\d+) \(sub (?P<pa>\d+)\)",  #      <major>.<minor> (sub <patch>)          2.80 (sub 75) -> 2.80.75
-            r"(?P<ma>\d+)\.(?P<mi>\d+)(?P<pre>[^-]{1,3})",  #        <major>.<minor><[chars]*(1-3)>         2.79rc1       -> 2.79.0-rc1
-            r"(?P<ma>\d+)\.(?P<mi>\d+)(?P<pre>\D[^\.\s]*)?",  #      <major>.<minor><patch?>                2.79          -> 2.79.0       | 2.79b -> 2.79.0-b
+        (  #                                                                                   # format                                 examples
+            r"(?P<ma>\d+)\.(?P<mi>\d+)\.(?P<pa>\d+)[ \-](?P<pre>((?!windows|linux)([^+]))*)",  # <major>.<minor>.<patch> <Prerelease>   2.80.0 Alpha  -> 2.80.0-alpha
+            # r"(?P<ma>\d+)\.(?P<mi>\d+)\.(?P<pa>\d+)",  #                                       <major>.<minor>.<patch>                3.0.0         -> 3.0.0
+            r"(?P<ma>\d+)\.(?P<mi>\d+) \(sub (?P<pa>\d+)\)",  #                                  <major>.<minor> (sub <patch>)          2.80 (sub 75) -> 2.80.75
+            r"(?P<ma>\d+)\.(?P<mi>\d+)(?P<pre>[^-\d]{1,3})",  #                                  <major>.<minor><[chars]*(1-3)>         2.79rc1       -> 2.79.0-rc1
+            r"(?P<ma>\d+)\.(?P<mi>\d+)(?P<pre>\D[^\.\s]*)?",  #                                  <major>.<minor><patch?>                2.79          -> 2.79.0       | 2.79b -> 2.79.0-b
         ),
     )
 )
@@ -53,9 +54,15 @@ def parse_blender_ver(s: str, search=False) -> Version:
 
         try:
             if search:
-                g = next(m for matcher in matchers if (m := matcher.search(s)) is not None)
+                for matcher in matchers:
+                    if (m := matcher.search(s)) is not None:
+                        g = m
+                        break
             else:
-                g = next(m for matcher in matchers if (m := matcher.match(s)) is not None)
+                for matcher in matchers:
+                    if (m := matcher.match(s)) is not None:
+                        g = m
+                        break
         except StopIteration:
             """No matcher gave any valid version"""
             raise ValueError("No valid version found") from e
@@ -67,7 +74,9 @@ def parse_blender_ver(s: str, search=False) -> Version:
         if "pre" in g.groupdict() and g.group("pre") is not None:
             prerelease = g.group("pre").casefold()
 
-        return Version(major=major, minor=minor, patch=patch, prerelease=prerelease)
+        v = Version(major=major, minor=minor, patch=patch, prerelease=prerelease)
+        # print(f"Parsed {s} to {v} using {matcher}")
+        return v
 
 
 @dataclass

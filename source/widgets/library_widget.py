@@ -126,8 +126,8 @@ class LibraryWidget(BaseBuildWidget):
         self.launchButton.setProperty("LaunchButton", True)
         self._launch_icon = None
 
+        subversion_view = str(self.build_info.semversion.finalize_version())
         prerelease = self.build_info.semversion.prerelease
-
         if self.branch == "lts":
             branch_name = "LTS"
         elif (self.parent_widget is not None) and self.build_info.custom_name:
@@ -143,11 +143,11 @@ class LibraryWidget(BaseBuildWidget):
 
         if (
             prerelease is not None
-            and prerelease not in branch_name.casefold()
+            and prerelease not in branch_name.casefold().split()
         ):
             branch_name = f"({prerelease.title()}) {branch_name}"
 
-        self.subversionLabel = QLabel(str(self.build_info.semversion.finalize_version()))
+        self.subversionLabel = QLabel(subversion_view)
         self.subversionLabel.setFixedWidth(85)
         self.subversionLabel.setIndent(20)
         self.subversionLabel.setToolTip(str(self.build_info.semversion))
