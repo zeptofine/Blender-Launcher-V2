@@ -4,12 +4,13 @@ import logging
 import os
 import re
 import webbrowser
+from datetime import datetime, timezone
 from enum import Enum
 from functools import partial
 from pathlib import Path
 from platform import version
 from shutil import copyfileobj
-from time import localtime, strftime
+from time import localtime, mktime, strftime
 from typing import TYPE_CHECKING
 
 import resources_rc
@@ -25,6 +26,7 @@ from modules.settings import (
     get_enable_download_notifications,
     get_enable_new_builds_notifications,
     get_enable_quick_launch_key_seq,
+    get_last_time_checked_utc,
     get_launch_minimized_to_tray,
     get_library_folder,
     get_make_error_popup,
@@ -34,6 +36,7 @@ from modules.settings import (
     get_sync_library_and_downloads_pages,
     get_worker_thread_count,
     is_library_folder_valid,
+    set_last_time_checked_utc,
     set_library_folder,
 )
 from modules.tasks import Task, TaskQueue, TaskWorker
@@ -74,6 +77,7 @@ except Exception as e:
 
 
 if TYPE_CHECKING:
+    from modules.build_info import BuildInfo
     from PyQt5.QtGui import QDragEnterEvent, QDragMoveEvent
     from widgets.base_build_widget import BaseBuildWidget
     from widgets.base_list_widget import BaseListWidget
@@ -137,6 +141,7 @@ class BlenderLauncher(BaseWindow):
         self.platform = get_platform()
         self.settings_window = None
         self.hk_listener = None
+        self.last_time_checked = get_last_time_checked_utc()
 
         if self.platform == "macOS":
             self.app.aboutToQuit.connect(self._aboutToQuit)
@@ -722,7 +727,7 @@ class BlenderLauncher(BaseWindow):
         #     self.timer.start()
 
     def scraper_finished(self):
-        if self.new_downloads and not self.started:
+        if self.new_downloads:
             self.show_message(
                 "New builds of Blender are available!",
                 message_type=MessageType.NEWBUILDS)
@@ -733,7 +738,10 @@ class BlenderLauncher(BaseWindow):
                     widget.destroy()
 
         set_locale()
-        utcnow = strftime(("%H:%M"), localtime())
+        utcnow = localtime()
+        dt = datetime.fromtimestamp(mktime(utcnow), tz=timezone.utc)
+        set_last_time_checked_utc(dt)
+        self.last_time_checked = dt
         self.app_state = AppState.IDLE
 
         for page in self.DownloadsToolBox.pages:
@@ -745,7 +753,7 @@ class BlenderLauncher(BaseWindow):
         #     self.timer.start()
         #     self.started = False
 
-        self.set_status("Last check at " + utcnow, True)
+        self.set_status("Last check at " + strftime("%H:%M", utcnow), True)
 
     def draw_from_cashed(self, build_info):
         if self.app_state == AppState.IDLE:
@@ -754,10 +762,13 @@ class BlenderLauncher(BaseWindow):
                     self.draw_to_downloads(cashed_build, False)
                     return
 
-    def draw_to_downloads(self, build_info, show_new=True):
+    def draw_to_downloads(self, build_info: BuildInfo, show_new=True):
         if self.started:
             show_new = False
         else:
+            show_new = True
+
+        if build_info.commit_time > self.last_time_checked:
             show_new = True
 
         if build_info not in self.cashed_builds:
