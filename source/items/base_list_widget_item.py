@@ -1,19 +1,21 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 from modules._platform import set_locale
 from PyQt5.QtWidgets import QListWidgetItem
 
 if TYPE_CHECKING:
     from semver import Version
+    from widgets.base_list_widget import BaseListWidget
 
 
 class BaseListWidgetItem(QListWidgetItem):
     def __init__(self, date=None):
         super().__init__()
         self.date = date
+        self.listWidget: Callable[[], BaseListWidget | None]
 
     def __lt__(self, other):
         soring_type = self.listWidget().parent.sorting_type

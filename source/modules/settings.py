@@ -1,6 +1,7 @@
 import contextlib
 import os
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 from modules._platform import get_cwd, get_platform
@@ -8,6 +9,8 @@ from PyQt5.QtCore import QSettings
 from semver import Version
 
 from .build_info import parse_blender_ver
+
+ISO_EPOCH = datetime.fromtimestamp(0, tz=timezone.utc).isoformat()
 
 tabs = {
     "Library": 0,
@@ -108,6 +111,16 @@ def get_favorite_path():
 
 def set_favorite_path(path):
     get_settings().setValue("Internal/favorite_path", path)
+
+
+def get_last_time_checked_utc():
+    v = get_settings().value("Internal/last_time_checked_utc", defaultValue=ISO_EPOCH)
+    return datetime.fromisoformat(v)
+
+
+def set_last_time_checked_utc(dt: datetime):
+    get_settings().setValue("Internal/last_time_checked_utc", dt.isoformat())
+
 
 
 def get_launch_when_system_starts():

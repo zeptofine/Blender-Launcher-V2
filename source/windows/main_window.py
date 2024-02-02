@@ -4,12 +4,13 @@ import logging
 import os
 import re
 import webbrowser
+from datetime import datetime, timezone
 from enum import Enum
 from functools import partial
 from pathlib import Path
 from platform import version
 from shutil import copyfileobj
-from time import localtime, strftime
+from time import localtime, mktime, strftime
 from typing import TYPE_CHECKING
 
 import resources_rc
@@ -25,6 +26,7 @@ from modules.settings import (
     get_enable_download_notifications,
     get_enable_new_builds_notifications,
     get_enable_quick_launch_key_seq,
+    get_last_time_checked_utc,
     get_launch_minimized_to_tray,
     get_library_folder,
     get_make_error_popup,
@@ -34,6 +36,7 @@ from modules.settings import (
     get_sync_library_and_downloads_pages,
     get_worker_thread_count,
     is_library_folder_valid,
+    set_last_time_checked_utc,
     set_library_folder,
 )
 from modules.tasks import Task, TaskQueue, TaskWorker
@@ -75,8 +78,10 @@ except Exception as e:
 
 
 if TYPE_CHECKING:
+    from modules.build_info import BuildInfo
     from PyQt5.QtGui import QDragEnterEvent, QDragMoveEvent
     from widgets.base_build_widget import BaseBuildWidget
+    from widgets.base_list_widget import BaseListWidget
 
 if get_platform() == "Windows":
     from PyQt5.QtWinExtras import QWinThumbnailToolBar, QWinThumbnailToolButton
@@ -137,6 +142,7 @@ class BlenderLauncher(BaseWindow):
         self.platform = get_platform()
         self.settings_window = None
         self.hk_listener = None
+        self.last_time_checked = get_last_time_checked_utc()
 
         if self.platform == "macOS":
             self.app.aboutToQuit.connect(self._aboutToQuit)
@@ -722,7 +728,7 @@ class BlenderLauncher(BaseWindow):
         #     self.timer.start()
 
     def scraper_finished(self):
-        if self.new_downloads and not self.started:
+        if self.new_downloads:
             self.show_message(
                 "New builds of Blender are available!",
                 message_type=MessageType.NEWBUILDS)
@@ -733,7 +739,10 @@ class BlenderLauncher(BaseWindow):
                     widget.destroy()
 
         set_locale()
-        utcnow = strftime(("%H:%M"), localtime())
+        utcnow = localtime()
+        dt = datetime.fromtimestamp(mktime(utcnow), tz=timezone.utc)
+        set_last_time_checked_utc(dt)
+        self.last_time_checked = dt
         self.app_state = AppState.IDLE
 
         for page in self.DownloadsToolBox.pages:
@@ -745,7 +754,7 @@ class BlenderLauncher(BaseWindow):
         #     self.timer.start()
         #     self.started = False
 
-        self.set_status("Last check at " + utcnow, True)
+        self.set_status("Last check at " + strftime("%H:%M", utcnow), True)
 
     def draw_from_cashed(self, build_info):
         if self.app_state == AppState.IDLE:
@@ -754,9 +763,14 @@ class BlenderLauncher(BaseWindow):
                     self.draw_to_downloads(cashed_build, False)
                     return
 
-    def draw_to_downloads(self, build_info, show_new=True):
+    def draw_to_downloads(self, build_info: BuildInfo, show_new=True):
         if self.started:
             show_new = False
+        else:
+            show_new = True
+
+        if build_info.commit_time > self.last_time_checked:
+            show_new = True
 
         if build_info not in self.cashed_builds:
             self.cashed_builds.append(build_info)
@@ -773,18 +787,19 @@ class BlenderLauncher(BaseWindow):
             downloads_list_widget = self.DownloadsExperimentalListWidget
             library_list_widget = self.LibraryExperimentalListWidget
 
-        is_installed = library_list_widget.contains_build_info(build_info)
+        installed = library_list_widget.widget_with_blinfo(build_info)
 
-        if is_installed:
-            show_new = True
+        if installed is not None:
+            show_new = False
 
         if not downloads_list_widget.contains_build_info(build_info):
             item = BaseListWidgetItem(build_info.commit_time)
             widget = DownloadWidget(
                 self, downloads_list_widget, item,
-                build_info, show_new, is_installed)
+                build_info, installed=installed, show_new=show_new)
+            widget.focus_installed_widget.connect(self.focus_widget)
             downloads_list_widget.add_item(item, widget)
-            if is_installed:
+            if show_new:
                 self.new_downloads = True
 
     def draw_to_library(self, path, show_new=False):
@@ -805,7 +820,7 @@ class BlenderLauncher(BaseWindow):
         widget = LibraryWidget(self, item, path, list_widget,
                                show_new)
         list_widget.insert_item(item, widget)
-
+        return widget
 
     def draw_unrecognized(self, path):
         branch = Path(path).parent.name
@@ -825,6 +840,22 @@ class BlenderLauncher(BaseWindow):
         widget = UnrecoBuildWidget(self, path, list_widget, item)
 
         list_widget.insert_item(item, widget)
+
+    def focus_widget(self, widget: BaseBuildWidget):
+        tab: QWidget | None= None
+        lst: BaseListWidget | None = None
+        item: BaseListWidgetItem | None = None
+
+        if isinstance(widget, LibraryWidget):
+            tab = self.LibraryTab
+            item = widget.item
+            assert item is not None
+            lst = item.listWidget()
+
+        assert tab and lst and item
+        self.TabWidget.setCurrentWidget(tab)
+        lst.setFocus(Qt.FocusReason.ShortcutFocusReason)
+        widget.setFocus(Qt.FocusReason.ShortcutFocusReason)
 
     def set_status(self, status=None, is_force_check_on=None):
         if status is not None:
