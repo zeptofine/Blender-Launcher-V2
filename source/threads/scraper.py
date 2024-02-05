@@ -153,8 +153,7 @@ class Scraper(QThread):
         if match:
             build_hash = match[-1].replace("-", "")
 
-        match = re.search(self.subversion, stem)
-        subversion = parse_blender_ver(match.group(0).replace("-", ""))
+        subversion = parse_blender_ver(stem, search=True)
         branch = branch_type
         if branch_type != "stable":
             build_var = ""

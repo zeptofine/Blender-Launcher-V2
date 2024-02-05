@@ -91,7 +91,6 @@ class DownloadWidget(BaseBuildWidget):
 
         if self.build_info.branch == "lts":
             branch_name = "LTS"
-            subversion = self.build_info.semversion
         elif self.build_info.branch == "daily":
             branch = self.build_info.semversion.prerelease
             if branch is not None:
@@ -99,18 +98,15 @@ class DownloadWidget(BaseBuildWidget):
             else:
                 branch = self.build_info.subversion.split("-", 1)[-1].title()
             branch_name = branch
-            subversion = self.build_info.semversion.finalize_version()
         elif self.build_info.branch == "stable":
             branch_name = self.build_info.branch.title()
-            subversion = self.build_info.semversion
         else:
             branch = self.build_info.semversion.prerelease
             if branch is None:
                 branch = str(self.build_info.semversion.finalize_version())
             branch_name = branch.title()
-            subversion = self.build_info.semversion.finalize_version()
 
-        self.subversionLabel = QLabel(str(subversion))
+        self.subversionLabel = QLabel(self.build_info.display_version)
         self.subversionLabel.setFixedWidth(85)
         self.subversionLabel.setIndent(20)
         self.subversionLabel.setToolTip(str(self.build_info.semversion))

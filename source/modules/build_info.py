@@ -23,11 +23,13 @@ matchers = tuple(
             r"(?P<ma>\d+)\.(?P<mi>\d+)\.(?P<pa>\d+)[ \-](?P<pre>((?!windows|linux)([^+]))*)",  # <major>.<minor>.<patch> <Prerelease>   2.80.0 Alpha  -> 2.80.0-alpha
             # r"(?P<ma>\d+)\.(?P<mi>\d+)\.(?P<pa>\d+)",  #                                       <major>.<minor>.<patch>                3.0.0         -> 3.0.0
             r"(?P<ma>\d+)\.(?P<mi>\d+) \(sub (?P<pa>\d+)\)",  #                                  <major>.<minor> (sub <patch>)          2.80 (sub 75) -> 2.80.75
-            r"(?P<ma>\d+)\.(?P<mi>\d+)(?P<pre>[^-\d]{1,3})",  #                                  <major>.<minor><[chars]*(1-3)>         2.79rc1       -> 2.79.0-rc1
+            r"(?P<ma>\d+)\.(?P<mi>\d+)$",  #                                                     <major>.<minor>                        2.79          -> 2.79.0
+            r"(?P<ma>\d+)\.(?P<mi>\d+)(?P<pre>[^-]{1,3})",  #                                    <major>.<minor><[chars]*(1-3)>         2.79rc1       -> 2.79.0-rc1
             r"(?P<ma>\d+)\.(?P<mi>\d+)(?P<pre>\D[^\.\s]*)?",  #                                  <major>.<minor><patch?>                2.79          -> 2.79.0       | 2.79b -> 2.79.0-b
         ),
     )
 )
+initial_cleaner = re.compile(r"(?!blender-)\d.*(?=-linux|-windows)")
 
 
 @cache
@@ -47,12 +49,21 @@ def parse_blender_ver(s: str, search=False) -> Version:
     try:
         return Version.parse(s)
     except ValueError as e:
+        m = initial_cleaner.search(s)
+        if m is not None:
+            s = m.group()
+            try:
+                return Version.parse(s)
+            except ValueError:
+                pass
+
         major = 0
         minor = 0
         patch = 0
         prerelease = None
 
         try:
+            g = None
             if search:
                 for matcher in matchers:
                     if (m := matcher.search(s)) is not None:
@@ -63,7 +74,8 @@ def parse_blender_ver(s: str, search=False) -> Version:
                     if (m := matcher.match(s)) is not None:
                         g = m
                         break
-        except StopIteration:
+            assert g is not None
+        except (StopIteration, AssertionError):
             """No matcher gave any valid version"""
             raise ValueError("No valid version found") from e
 
@@ -72,11 +84,14 @@ def parse_blender_ver(s: str, search=False) -> Version:
         if "pa" in g.groupdict():
             patch = int(g.group("pa"))
         if "pre" in g.groupdict() and g.group("pre") is not None:
-            prerelease = g.group("pre").casefold()
+            prerelease = g.group("pre").casefold().strip("- ")
 
         v = Version(major=major, minor=minor, patch=patch, prerelease=prerelease)
         # print(f"Parsed {s} to {v} using {matcher}")
         return v
+
+
+oldver_cutoff = Version(2, 83, 0)
 
 
 @dataclass
@@ -114,6 +129,20 @@ class BuildInfo:
     @property
     def full_semversion(self):
         return BuildInfo.get_semver(self.subversion, self.branch, self.build_hash)
+
+    @property
+    def display_version(self):
+        return self._display_version(self.semversion)
+
+    @staticmethod
+    @cache
+    def _display_version(v: Version):
+        if v < oldver_cutoff:
+            pre = ""
+            if v.prerelease:
+                pre = v.prerelease
+            return f"{v.major}.{v.minor}{pre}"
+        return str(v.finalize_version())
 
     @staticmethod
     @cache
