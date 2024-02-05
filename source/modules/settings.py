@@ -1,10 +1,13 @@
 import contextlib
 import os
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 from modules._platform import get_cwd, get_platform
 from PyQt5.QtCore import QSettings
+
+ISO_EPOCH = datetime.fromtimestamp(0, tz=timezone.utc).isoformat()
 
 tabs = {
     "Library": 0,
@@ -106,6 +109,16 @@ def get_favorite_path():
 
 def set_favorite_path(path):
     get_settings().setValue("Internal/favorite_path", path)
+
+
+def get_last_time_checked_utc():
+    v = get_settings().value("Internal/last_time_checked_utc", defaultValue=ISO_EPOCH)
+    return datetime.fromisoformat(v)
+
+
+def set_last_time_checked_utc(dt: datetime):
+    get_settings().setValue("Internal/last_time_checked_utc", dt.isoformat())
+
 
 
 def get_launch_when_system_starts():
@@ -396,3 +409,9 @@ def get_worker_thread_count() -> int:
 
 def set_worker_thread_count(v: int):
     get_settings().setValue("worker_thread_count", v)
+
+def get_use_system_titlebar():
+    return get_settings().value("use_system_title_bar", defaultValue=False, type=bool)
+
+def set_use_system_titlebar(b: bool):
+    get_settings().setValue("use_system_title_bar", b)

@@ -22,8 +22,14 @@ from modules.settings import (
 from modules.shortcut import create_shortcut
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt, pyqtSlot
-from PyQt5.QtGui import QDragEnterEvent, QDragLeaveEvent, QDragMoveEvent, QDropEvent
+from PyQt5.QtGui import (
+    QDragEnterEvent,
+    QDragLeaveEvent,
+    QDropEvent,
+    QHoverEvent,
+)
 from PyQt5.QtWidgets import QAction, QApplication, QHBoxLayout, QLabel, QWidget
+from source.windows.custom_build_dialog_window import CustomBuildDialogWindow
 from threads.observer import Observer
 from threads.register import Register
 from threads.remover import RemovalTask
@@ -35,6 +41,7 @@ from widgets.build_state_widget import BuildStateWidget
 from widgets.datetime_widget import DateTimeWidget
 from widgets.elided_text_label import ElidedTextLabel
 from widgets.left_icon_button_widget import LeftIconButtonWidget
+from windows.custom_build_dialog_window import CustomBuildDialogWindow
 from windows.dialog_window import DialogWindow
 
 if TYPE_CHECKING:
@@ -42,12 +49,17 @@ if TYPE_CHECKING:
 
 
 class LibraryWidget(BaseBuildWidget):
-    def __init__(self, parent: BlenderLauncher, item, link, list_widget, show_new=False, parent_widget=None):
+    def __init__(self, parent: BlenderLauncher, item: BaseListWidgetItem, link, list_widget, show_new=False, parent_widget=None):
         super().__init__(parent=parent)
         self.setAcceptDrops(True)
+        self.setAttribute(Qt.WidgetAttribute.WA_Hover)
+        self.setMouseTracking(True)
+        self.installEventFilter(self)
+        self._hovering_and_shifting = False
+        self._hovered = False
 
         self.parent: BlenderLauncher = parent
-        self.item = item
+        self.item: BaseListWidgetItem = item
         self.link = link
         self.list_widget = list_widget
         self.show_new = show_new
@@ -114,6 +126,7 @@ class LibraryWidget(BaseBuildWidget):
         self.launchButton = LeftIconButtonWidget("Launch")
         self.launchButton.setFixedWidth(85)
         self.launchButton.setProperty("LaunchButton", True)
+        self._launch_icon = None
 
         if self.branch == "lts":
             branch_name = "LTS"
@@ -130,7 +143,7 @@ class LibraryWidget(BaseBuildWidget):
         self.subversionLabel = QLabel(sub[0])
         self.subversionLabel.setFixedWidth(85)
         self.subversionLabel.setIndent(20)
-        self.branchLabel = ElidedTextLabel(branch_name)
+        self.branchLabel = ElidedTextLabel(self.build_info.custom_name or branch_name)
         self.commitTimeLabel = DateTimeWidget(self.build_info.commit_time, self.build_info.build_hash)
 
         self.build_state_widget = BuildStateWidget(self.parent)
@@ -151,7 +164,9 @@ class LibraryWidget(BaseBuildWidget):
         self.layout.addWidget(self.commitTimeLabel)
         self.layout.addWidget(self.build_state_widget)
 
-        self.launchButton.clicked.connect(lambda: self.launch(True))
+        self.launchButton.clicked.connect(
+            lambda: self.launch(update_selection=True, open_last=self.hovering_and_shifting)
+        )
         self.launchButton.setCursor(Qt.CursorShape.PointingHandCursor)
 
         # Context menu
@@ -161,6 +176,21 @@ class LibraryWidget(BaseBuildWidget):
         self.deleteAction = QAction("Delete From Drive", self)
         self.deleteAction.setIcon(self.parent.icons.delete)
         self.deleteAction.triggered.connect(self.ask_remove_from_drive)
+
+
+        self.editAction = QAction("Edit build...", self)
+        self.editAction.setIcon(self.parent.icons.settings)
+        self.editAction.triggered.connect(self.edit_build)
+
+        self.openRecentAction = QAction("Open Previous File", self)
+        self.openRecentAction.setIcon(self.parent.icons.file)
+        self.openRecentAction.triggered.connect(lambda: self.launch(open_last=True))
+        self.openRecentAction.setToolTip(
+            "This action opens the last file used in this build."
+            "\n(Appends `--open-last` to the execution arguments)"
+            "\nSHORTCUT: Shift + Launch or Doubleclick"
+        )
+
 
         self.addToQuickLaunchAction = QAction("Add To Quick Launch", self)
         self.addToQuickLaunchAction.setIcon(self.parent.icons.quick_launch)
@@ -187,6 +217,7 @@ class LibraryWidget(BaseBuildWidget):
         self.createShortcutAction.triggered.connect(self.create_shortcut)
 
         self.showFolderAction = QAction("Show Folder")
+        self.showFolderAction.setIcon(self.parent.icons.folder)
         self.showFolderAction.triggered.connect(self.show_folder)
 
         self.createSymlinkAction = QAction("Create Symlink")
@@ -214,6 +245,7 @@ class LibraryWidget(BaseBuildWidget):
         self.debugMenu.addAction(self.debugGpuTemplateAction)
         self.debugMenu.addAction(self.debugGpuGWTemplateAction)
 
+        self.menu.addAction(self.openRecentAction)
         self.menu.addAction(self.addToQuickLaunchAction)
         self.menu.addAction(self.addToFavoritesAction)
         self.menu.addAction(self.removeFromFavoritesAction)
@@ -244,6 +276,7 @@ class LibraryWidget(BaseBuildWidget):
                 self.menu.addAction(self.showReleaseNotesAction)
 
         self.menu.addAction(self.showFolderAction)
+        self.menu.addAction(self.editAction)
         self.menu.addAction(self.deleteAction)
 
         self.menu_extended.addAction(self.deleteAction)
@@ -287,7 +320,7 @@ class LibraryWidget(BaseBuildWidget):
 
     def mouseDoubleClickEvent(self, event):
         if self.build_info is not None:
-            self.launch()
+            self.launch(open_last=self.hovering_and_shifting)
 
     def mouseReleaseEvent(self, event):
         if event.button == Qt.MouseButton.LeftButton:
@@ -329,6 +362,45 @@ class LibraryWidget(BaseBuildWidget):
             self.launch(True, blendfile=Path(file.toLocalFile()))
         self.setStyleSheet("background-color:")
 
+    def eventFilter(self, obj, event):
+        # For detecting SHIFT
+        if isinstance(event, QHoverEvent):
+            if self._hovered and event.modifiers() & Qt.Modifier.SHIFT:
+                self.hovering_and_shifting = True
+            else:
+                self.hovering_and_shifting = False
+        return super().eventFilter(obj, event)
+
+    def _shift_hovering(self):
+        self.launchButton.set_text("  Previous")
+        self._launch_icon = self.launchButton.icon()
+        self.launchButton.setIcon(self.parent.icons.file)
+        self.launchButton.setFont(self.parent.font_8)
+
+    def _stopped_shift_hovering(self):
+        self.launchButton.set_text("Launch")
+        self.launchButton.setIcon(self._launch_icon or self.parent.icons.none)
+        self.launchButton.setFont(self.parent.font_10)
+
+    def enterEvent(self, e):
+        self._hovered = True
+
+    def leaveEvent(self, e):
+        self._hovered = False
+
+    @property
+    def hovering_and_shifting(self):
+        return self._hovering_and_shifting
+
+    @hovering_and_shifting.setter
+    def hovering_and_shifting(self, v: bool):
+        if v and not self._hovering_and_shifting:
+            self._hovering_and_shifting = True
+            self._shift_hovering()
+        elif not v and self._hovering_and_shifting:
+            self._hovering_and_shifting = False
+            self._stopped_shift_hovering()
+
     def install_template(self):
         self.launchButton.set_text("Updating")
         self.launchButton.setEnabled(False)
@@ -344,7 +416,7 @@ class LibraryWidget(BaseBuildWidget):
         self.deleteAction.setEnabled(True)
         self.installTemplateAction.setEnabled(True)
 
-    def launch(self, update_selection=False, exe=None, blendfile: Path | None=None):
+    def launch(self, update_selection=False, exe=None, blendfile: Path | None = None, open_last=False):
         assert self.build_info is not None
         if update_selection is True:
             self.list_widget.clearSelection()
@@ -408,6 +480,12 @@ class LibraryWidget(BaseBuildWidget):
                 args.append(blendfile.as_posix())
             else:
                 args += f' "{blendfile.as_posix()}"'
+
+        if open_last:
+            if isinstance(args, list):
+                args.append("--open-last")
+            else:
+                args += " --open-last"
 
         proc = _popen(args)
         assert proc is not None
@@ -537,6 +615,18 @@ class LibraryWidget(BaseBuildWidget):
         self.launchButton.set_text("Launch")
         self.setEnabled(True)
         return
+
+    @QtCore.pyqtSlot()
+    def edit_build(self):
+        assert self.build_info is not None
+        dlg = CustomBuildDialogWindow(self.parent, Path(self.build_info.link), self.build_info)
+        dlg.accepted.connect(self.build_info_edited)
+
+    @QtCore.pyqtSlot(BuildInfo)
+    def build_info_edited(self, blinfo: BuildInfo):
+        self.list_widget.remove_item(self.item)
+        blinfo.write_to(Path(blinfo.link))
+        self.parent.draw_to_library(Path(blinfo.link), show_new=True)
 
     @QtCore.pyqtSlot()
     def add_to_quick_launch(self):

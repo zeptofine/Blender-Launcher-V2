@@ -4,12 +4,13 @@ import logging
 import os
 import re
 import webbrowser
+from datetime import datetime, timezone
 from enum import Enum
 from functools import partial
 from pathlib import Path
 from platform import version
 from shutil import copyfileobj
-from time import localtime, strftime
+from time import localtime, mktime, strftime
 from typing import TYPE_CHECKING
 
 import resources_rc
@@ -26,6 +27,7 @@ from modules.settings import (
     get_enable_download_notifications,
     get_enable_new_builds_notifications,
     get_enable_quick_launch_key_seq,
+    get_last_time_checked_utc,
     get_launch_minimized_to_tray,
     get_library_folder,
     get_make_error_popup,
@@ -33,8 +35,10 @@ from modules.settings import (
     get_quick_launch_key_seq,
     get_show_tray_icon,
     get_sync_library_and_downloads_pages,
+    get_use_system_titlebar,
     get_worker_thread_count,
     is_library_folder_valid,
+    set_last_time_checked_utc,
     set_library_folder,
 )
 from modules.tasks import Task, TaskQueue, TaskWorker
@@ -43,6 +47,7 @@ from PyQt5.QtNetwork import QLocalServer
 from PyQt5.QtWidgets import (
     QAction,
     QApplication,
+    QHBoxLayout,
     QLabel,
     QPushButton,
     QStatusBar,
@@ -77,8 +82,10 @@ except Exception as e:
 
 
 if TYPE_CHECKING:
+    from modules.build_info import BuildInfo
     from PyQt5.QtGui import QDragEnterEvent, QDragMoveEvent
     from widgets.base_build_widget import BaseBuildWidget
+    from widgets.base_list_widget import BaseListWidget
 
 if get_platform() == "Windows":
     from PyQt5.QtWinExtras import QWinThumbnailToolBar, QWinThumbnailToolButton
@@ -141,6 +148,7 @@ class BlenderLauncher(BaseWindow):
         self.platform = get_platform()
         self.settings_window = None
         self.hk_listener = None
+        self.last_time_checked = get_last_time_checked_utc()
 
         if self.platform == "macOS":
             self.app.aboutToQuit.connect(self._aboutToQuit)
@@ -204,6 +212,14 @@ class BlenderLauncher(BaseWindow):
         else:
             self.app.quit()
 
+    def update_system_titlebar(self, b: bool):
+        for window in self.windows:
+            window.set_system_titlebar(b)
+            if window is not self:
+                window.update_system_titlebar(b)
+        self.header.setHidden(b)
+        self.corner_settings_widget.setHidden(not b)
+
     def draw(self, polish=False):
         # Header
         self.SettingsButton = WHeaderButton(self.icons.settings, "", self)
@@ -215,6 +231,20 @@ class BlenderLauncher(BaseWindow):
 
         self.SettingsButton.setProperty("HeaderButton", True)
         self.DocsButton.setProperty("HeaderButton", True)
+
+        self.corner_settings = QPushButton(self.icons.settings, "", self)
+        self.corner_settings.clicked.connect(self.show_settings_window)
+        self.corner_docs = QPushButton(self.icons.wiki, "", self)
+        self.corner_docs.clicked.connect(self.open_docs)
+
+        self.corner_settings_widget = QWidget(self)
+        # self.corner_settings_widget.setMaximumHeight(25)
+        self.corner_settings_widget.setContentsMargins(0, 0, 0, 0)
+        self.corner_settings_layout = QHBoxLayout(self.corner_settings_widget)
+        self.corner_settings_layout.addWidget(self.corner_docs)
+        self.corner_settings_layout.addWidget(self.corner_settings)
+        self.corner_settings_layout.setContentsMargins(0, 0, 0, 0)
+        self.corner_settings_layout.setSpacing(0)
 
         self.header = WindowHeader(
             self,
@@ -231,8 +261,10 @@ class BlenderLauncher(BaseWindow):
         # Tab layout
         self.TabWidget = QTabWidget()
         self.TabWidget.setProperty("North", True)
+        self.TabWidget.setCornerWidget(self.corner_settings_widget)
         self.CentralLayout.addWidget(self.TabWidget)
 
+        self.update_system_titlebar(get_use_system_titlebar())
         self.LibraryTab = QWidget()
         self.LibraryTabLayout = QVBoxLayout()
         self.LibraryTabLayout.setContentsMargins(0, 0, 0, 0)
@@ -761,7 +793,7 @@ class BlenderLauncher(BaseWindow):
         #     self.timer.start()
 
     def scraper_finished(self):
-        if self.new_downloads and not self.started:
+        if self.new_downloads:
             self.show_message("New builds of Blender are available!", message_type=MessageType.NEWBUILDS)
 
         for list_widget in self.DownloadsToolBox.list_widgets:
@@ -770,7 +802,10 @@ class BlenderLauncher(BaseWindow):
                     widget.destroy()
 
         set_locale()
-        utcnow = strftime(("%H:%M"), localtime())
+        utcnow = localtime()
+        dt = datetime.fromtimestamp(mktime(utcnow), tz=timezone.utc)
+        set_last_time_checked_utc(dt)
+        self.last_time_checked = dt
         self.app_state = AppState.IDLE
 
         for page in self.DownloadsToolBox.pages:
@@ -782,7 +817,7 @@ class BlenderLauncher(BaseWindow):
         #     self.timer.start()
         #     self.started = False
 
-        self.set_status("Last check at " + utcnow, True)
+        self.set_status("Last check at " + strftime("%H:%M", utcnow), True)
 
     def draw_from_cashed(self, build_info):
         if self.app_state == AppState.IDLE:
@@ -791,9 +826,14 @@ class BlenderLauncher(BaseWindow):
                     self.draw_to_downloads(cashed_build, False)
                     return
 
-    def draw_to_downloads(self, build_info, show_new=True):
+    def draw_to_downloads(self, build_info: BuildInfo, show_new=True):
         if self.started:
             show_new = False
+        else:
+            show_new = True
+
+        if build_info.commit_time > self.last_time_checked:
+            show_new = True
 
         if build_info not in self.cashed_builds:
             self.cashed_builds.append(build_info)
@@ -810,19 +850,26 @@ class BlenderLauncher(BaseWindow):
             downloads_list_widget = self.DownloadsExperimentalListWidget
             library_list_widget = self.LibraryExperimentalListWidget
 
-        is_installed = library_list_widget.contains_build_info(build_info)
+        installed = library_list_widget.widget_with_blinfo(build_info)
 
-        if is_installed:
-            show_new = True
+        if installed is not None:
+            show_new = False
 
         if not downloads_list_widget.contains_build_info(build_info):
             item = BaseListWidgetItem(build_info.commit_time)
-            widget = DownloadWidget(self, downloads_list_widget, item, build_info, show_new, is_installed)
+            widget = DownloadWidget(
+                self,
+                downloads_list_widget,
+                item,
+                build_info,
+                installed=installed,
+                show_new=show_new,
+            )
             downloads_list_widget.add_item(item, widget)
-            if is_installed:
+            if show_new:
                 self.new_downloads = True
 
-    def draw_to_library(self, path, show_new=False):
+    def draw_to_library(self, path: Path, show_new=False):
         branch = Path(path).parent.name
 
         if branch in ("stable", "lts"):
@@ -839,6 +886,7 @@ class BlenderLauncher(BaseWindow):
         item = BaseListWidgetItem()
         widget = LibraryWidget(self, item, path, list_widget, show_new)
         list_widget.insert_item(item, widget)
+        return widget
 
     def draw_unrecognized(self, path):
         branch = Path(path).parent.name
@@ -862,6 +910,22 @@ class BlenderLauncher(BaseWindow):
     def draw_preferences_factory(self):
         item = BaseListWidgetItem()
         self.PreferencesListWidget.add_item(item, PreferenceFactoryWidget(self, self.PreferencesListWidget))
+
+    def focus_widget(self, widget: BaseBuildWidget):
+        tab: QWidget | None= None
+        lst: BaseListWidget | None = None
+        item: BaseListWidgetItem | None = None
+
+        if isinstance(widget, LibraryWidget):
+            tab = self.LibraryTab
+            item = widget.item
+            assert item is not None
+            lst = item.listWidget()
+
+        assert tab and lst and item
+        self.TabWidget.setCurrentWidget(tab)
+        lst.setFocus(Qt.FocusReason.ShortcutFocusReason)
+        widget.setFocus(Qt.FocusReason.ShortcutFocusReason)
 
     def set_status(self, status=None, is_force_check_on=None):
         if status is not None:

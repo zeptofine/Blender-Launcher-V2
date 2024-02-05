@@ -1,12 +1,22 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFontMetrics
 from PyQt5.QtWidgets import QAbstractItemView, QListWidget
 
+if TYPE_CHECKING:
+    from modules.build_info import BuildInfo
+    from widgets.base_build_widget import BaseBuildWidget
+    from widgets.base_page_widget import BasePageWidget
+
 
 class BaseListWidget(QListWidget):
-    def __init__(self, parent=None, extended_selection=False):
-        super().__init__()
-        self.parent = parent
+    def __init__(self, parent: BasePageWidget | None=None, extended_selection=False):
+        super().__init__(parent)
+        self.parent: BasePageWidget | None = parent
+
         self.widgets = set()
         self.metrics = QFontMetrics(self.font())
 
@@ -60,6 +70,12 @@ class BaseListWidget(QListWidget):
 
     def contains_build_info(self, build_info):
         return any(build_info == widget.build_info for widget in self.widgets)
+
+    def widget_with_blinfo(self, build_info: BuildInfo) -> BaseBuildWidget | None:
+        try:
+            return next(widget for widget in self.widgets if build_info == widget.build_info)
+        except StopIteration:
+            return None
 
     def clear_(self):
         self.clear()
