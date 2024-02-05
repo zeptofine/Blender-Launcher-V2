@@ -40,6 +40,7 @@ from widgets.build_state_widget import BuildStateWidget
 from widgets.datetime_widget import DateTimeWidget
 from widgets.elided_text_label import ElidedTextLabel
 from widgets.left_icon_button_widget import LeftIconButtonWidget
+from windows.custom_build_dialog_window import CustomBuildDialogWindow
 from windows.dialog_window import DialogWindow
 
 if TYPE_CHECKING:
@@ -209,6 +210,7 @@ class LibraryWidget(BaseBuildWidget):
         self.createShortcutAction.triggered.connect(self.create_shortcut)
 
         self.showFolderAction = QAction("Show Folder")
+        self.showFolderAction.setIcon(self.parent.icons.folder)
         self.showFolderAction.triggered.connect(self.show_folder)
 
         self.createSymlinkAction = QAction("Create Symlink")
