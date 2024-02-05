@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from modules.connection_manager import ConnectionManager
 from modules.icons import Icons
-from modules.settings import get_enable_high_dpi_scaling
+from modules.settings import get_enable_high_dpi_scaling, get_use_system_titlebar
 from PyQt5.QtCore import QFile, QPoint, Qt, QTextStream
 from PyQt5.QtGui import QFont, QFontDatabase
 from PyQt5.QtWidgets import QApplication, QMainWindow
@@ -43,13 +43,46 @@ class BaseWindow(QMainWindow):
             self.style_sheet = QTextStream(file).readAll()
             self.app.setStyleSheet(self.style_sheet)
 
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
+        self.using_system_bar = get_use_system_titlebar()
+        self.set_system_titlebar(self.using_system_bar)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
 
         self.pos = self.pos()
         self.pressing = False
 
         self.destroyed.connect(lambda: self._destroyed())
+
+    def set_system_titlebar(self, b: bool):
+        """
+        Changes window flags so frameless is enabled (custom headers) or disabled (system).
+
+        This is called during initialization. use update_system_titlebar(b: bool) to update window components.
+
+        Arguments:
+            b -- bool
+        """
+        if not b:
+            self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
+            if self.using_system_bar:
+                self.hide()
+                self.show()
+            self.using_system_bar = False
+        else:
+            self.setWindowFlags(self.windowFlags() & ~Qt.WindowType.FramelessWindowHint)  # type: ignore
+            if not self.using_system_bar:
+                self.hide()
+                self.show()
+            self.using_system_bar = True
+
+    def update_system_titlebar(self, b: bool):
+        """
+        Used to update window components, such as the header, when swapping between the system title bar and
+        the custom one
+
+        Arguments:
+            b -- bool
+        """
+        ...
 
     def mousePressEvent(self, event):
         self.pos = event.globalPos()

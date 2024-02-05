@@ -403,3 +403,9 @@ def get_worker_thread_count() -> int:
 
 def set_worker_thread_count(v: int):
     get_settings().setValue("worker_thread_count", v)
+
+def get_use_system_titlebar():
+    return get_settings().value("use_system_title_bar", defaultValue=False, type=bool)
+
+def set_use_system_titlebar(b: bool):
+    get_settings().setValue("use_system_title_bar", b)
