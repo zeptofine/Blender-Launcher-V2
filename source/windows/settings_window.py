@@ -63,6 +63,7 @@ class SettingsWindow(BaseWindow):
         self.header = WindowHeader(self, "Settings", use_minimize=False)
         self.header.close_signal.connect(self._close)
         self.CentralLayout.addWidget(self.header)
+        self.update_system_titlebar(self.using_system_bar)
 
         # Tab Layout
         self.TabWidget = QTabWidget()
@@ -196,6 +197,9 @@ class SettingsWindow(BaseWindow):
 
     def restart_app(self):
         self.parent.restart_app()
+
+    def update_system_titlebar(self, b: bool):
+        self.header.setHidden(b)
 
     def _destroy(self):
         self.parent.settings_window = None

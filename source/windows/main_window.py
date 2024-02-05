@@ -34,6 +34,7 @@ from modules.settings import (
     get_quick_launch_key_seq,
     get_show_tray_icon,
     get_sync_library_and_downloads_pages,
+    get_use_system_titlebar,
     get_worker_thread_count,
     is_library_folder_valid,
     set_last_time_checked_utc,
@@ -45,6 +46,7 @@ from PyQt5.QtNetwork import QLocalServer
 from PyQt5.QtWidgets import (
     QAction,
     QApplication,
+    QHBoxLayout,
     QLabel,
     QPushButton,
     QStatusBar,
@@ -199,6 +201,15 @@ class BlenderLauncher(BaseWindow):
         else:
             self.app.quit()
 
+    def update_system_titlebar(self, b: bool):
+        for window in self.windows:
+            window.set_system_titlebar(b)
+            if window is not self:
+                window.update_system_titlebar(b)
+        self.header.setHidden(b)
+        self.corner_settings_widget.setHidden(not b)
+
+
     def draw(self, polish=False):
         # Header
         self.SettingsButton = WHeaderButton(self.icons.settings, "", self)
@@ -210,6 +221,21 @@ class BlenderLauncher(BaseWindow):
 
         self.SettingsButton.setProperty("HeaderButton", True)
         self.DocsButton.setProperty("HeaderButton", True)
+
+        self.corner_settings = QPushButton(self.icons.settings, "", self)
+        self.corner_settings.clicked.connect(self.show_settings_window)
+        self.corner_docs = QPushButton(self.icons.wiki, "", self)
+        self.corner_docs.clicked.connect(self.open_docs)
+
+
+        self.corner_settings_widget = QWidget(self)
+        # self.corner_settings_widget.setMaximumHeight(25)
+        self.corner_settings_widget.setContentsMargins(0, 0, 0, 0)
+        self.corner_settings_layout = QHBoxLayout(self.corner_settings_widget)
+        self.corner_settings_layout.addWidget(self.corner_docs)
+        self.corner_settings_layout.addWidget(self.corner_settings)
+        self.corner_settings_layout.setContentsMargins(0, 0, 0, 0)
+        self.corner_settings_layout.setSpacing(0)
 
 
         self.header = WindowHeader(
@@ -224,8 +250,10 @@ class BlenderLauncher(BaseWindow):
         # Tab layout
         self.TabWidget = QTabWidget()
         self.TabWidget.setProperty("North", True)
+        self.TabWidget.setCornerWidget(self.corner_settings_widget)
         self.CentralLayout.addWidget(self.TabWidget)
 
+        self.update_system_titlebar(get_use_system_titlebar())
         self.LibraryTab = QWidget()
         self.LibraryTabLayout = QVBoxLayout()
         self.LibraryTabLayout.setContentsMargins(0, 0, 0, 0)
@@ -802,7 +830,7 @@ class BlenderLauncher(BaseWindow):
             if show_new:
                 self.new_downloads = True
 
-    def draw_to_library(self, path, show_new=False):
+    def draw_to_library(self, path: Path, show_new=False):
         branch = Path(path).parent.name
 
         if branch in ("stable", "lts"):

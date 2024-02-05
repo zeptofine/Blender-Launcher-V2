@@ -10,6 +10,7 @@ from modules.settings import (
     get_new_builds_check_frequency,
     get_platform,
     get_show_tray_icon,
+    get_use_system_titlebar,
     get_worker_thread_count,
     set_check_for_new_builds_automatically,
     set_enable_high_dpi_scaling,
@@ -19,6 +20,7 @@ from modules.settings import (
     set_make_error_popup,
     set_new_builds_check_frequency,
     set_show_tray_icon,
+    set_use_system_titlebar,
     set_worker_thread_count,
 )
 from PyQt5.QtCore import Qt
@@ -65,6 +67,11 @@ class GeneralTabWidget(SettingsFormWidget):
         self.ShowTrayIconCheckBox = QCheckBox()
         self.ShowTrayIconCheckBox.setChecked(get_show_tray_icon())
         self.ShowTrayIconCheckBox.clicked.connect(self.toggle_show_tray_icon)
+
+        # Use System Title Bar
+        self.UseSystemTitleBar = QCheckBox()
+        self.UseSystemTitleBar.setChecked(get_use_system_titlebar())
+        self.UseSystemTitleBar.clicked.connect(self.toggle_system_titlebar)
 
         # New Builds Check Settings
         self.CheckForNewBuildsAutomatically = QCheckBox()
@@ -120,6 +127,7 @@ class GeneralTabWidget(SettingsFormWidget):
             self._addRow("Launch When System Starts", self.LaunchWhenSystemStartsCheckBox)
 
         self._addRow("Show Tray Icon", self.ShowTrayIconCheckBox)
+        self._addRow("Use System Title Bar", self.UseSystemTitleBar)
 
         self.LaunchMinimizedToTrayRow = self._addRow("Launch Minimized To Tray", self.LaunchMinimizedToTrayCheckBox)
         self.LaunchMinimizedToTrayRow.setEnabled(get_show_tray_icon())
@@ -160,6 +168,10 @@ class GeneralTabWidget(SettingsFormWidget):
         set_show_tray_icon(is_checked)
         self.LaunchMinimizedToTrayRow.setEnabled(is_checked)
         self.parent.tray_icon.setVisible(is_checked)
+
+    def toggle_system_titlebar(self, is_checked):
+        set_use_system_titlebar(is_checked)
+        self.parent.update_system_titlebar(is_checked)
 
     def toggle_check_for_new_builds_automatically(self, is_checked):
         set_check_for_new_builds_automatically(is_checked)
