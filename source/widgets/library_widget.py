@@ -29,6 +29,7 @@ from PyQt5.QtGui import (
     QHoverEvent,
 )
 from PyQt5.QtWidgets import QAction, QApplication, QHBoxLayout, QLabel, QWidget
+from source.windows.custom_build_dialog_window import CustomBuildDialogWindow
 from threads.observer import Observer
 from threads.register import Register
 from threads.remover import RemovalTask
@@ -142,7 +143,7 @@ class LibraryWidget(BaseBuildWidget):
         self.subversionLabel = QLabel(sub[0])
         self.subversionLabel.setFixedWidth(85)
         self.subversionLabel.setIndent(20)
-        self.branchLabel = ElidedTextLabel(branch_name)
+        self.branchLabel = ElidedTextLabel(self.build_info.custom_name or branch_name)
         self.commitTimeLabel = DateTimeWidget(self.build_info.commit_time, self.build_info.build_hash)
 
         self.build_state_widget = BuildStateWidget(self.parent)
@@ -176,6 +177,11 @@ class LibraryWidget(BaseBuildWidget):
         self.deleteAction.setIcon(self.parent.icons.delete)
         self.deleteAction.triggered.connect(self.ask_remove_from_drive)
 
+
+        self.editAction = QAction("Edit build...", self)
+        self.editAction.setIcon(self.parent.icons.settings)
+        self.editAction.triggered.connect(self.edit_build)
+
         self.openRecentAction = QAction("Open Previous File", self)
         self.openRecentAction.setIcon(self.parent.icons.file)
         self.openRecentAction.triggered.connect(lambda: self.launch(open_last=True))
@@ -184,6 +190,7 @@ class LibraryWidget(BaseBuildWidget):
             "\n(Appends `--open-last` to the execution arguments)"
             "\nSHORTCUT: Shift + Launch or Doubleclick"
         )
+
 
         self.addToQuickLaunchAction = QAction("Add To Quick Launch", self)
         self.addToQuickLaunchAction.setIcon(self.parent.icons.quick_launch)
@@ -269,6 +276,7 @@ class LibraryWidget(BaseBuildWidget):
                 self.menu.addAction(self.showReleaseNotesAction)
 
         self.menu.addAction(self.showFolderAction)
+        self.menu.addAction(self.editAction)
         self.menu.addAction(self.deleteAction)
 
         self.menu_extended.addAction(self.deleteAction)
@@ -607,6 +615,18 @@ class LibraryWidget(BaseBuildWidget):
         self.launchButton.set_text("Launch")
         self.setEnabled(True)
         return
+
+    @QtCore.pyqtSlot()
+    def edit_build(self):
+        assert self.build_info is not None
+        dlg = CustomBuildDialogWindow(self.parent, Path(self.build_info.link), self.build_info)
+        dlg.accepted.connect(self.build_info_edited)
+
+    @QtCore.pyqtSlot(BuildInfo)
+    def build_info_edited(self, blinfo: BuildInfo):
+        self.list_widget.remove_item(self.item)
+        blinfo.write_to(Path(blinfo.link))
+        self.parent.draw_to_library(Path(blinfo.link), show_new=True)
 
     @QtCore.pyqtSlot()
     def add_to_quick_launch(self):
