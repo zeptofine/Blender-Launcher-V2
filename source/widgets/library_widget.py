@@ -21,7 +21,7 @@ from modules.settings import (
 )
 from modules.shortcut import create_shortcut
 from PyQt5 import QtCore
-from PyQt5.QtCore import Qt, pyqtSlot
+from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import (
     QDragEnterEvent,
     QDragLeaveEvent,
@@ -29,7 +29,6 @@ from PyQt5.QtGui import (
     QHoverEvent,
 )
 from PyQt5.QtWidgets import QAction, QApplication, QHBoxLayout, QLabel, QWidget
-from source.windows.custom_build_dialog_window import CustomBuildDialogWindow
 from threads.observer import Observer
 from threads.register import Register
 from threads.remover import RemovalTask
@@ -49,7 +48,17 @@ if TYPE_CHECKING:
 
 
 class LibraryWidget(BaseBuildWidget):
-    def __init__(self, parent: BlenderLauncher, item: BaseListWidgetItem, link, list_widget, show_new=False, parent_widget=None):
+    initialized = pyqtSignal()
+
+    def __init__(
+        self,
+        parent: BlenderLauncher,
+        item: BaseListWidgetItem,
+        link,
+        list_widget,
+        show_new=False,
+        parent_widget=None,
+    ):
         super().__init__(parent=parent)
         self.setAcceptDrops(True)
         self.setAttribute(Qt.WidgetAttribute.WA_Hover)
@@ -177,7 +186,6 @@ class LibraryWidget(BaseBuildWidget):
         self.deleteAction.setIcon(self.parent.icons.delete)
         self.deleteAction.triggered.connect(self.ask_remove_from_drive)
 
-
         self.editAction = QAction("Edit build...", self)
         self.editAction.setIcon(self.parent.icons.settings)
         self.editAction.triggered.connect(self.edit_build)
@@ -190,7 +198,6 @@ class LibraryWidget(BaseBuildWidget):
             "\n(Appends `--open-last` to the execution arguments)"
             "\nSHORTCUT: Shift + Launch or Doubleclick"
         )
-
 
         self.addToQuickLaunchAction = QAction("Add To Quick Launch", self)
         self.addToQuickLaunchAction.setIcon(self.parent.icons.quick_launch)
@@ -300,6 +307,8 @@ class LibraryWidget(BaseBuildWidget):
 
         if self.build_info.is_favorite and self.parent_widget is None:
             self.add_to_favorites()
+
+        self.initialized.emit()
 
     def context_menu(self):
         if self.is_damaged:

@@ -816,9 +816,6 @@ class BlenderLauncher(BaseWindow):
 
         installed = library_list_widget.widget_with_blinfo(build_info)
 
-        if installed is not None:
-            show_new = False
-
         if not downloads_list_widget.contains_build_info(build_info):
             item = BaseListWidgetItem(build_info.commit_time)
             widget = DownloadWidget(
@@ -833,20 +830,33 @@ class BlenderLauncher(BaseWindow):
         branch = Path(path).parent.name
 
         if branch in ("stable", "lts"):
-            list_widget = self.LibraryStableListWidget
+            library = self.LibraryStableListWidget
+            download = self.DownloadsStableListWidget
         elif branch == "daily":
-            list_widget = self.LibraryDailyListWidget
+            library = self.LibraryDailyListWidget
+            download = self.DownloadsDailyListWidget
         elif branch == "experimental":
-            list_widget = self.LibraryExperimentalListWidget
+            library = self.LibraryExperimentalListWidget
+            download = self.DownloadsExperimentalListWidget
         elif branch == "custom":
-            list_widget = self.UserCustomListWidget
+            library = self.UserCustomListWidget
+            download = None
         else:
-            return
+            return None
 
         item = BaseListWidgetItem()
-        widget = LibraryWidget(self, item, path, list_widget,
+        widget = LibraryWidget(self, item, path, library,
                                show_new)
-        list_widget.insert_item(item, widget)
+
+        if download is not None:
+            def _initialized():
+                dlw: DownloadWidget | None = download.widget_with_blinfo(widget.build_info)
+                if dlw is not None and not dlw.installed:
+                    dlw.setInstalled(widget)
+
+            widget.initialized.connect(_initialized)
+
+        library.insert_item(item, widget)
         return widget
 
     def draw_unrecognized(self, path):
