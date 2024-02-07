@@ -20,7 +20,18 @@ class ConfigInfo:
     def __eq__(self, other: ConfigInfo):
         if (self is None) or (other is None):  # what
             return False
-        return False
+
+        return (
+            self.directory == other.directory
+            and self.target_version == other.target_version
+        )
+
+    def get_env(self) -> dict[str, str]:
+        return {
+            "BLENDER_USER_CONFIG": str(self.directory / "config"),
+            "BLENDER_USER_SCRIPTS": str(self.directory / "scripts"),
+            "BLENDER_USER_DATAFILES": str(self.directory / "datafiles"),
+        }
 
     @classmethod
     def from_dict(cls, confinfo: dict):
