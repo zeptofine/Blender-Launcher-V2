@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+import logging
 import os
 import re
 import subprocess
@@ -46,6 +47,7 @@ from windows.dialog_window import DialogWindow
 if TYPE_CHECKING:
     from windows.main_window import BlenderLauncher
 
+logger = logging.getLogger()
 
 class LibraryWidget(BaseBuildWidget):
     initialized = pyqtSignal()
@@ -496,6 +498,7 @@ class LibraryWidget(BaseBuildWidget):
             else:
                 args += " --open-last"
 
+        logger.debug("Running build with args %s", str(args))
         proc = _popen(args)
         assert proc is not None
         if self.observer is None:
