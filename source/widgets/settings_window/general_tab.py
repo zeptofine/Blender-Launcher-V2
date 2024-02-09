@@ -127,10 +127,9 @@ class GeneralTabWidget(SettingsFormWidget):
             self._addRow("Launch When System Starts", self.LaunchWhenSystemStartsCheckBox)
 
         self._addRow("Show Tray Icon", self.ShowTrayIconCheckBox)
-        self._addRow("Use System Title Bar", self.UseSystemTitleBar)
-
         self.LaunchMinimizedToTrayRow = self._addRow("Launch Minimized To Tray", self.LaunchMinimizedToTrayCheckBox)
         self.LaunchMinimizedToTrayRow.setEnabled(get_show_tray_icon())
+        self._addRow("Use System Title Bar", self.UseSystemTitleBar)
 
         sub_layout = QHBoxLayout()
         sub_layout.addWidget(self.CheckForNewBuildsAutomatically)
