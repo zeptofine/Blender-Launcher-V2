@@ -22,6 +22,7 @@ jobs:
           python3 -m venv .venv
           source ./.venv/bin/activate
           pip install -e ./
+          python build_style.py
           sh ./build_linux.sh
       - name: Zipping
         run: |
