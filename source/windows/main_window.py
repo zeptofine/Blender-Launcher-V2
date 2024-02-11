@@ -13,7 +13,6 @@ from shutil import copyfileobj
 from time import localtime, mktime, strftime
 from typing import TYPE_CHECKING
 
-import resources_rc
 from items.base_list_widget_item import BaseListWidgetItem
 from modules._platform import _popen, get_cwd, get_platform, is_frozen, set_locale
 from modules.connection_manager import ConnectionManager
@@ -71,6 +70,20 @@ from windows.base_window import BaseWindow
 from windows.dialog_window import DialogIcon, DialogWindow
 from windows.file_dialog_window import FileDialogWindow
 from windows.settings_window import SettingsWindow
+
+try:
+    import resources_rc
+except ImportError:
+    if is_frozen():
+        print("Failed to import cached resources! Blender-Launcher-V2 was built without resources.")
+    elif (Path.cwd() / "build_style.py").exists():
+        # TODO: Attempt to build the style and check if it fails
+        print("Resources were not built! Run python build_style.py to build the style.")
+    else:
+        raise
+
+    exit()
+
 
 try:
     from pynput import keyboard
@@ -145,6 +158,7 @@ class BlenderLauncher(BaseWindow):
         self.platform = get_platform()
         self.settings_window = None
         self.hk_listener = None
+        self.scraper = None
         self.last_time_checked = get_last_time_checked_utc()
 
         if self.platform == "macOS":
@@ -698,8 +712,8 @@ class BlenderLauncher(BaseWindow):
 
             if self.timer is not None:
                 self.timer.cancel()
-
-            self.scraper.quit()
+            if self.scraper is not None:
+                self.scraper.quit()
             self.DownloadsStableListWidget.clear_()
             self.DownloadsDailyListWidget.clear_()
             self.DownloadsExperimentalListWidget.clear_()
