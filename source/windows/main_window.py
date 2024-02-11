@@ -20,6 +20,7 @@ from modules.connection_manager import ConnectionManager
 from modules.enums import MessageType
 from modules.settings import (
     create_library_folders,
+    get_check_for_new_builds_on_startup,
     get_default_downloads_page,
     get_default_library_page,
     get_default_tab,
@@ -61,6 +62,7 @@ from threads.scraper import Scraper
 from widgets.base_menu_widget import BaseMenuWidget
 from widgets.base_page_widget import BasePageWidget
 from widgets.base_tool_box_widget import BaseToolBoxWidget
+from widgets.datetime_widget import DATETIME_FORMAT
 from widgets.download_widget import DownloadState, DownloadWidget
 from widgets.foreign_build_widget import UnrecoBuildWidget
 from widgets.header import WHeaderButton, WindowHeader
@@ -369,7 +371,7 @@ class BlenderLauncher(BaseWindow):
         self.statusbarLabel = QLabel()
         self.ForceCheckNewBuilds = QPushButton("Check")
         self.ForceCheckNewBuilds.setEnabled(False)
-        self.ForceCheckNewBuilds.clicked.connect(self.draw_downloads)
+        self.ForceCheckNewBuilds.clicked.connect(self.start_scraper)
         self.NewVersionButton = QPushButton()
         self.NewVersionButton.hide()
         self.NewVersionButton.clicked.connect(self.show_update_window)
@@ -717,6 +719,7 @@ class BlenderLauncher(BaseWindow):
             self.library_drawer.finished.connect(self.draw_downloads)
 
         self.task_queue.append(self.library_drawer)
+
     def reload_custom_builds(self):
         self.UserCustomListWidget.clear_()
 
@@ -727,20 +730,10 @@ class BlenderLauncher(BaseWindow):
 
 
     def draw_downloads(self):
-        self.set_status("Checking for new builds", False)
-
-        for page in self.DownloadsToolBox.pages:
-            page.set_info_label_text("Checking for new builds")
-
-        self.cashed_builds.clear()
-        self.new_downloads = False
-        self.app_state = AppState.CHECKINGBUILDS
-        self.scraper = Scraper(self, self.cm)
-        self.scraper.links.connect(self.draw_to_downloads)
-        self.scraper.new_bl_version.connect(self.set_version)
-        self.scraper.error.connect(self.connection_error)
-        self.scraper.finished.connect(self.scraper_finished)
-        self.scraper.start()
+        if get_check_for_new_builds_on_startup():
+            self.start_scraper()
+        else:
+            self.ready_to_scrape()
 
     def connection_error(self):
         print("connection_error")
@@ -753,6 +746,23 @@ class BlenderLauncher(BaseWindow):
         #     self.timer = threading.Timer(
         #         get_new_builds_check_frequency(), self.draw_downloads)
         #     self.timer.start()
+
+    def start_scraper(self):
+            self.set_status("Checking for new builds", False)
+
+            for page in self.DownloadsToolBox.pages:
+                page.set_info_label_text("Checking for new builds")
+
+            self.cashed_builds.clear()
+            self.new_downloads = False
+            self.app_state = AppState.CHECKINGBUILDS
+            self.scraper = Scraper(self, self.cm)
+            self.scraper.links.connect(self.draw_to_downloads)
+            self.scraper.new_bl_version.connect(self.set_version)
+            self.scraper.error.connect(self.connection_error)
+            self.scraper.finished.connect(self.scraper_finished)
+            self.scraper.start()
+
 
     def scraper_finished(self):
         if self.new_downloads:
@@ -780,8 +790,12 @@ class BlenderLauncher(BaseWindow):
         #         get_new_builds_check_frequency(), self.draw_downloads)
         #     self.timer.start()
         #     self.started = False
+        self.ready_to_scrape()
 
-        self.set_status("Last check at " + strftime("%H:%M", utcnow), True)
+    def ready_to_scrape(self):
+        self.app_state = AppState.IDLE
+        self.set_status("Last check at " + self.last_time_checked.strftime(DATETIME_FORMAT), True)
+
 
     def draw_from_cashed(self, build_info):
         if self.app_state == AppState.IDLE:
