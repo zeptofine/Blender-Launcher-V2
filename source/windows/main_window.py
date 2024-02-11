@@ -371,7 +371,7 @@ class BlenderLauncher(BaseWindow):
         self.statusbarLabel = QLabel()
         self.ForceCheckNewBuilds = QPushButton("Check")
         self.ForceCheckNewBuilds.setEnabled(False)
-        self.ForceCheckNewBuilds.clicked.connect(self.draw_downloads)
+        self.ForceCheckNewBuilds.clicked.connect(self.start_scraper)
         self.NewVersionButton = QPushButton()
         self.NewVersionButton.hide()
         self.NewVersionButton.clicked.connect(self.show_update_window)
