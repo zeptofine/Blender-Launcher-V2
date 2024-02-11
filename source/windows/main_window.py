@@ -416,7 +416,7 @@ class BlenderLauncher(BaseWindow):
         quick_launch_action = QAction(self.icons.quick_launch, "Blender", self)
         quick_launch_action.triggered.connect(self.quick_launch)
 
-        self.tray_menu = BaseMenuWidget()
+        self.tray_menu = BaseMenuWidget(parent=self)
         self.tray_menu.setFont(self.font_10)
         self.tray_menu.addActions([
             quick_launch_action,

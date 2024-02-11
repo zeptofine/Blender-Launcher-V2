@@ -16,8 +16,8 @@ class DateTimeWidget(QPushButton):
     left_arrow = "◂"
     right_arrow = "▸"
 
-    def __init__(self, dt: datetime, build_hash: str | None):
-        super().__init__()
+    def __init__(self, dt: datetime, build_hash: str | None, parent=None):
+        super().__init__(parent)
         self.build_hash = build_hash
 
         self.setProperty("TextOnly", True)
