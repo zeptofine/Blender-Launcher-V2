@@ -764,7 +764,7 @@ class BlenderLauncher(BaseWindow):
 
     def connection_error(self):
         print("connection_error")
-        set_locale()
+
         utcnow = strftime(("%H:%M"), localtime())
         self.set_status("Error: connection failed at " + utcnow)
         self.app_state = AppState.IDLE
@@ -799,7 +799,6 @@ class BlenderLauncher(BaseWindow):
                 if widget.build_info not in self.cashed_builds:
                     widget.destroy()
 
-        set_locale()
         utcnow = localtime()
         dt = datetime.fromtimestamp(mktime(utcnow), tz=timezone.utc)
         set_last_time_checked_utc(dt)

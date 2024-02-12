@@ -125,8 +125,6 @@ def read_blender_version(
     archive_name=None,
     custom_exe=None,
 ) -> BuildInfo:
-    set_locale()
-
     if custom_exe is not None:
         exe_path = path / custom_exe
     elif old_build_info is not None and old_build_info.custom_executable:
