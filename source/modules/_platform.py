@@ -24,6 +24,7 @@ def get_platform():
 
     return platforms[sys.platform]
 
+
 @cache
 def get_platform_full():
     return f"{get_platform()} {os.name} {platform.release()}"
@@ -122,6 +123,7 @@ def _check_output(args):
 
     return check_output(args, shell=False, stderr=DEVNULL, stdin=DEVNULL)
 
+
 @cache
 def is_frozen():
     """
@@ -131,6 +133,7 @@ def is_frozen():
     """
 
     return bool(getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"))
+
 
 @cache
 def get_cwd():

@@ -39,7 +39,11 @@ dev = [
 ]
 
 [tool.ruff]
-extend-ignore = ["F401", "E501", "B905", "SIM114", "A003", "SIM108"]
+line-length = 120
+target-version = "py39"
+
+[tool.ruff.lint]
+extend-ignore = ["F401", "E501", "B905", "SIM114", "A003", "SIM108", "ISC001"]
 extend-select = [
   "A", # flake8-builtins
   "ASYNC", # flake8-async
@@ -72,10 +76,8 @@ extend-select = [
 
 ]
 fixable = ["ALL"]
-line-length = 120
-target-version = "py39"
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["E402"]
 "source/resources_rc.py" = ["ALL"]
 
