@@ -88,6 +88,7 @@ except ImportError:
 
 try:
     from pynput import keyboard
+
     HOTKEYS_AVAILABLE = True
 except Exception as e:
     logging.error(f"Error importing pynput: {e}\nGlobal hotkeys not supported.")
@@ -104,6 +105,8 @@ if get_platform() == "Windows":
     from PyQt5.QtWinExtras import QWinThumbnailToolBar, QWinThumbnailToolButton
 
 logger = logging.getLogger()
+
+
 class AppState(Enum):
     IDLE = 1
     CHECKINGBUILDS = 2
@@ -165,7 +168,6 @@ class BlenderLauncher(BaseWindow):
         if self.platform == "macOS":
             self.app.aboutToQuit.connect(self._aboutToQuit)
 
-
         # Setup window
         self.setWindowTitle("Blender Launcher")
         self.app.setWindowIcon(self.icons.taskbar)
@@ -179,10 +181,13 @@ class BlenderLauncher(BaseWindow):
                 self.draw(True)
             else:
                 self.dlg = DialogWindow(
-                    parent=self, title="Warning",
+                    parent=self,
+                    title="Warning",
                     text="Passed path is not a valid folder or<br>\
                     it doesn't have write permissions!",
-                    accept_text="Quit", cancel_text=None)
+                    accept_text="Quit",
+                    cancel_text=None,
+                )
                 self.dlg.accepted.connect(self.app.quit)
 
             return
@@ -190,29 +195,34 @@ class BlenderLauncher(BaseWindow):
         # Check library folder
         if is_library_folder_valid() is False:
             self.dlg = DialogWindow(
-                parent=self, title="Setup",
+                parent=self,
+                title="Setup",
                 text="First, choose where Blender<br>builds will be stored",
-                accept_text="Continue", cancel_text=None, icon=DialogIcon.INFO)
+                accept_text="Continue",
+                cancel_text=None,
+                icon=DialogIcon.INFO,
+            )
             self.dlg.accepted.connect(self.set_library_folder)
         else:
             create_library_folders(get_library_folder())
             self.draw()
 
-
     def set_library_folder(self):
         library_folder = get_cwd().as_posix()
-        new_library_folder = FileDialogWindow().get_directory(
-            self, "Select Library Folder", library_folder)
+        new_library_folder = FileDialogWindow().get_directory(self, "Select Library Folder", library_folder)
 
-        if (new_library_folder):
+        if new_library_folder:
             if set_library_folder(new_library_folder) is True:
                 self.draw(True)
             else:
                 self.dlg = DialogWindow(
-                    parent=self, title="Warning",
+                    parent=self,
+                    title="Warning",
                     text="Selected folder is not valid or<br>\
                     doesn't have write permissions!",
-                    accept_text="Retry", cancel_text=None)
+                    accept_text="Retry",
+                    cancel_text=None,
+                )
                 self.dlg.accepted.connect(self.set_library_folder)
         else:
             self.app.quit()
@@ -224,7 +234,6 @@ class BlenderLauncher(BaseWindow):
                 window.update_system_titlebar(b)
         self.header.setHidden(b)
         self.corner_settings_widget.setHidden(not b)
-
 
     def draw(self, polish=False):
         # Header
@@ -243,7 +252,6 @@ class BlenderLauncher(BaseWindow):
         self.corner_docs = QPushButton(self.icons.wiki, "", self)
         self.corner_docs.clicked.connect(self.open_docs)
 
-
         self.corner_settings_widget = QWidget(self)
         # self.corner_settings_widget.setMaximumHeight(25)
         self.corner_settings_widget.setContentsMargins(0, 0, 0, 0)
@@ -253,11 +261,10 @@ class BlenderLauncher(BaseWindow):
         self.corner_settings_layout.setContentsMargins(0, 0, 0, 0)
         self.corner_settings_layout.setSpacing(0)
 
-
         self.header = WindowHeader(
             self,
             "Blender Launcher",
-            (self.SettingsButton, self.DocsButton,),
+            (self.SettingsButton, self.DocsButton),
         )
         self.header.close_signal.connect(self.attempt_close)
         self.header.minimize_signal.connect(self.showMinimized)
@@ -292,8 +299,7 @@ class BlenderLauncher(BaseWindow):
         self.DownloadsToolBox = BaseToolBoxWidget(self)
         self.UserToolBox = BaseToolBoxWidget(self)
 
-        self.toggle_sync_library_and_downloads_pages(
-            get_sync_library_and_downloads_pages())
+        self.toggle_sync_library_and_downloads_pages(get_sync_library_and_downloads_pages())
 
         self.LibraryTabLayout.addWidget(self.LibraryToolBox)
         self.DownloadsTabLayout.addWidget(self.DownloadsToolBox)
@@ -304,61 +310,60 @@ class BlenderLauncher(BaseWindow):
             page_name="LibraryStableListWidget",
             time_label="Commit Time",
             info_text="Nothing to show yet",
-            extended_selection=True)
-        self.LibraryStableListWidget = \
-            self.LibraryToolBox.add_page_widget(self.LibraryStablePageWidget, "Stable")
+            extended_selection=True,
+        )
+        self.LibraryStableListWidget = self.LibraryToolBox.add_page_widget(self.LibraryStablePageWidget, "Stable")
 
         self.LibraryDailyPageWidget = BasePageWidget(
             parent=self,
             page_name="LibraryDailyListWidget",
             time_label="Commit Time",
             info_text="Nothing to show yet",
-            extended_selection=True)
-        self.LibraryDailyListWidget = \
-            self.LibraryToolBox.add_page_widget(self.LibraryDailyPageWidget, "Daily")
+            extended_selection=True,
+        )
+        self.LibraryDailyListWidget = self.LibraryToolBox.add_page_widget(self.LibraryDailyPageWidget, "Daily")
 
         self.LibraryExperimentalPageWidget = BasePageWidget(
             parent=self,
             page_name="LibraryExperimentalListWidget",
             time_label="Commit Time",
             info_text="Nothing to show yet",
-            extended_selection=True)
-        self.LibraryExperimentalListWidget = \
-            self.LibraryToolBox.add_page_widget(self.LibraryExperimentalPageWidget, "Experimental")
+            extended_selection=True,
+        )
+        self.LibraryExperimentalListWidget = self.LibraryToolBox.add_page_widget(
+            self.LibraryExperimentalPageWidget, "Experimental"
+        )
 
         self.DownloadsStablePageWidget = BasePageWidget(
             parent=self,
             page_name="DownloadsStableListWidget",
             time_label="Upload Time",
-            info_text="No new builds available")
-        self.DownloadsStableListWidget = \
-            self.DownloadsToolBox.add_page_widget(self.DownloadsStablePageWidget, "Stable")
+            info_text="No new builds available",
+        )
+        self.DownloadsStableListWidget = self.DownloadsToolBox.add_page_widget(self.DownloadsStablePageWidget, "Stable")
 
         self.DownloadsDailyPageWidget = BasePageWidget(
             parent=self,
             page_name="DownloadsDailyListWidget",
             time_label="Upload Time",
-            info_text="No new builds available")
-        self.DownloadsDailyListWidget = \
-            self.DownloadsToolBox.add_page_widget(self.DownloadsDailyPageWidget, "Daily")
+            info_text="No new builds available",
+        )
+        self.DownloadsDailyListWidget = self.DownloadsToolBox.add_page_widget(self.DownloadsDailyPageWidget, "Daily")
 
         self.DownloadsExperimentalPageWidget = BasePageWidget(
             parent=self,
             page_name="DownloadsExperimentalListWidget",
             time_label="Upload Time",
-            info_text="No new builds available")
-        self.DownloadsExperimentalListWidget = \
-            self.DownloadsToolBox.add_page_widget(
-                self.DownloadsExperimentalPageWidget, "Experimental")
+            info_text="No new builds available",
+        )
+        self.DownloadsExperimentalListWidget = self.DownloadsToolBox.add_page_widget(
+            self.DownloadsExperimentalPageWidget, "Experimental"
+        )
 
         self.UserFavoritesListWidget = BasePageWidget(
-            parent=self,
-            page_name="UserFavoritesListWidget",
-            time_label="Commit Time",
-            info_text="Nothing to show yet")
-        self.UserFavoritesListWidget = \
-            self.UserToolBox.add_page_widget(
-                self.UserFavoritesListWidget, "Favorites")
+            parent=self, page_name="UserFavoritesListWidget", time_label="Commit Time", info_text="Nothing to show yet"
+        )
+        self.UserFavoritesListWidget = self.UserToolBox.add_page_widget(self.UserFavoritesListWidget, "Favorites")
 
         self.UserCustomPageWidget = BasePageWidget(
             parent=self,
@@ -366,16 +371,16 @@ class BlenderLauncher(BaseWindow):
             time_label="Commit Time",
             info_text="Nothing to show yet",
             show_reload=True,
-            extended_selection=True)
-        self.UserCustomListWidget = \
-            self.UserToolBox.add_page_widget(self.UserCustomPageWidget, "Custom")
+            extended_selection=True,
+        )
+        self.UserCustomListWidget = self.UserToolBox.add_page_widget(self.UserCustomPageWidget, "Custom")
 
         self.TabWidget.setCurrentIndex(get_default_tab())
         self.LibraryToolBox.setCurrentIndex(get_default_library_page())
         self.DownloadsToolBox.setCurrentIndex(get_default_downloads_page())
 
         version_status = self.version
-        if not is_frozen(): # Add an asterisk to the statusbar version if running from source
+        if not is_frozen():  # Add an asterisk to the statusbar version if running from source
             version_status = f"*{version_status}"
 
         # Status bar
@@ -393,8 +398,8 @@ class BlenderLauncher(BaseWindow):
         self.statusbarVersion = QPushButton(version_status)
         self.statusbarVersion.clicked.connect(self.show_changelog)
         self.statusbarVersion.setToolTip(
-            "The version of Blender Launcher that is currently run. "
-            "Press to check changelog.")
+            "The version of Blender Launcher that is currently run. Press to check changelog."
+        )
         self.status_bar.addPermanentWidget(self.ForceCheckNewBuilds)
         self.status_bar.addPermanentWidget(QLabel("│"))
         self.status_bar.addPermanentWidget(self.statusbarLabel)
@@ -419,13 +424,15 @@ class BlenderLauncher(BaseWindow):
 
         self.tray_menu = BaseMenuWidget(parent=self)
         self.tray_menu.setFont(self.font_10)
-        self.tray_menu.addActions([
-            quick_launch_action,
-            show_favorites_action,
-            show_action,
-            hide_action,
-            quit_action,
-        ])
+        self.tray_menu.addActions(
+            [
+                quick_launch_action,
+                show_favorites_action,
+                show_action,
+                hide_action,
+                quit_action,
+            ]
+        )
 
         # Setup tray icon
         self.tray_icon = QSystemTrayIcon(self)
@@ -475,13 +482,15 @@ class BlenderLauncher(BaseWindow):
                     key_seq = key_seq.replace(key, "<" + key + ">")
 
             try:
-                self.hk_listener = keyboard.GlobalHotKeys({
-                    key_seq: self.on_activate_quick_launch})
+                self.hk_listener = keyboard.GlobalHotKeys({key_seq: self.on_activate_quick_launch})
             except Exception:
                 self.dlg = DialogWindow(
-                    parent=self, title="Warning",
+                    parent=self,
+                    title="Warning",
                     text="Global hotkey sequence was not recognized!<br>Try to use another combination of keys",
-                    accept_text="OK", cancel_text=None)
+                    accept_text="OK",
+                    cancel_text=None,
+                )
                 return
 
             self.hk_listener.start()
@@ -528,10 +537,13 @@ class BlenderLauncher(BaseWindow):
     def show_update_window(self):
         if not self.is_downloading_idle():
             self.dlg = DialogWindow(
-                parent=self, title="Warning",
+                parent=self,
+                title="Warning",
                 text="In order to update Blender Launcher<br> \
                         complete all active downloads!",
-                accept_text="OK", cancel_text=None)
+                accept_text="OK",
+                cancel_text=None,
+            )
 
             return
 
@@ -548,8 +560,7 @@ class BlenderLauncher(BaseWindow):
         source = cwd / bl_exe
         dist = cwd / blu_exe
 
-        with open(source.as_posix(), "rb") as f1, \
-                open(dist.as_posix(), "wb") as f2:
+        with open(source.as_posix(), "rb") as f1, open(dist.as_posix(), "wb") as f2:
             copyfileobj(f1, f2)
 
         # Run 'Blender Launcher Updater.exe' with '-update' flag
@@ -584,15 +595,13 @@ class BlenderLauncher(BaseWindow):
             self.thumbnail_toolbar = QWinThumbnailToolBar(self)
             self.thumbnail_toolbar.setWindow(self.windowHandle())
 
-            self.toolbar_quick_launch_btn = QWinThumbnailToolButton(
-                self.thumbnail_toolbar)
+            self.toolbar_quick_launch_btn = QWinThumbnailToolButton(self.thumbnail_toolbar)
             self.toolbar_quick_launch_btn.setIcon(self.icons.quick_launch)
             self.toolbar_quick_launch_btn.setToolTip("Quick Launch")
             self.toolbar_quick_launch_btn.clicked.connect(self.quick_launch)
             self.thumbnail_toolbar.addButton(self.toolbar_quick_launch_btn)
 
-            self.toolbar_quit_btn = QWinThumbnailToolButton(
-                self.thumbnail_toolbar)
+            self.toolbar_quit_btn = QWinThumbnailToolButton(self.thumbnail_toolbar)
             self.toolbar_quit_btn.setIcon(self.icons.close)
             self.toolbar_quit_btn.setToolTip("Quit")
             self.toolbar_quit_btn.clicked.connect(self.quit_)
@@ -638,9 +647,13 @@ class BlenderLauncher(BaseWindow):
 
     def quick_launch_fail(self):
         self.dlg = DialogWindow(
-            parent=self, text="Add build to Quick Launch via<br>\
+            parent=self,
+            text="Add build to Quick Launch via<br>\
                         context menu to run it from tray",
-            accept_text="OK", cancel_text=None, icon=DialogIcon.INFO)
+            accept_text="OK",
+            cancel_text=None,
+            icon=DialogIcon.INFO,
+        )
 
     def tray_icon_activated(self, reason):
         if reason == QSystemTrayIcon.ActivationReason.Trigger:
@@ -658,13 +671,16 @@ class BlenderLauncher(BaseWindow):
         busy = self.task_queue.get_busy_threads()
         if any(busy):
             self.dlg = DialogWindow(
-                parent=self, title="Warning",
+                parent=self,
+                title="Warning",
                 text=(
                     "Some tasks are still in progress!<br>"
                     + "\n".join([f" - {item}<br>" for worker, item in busy.items()])
                     + "Are you sure you want to quit?"
                 ),
-                accept_text="Yes", cancel_text="No")
+                accept_text="Yes",
+                cancel_text="No",
+            )
 
             self.dlg.accepted.connect(self.destroy)
             return
@@ -691,7 +707,6 @@ class BlenderLauncher(BaseWindow):
             return True
         return False
 
-
     def destroy(self):
         self.quit_signal.emit()
 
@@ -705,8 +720,7 @@ class BlenderLauncher(BaseWindow):
         self.set_status("Reading local builds", False)
 
         if clear:
-            self.cm = ConnectionManager(
-                version=version, proxy_type=get_proxy_type())
+            self.cm = ConnectionManager(version=version, proxy_type=get_proxy_type())
             self.cm.setup()
             self.cm.error.connect(self.connection_error)
             self.manager = self.cm.manager
@@ -743,7 +757,6 @@ class BlenderLauncher(BaseWindow):
         self.library_drawer.unrecognized.connect(self.draw_unrecognized)
         self.task_queue.append(self.library_drawer)
 
-
     def draw_downloads(self):
         if get_check_for_new_builds_on_startup():
             self.start_scraper()
@@ -752,7 +765,7 @@ class BlenderLauncher(BaseWindow):
 
     def connection_error(self):
         print("connection_error")
-        set_locale()
+
         utcnow = strftime(("%H:%M"), localtime())
         self.set_status("Error: connection failed at " + utcnow)
         self.app_state = AppState.IDLE
@@ -763,34 +776,30 @@ class BlenderLauncher(BaseWindow):
         #     self.timer.start()
 
     def start_scraper(self):
-            self.set_status("Checking for new builds", False)
+        self.set_status("Checking for new builds", False)
 
-            for page in self.DownloadsToolBox.pages:
-                page.set_info_label_text("Checking for new builds")
+        for page in self.DownloadsToolBox.pages:
+            page.set_info_label_text("Checking for new builds")
 
-            self.cashed_builds.clear()
-            self.new_downloads = False
-            self.app_state = AppState.CHECKINGBUILDS
-            self.scraper = Scraper(self, self.cm)
-            self.scraper.links.connect(self.draw_to_downloads)
-            self.scraper.new_bl_version.connect(self.set_version)
-            self.scraper.error.connect(self.connection_error)
-            self.scraper.finished.connect(self.scraper_finished)
-            self.scraper.start()
-
+        self.cashed_builds.clear()
+        self.new_downloads = False
+        self.app_state = AppState.CHECKINGBUILDS
+        self.scraper = Scraper(self, self.cm)
+        self.scraper.links.connect(self.draw_to_downloads)
+        self.scraper.new_bl_version.connect(self.set_version)
+        self.scraper.error.connect(self.connection_error)
+        self.scraper.finished.connect(self.scraper_finished)
+        self.scraper.start()
 
     def scraper_finished(self):
         if self.new_downloads:
-            self.show_message(
-                "New builds of Blender are available!",
-                message_type=MessageType.NEWBUILDS)
+            self.show_message("New builds of Blender are available!", message_type=MessageType.NEWBUILDS)
 
         for list_widget in self.DownloadsToolBox.list_widgets:
             for widget in list_widget.widgets.copy():
                 if widget.build_info not in self.cashed_builds:
                     widget.destroy()
 
-        set_locale()
         utcnow = localtime()
         dt = datetime.fromtimestamp(mktime(utcnow), tz=timezone.utc)
         set_last_time_checked_utc(dt)
@@ -810,7 +819,6 @@ class BlenderLauncher(BaseWindow):
     def ready_to_scrape(self):
         self.app_state = AppState.IDLE
         self.set_status("Last check at " + self.last_time_checked.strftime(DATETIME_FORMAT), True)
-
 
     def draw_from_cashed(self, build_info):
         if self.app_state == AppState.IDLE:
@@ -848,8 +856,13 @@ class BlenderLauncher(BaseWindow):
         if not downloads_list_widget.contains_build_info(build_info):
             item = BaseListWidgetItem(build_info.commit_time)
             widget = DownloadWidget(
-                self, downloads_list_widget, item,
-                build_info, installed=installed, show_new=show_new)
+                self,
+                downloads_list_widget,
+                item,
+                build_info,
+                installed=installed,
+                show_new=show_new,
+            )
             widget.focus_installed_widget.connect(self.focus_widget)
             downloads_list_widget.add_item(item, widget)
             if show_new:
@@ -874,10 +887,10 @@ class BlenderLauncher(BaseWindow):
             return None
 
         item = BaseListWidgetItem()
-        widget = LibraryWidget(self, item, path, library,
-                               show_new)
+        widget = LibraryWidget(self, item, path, library, show_new)
 
         if download is not None:
+
             def _initialized():
                 dlw: DownloadWidget | None = download.widget_with_blinfo(widget.build_info)
                 if dlw is not None and not dlw.installed:
@@ -908,7 +921,7 @@ class BlenderLauncher(BaseWindow):
         list_widget.insert_item(item, widget)
 
     def focus_widget(self, widget: BaseBuildWidget):
-        tab: QWidget | None= None
+        tab: QWidget | None = None
         lst: BaseListWidget | None = None
         item: BaseListWidgetItem | None = None
 
@@ -944,9 +957,7 @@ class BlenderLauncher(BaseWindow):
             if latest_tag not in self.notification_pool:
                 self.NewVersionButton.setText(f"Update to version {latest_tag.replace('v', '')}")
                 self.NewVersionButton.show()
-                self.show_message(
-                    "New version of Blender Launcher is available!",
-                    value=latest_tag)
+                self.show_message("New version of Blender Launcher is available!", value=latest_tag)
 
             self.latest_tag = latest_tag
 
@@ -986,12 +997,16 @@ class BlenderLauncher(BaseWindow):
 
         if str(data, encoding="ascii") != self.version:
             self.dlg = DialogWindow(
-                parent=self, title="Warning",
+                parent=self,
+                title="Warning",
                 text="An attempt to launch a different version<br>\
                       of Blender Launcher was detected!<br>\
                       Please, terminate currently running<br>\
                       version to proceed this action!",
-                accept_text="OK", cancel_text=None, icon=DialogIcon.WARNING)
+                accept_text="OK",
+                cancel_text=None,
+                icon=DialogIcon.WARNING,
+            )
 
     def open_docs(self):
         webbrowser.open("https://Victor-IX.github.io/Blender-Launcher-V2")
@@ -1006,7 +1021,7 @@ class BlenderLauncher(BaseWindow):
         print(e.mimeData().text())
 
     def restart_app(self):
-        """ Launch 'Blender Launcher.exe' and exit """
+        """Launch 'Blender Launcher.exe' and exit"""
         cwd = get_cwd()
 
         if self.platform == "Windows":

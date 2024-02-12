@@ -49,7 +49,6 @@ class DownloadWidget(BaseBuildWidget):
         self.build_dir = None
         self.source_file = None
 
-
         self.progressBar = BaseProgressBarWidget()
         self.progressBar.setFont(self.parent.font_8)
         self.progressBar.setFixedHeight(18)
@@ -247,6 +246,11 @@ class DownloadWidget(BaseBuildWidget):
         if not self.parent.kill_thread_with_task(self.dl_task):  # killing failed
             if self.dl_task in self.parent.task_queue:
                 self.parent.task_queue.remove(self.dl_task)
+            else:
+                # Task does not exist / finished in the
+                # microsecond between this function starting and now
+                ...
+
         self.build_state_widget.setDownload(False)
 
     def download_get_info(self):

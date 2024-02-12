@@ -30,8 +30,6 @@ class BaseListWidgetItem(QListWidgetItem):
         if (self.date is None) or (other.date is None):
             return False
 
-        set_locale()
-
         return self.date > other.date
 
     def compare_version(self, other):

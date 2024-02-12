@@ -34,8 +34,6 @@ class SemVersionEdit(QWidget):
         if not use_patch:
             self.patch.hide()
 
-
-
         layout.addWidget(self.major)
         layout.addWidget(self.minor)
         layout.addWidget(self.patch)

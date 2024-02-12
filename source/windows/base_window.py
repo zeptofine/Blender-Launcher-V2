@@ -82,7 +82,6 @@ class BaseWindow(QMainWindow):
         Arguments:
             b -- bool
         """
-        ...
 
     def mousePressEvent(self, event):
         self.pos = event.globalPos()

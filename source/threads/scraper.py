@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup, SoupStrainer
-from modules._platform import get_platform, set_locale
+from modules._platform import get_platform, reset_locale, set_locale
 from modules.build_info import BuildInfo, parse_blender_ver
 from modules.settings import get_minimum_blender_stable_version
 from PyQt5.QtCore import QThread, pyqtSignal
@@ -71,11 +71,15 @@ class Scraper(QThread):
         return tag
 
     def get_download_links(self):
+        set_locale()
+
         # Stable Builds
         self.scrap_stable_releases()
 
         # Daily, Experimental build
         self.gather_automated_builds()
+
+        reset_locale()
 
     def gather_automated_builds(self):
         base_fmt = "https://builder.blender.org/download/{}/?format=json&v=1"
@@ -93,7 +97,7 @@ class Scraper(QThread):
                     self.links.emit(new_build)
 
     def new_build_from_dict(self, build, branch_type):
-        self.strptime = datetime.fromtimestamp(build["file_mtime"], tz=timezone.utc)
+        dt = datetime.fromtimestamp(build["file_mtime"], tz=timezone.utc)
 
         subversion = parse_blender_ver(build["version"])
         build_var = ""
@@ -111,7 +115,7 @@ class Scraper(QThread):
             build["url"],
             str(subversion),
             build["hash"],
-            self.strptime,
+            dt,
             branch_type,
         )
 
@@ -175,9 +179,7 @@ class Scraper(QThread):
                 branch = "daily"
                 subversion = subversion.replace(prerelease=build_var)
 
-        set_locale()
-        self.strptime = datetime.strptime(info["last-modified"], "%a, %d %b %Y %H:%M:%S %Z").astimezone()
-        commit_time = self.strptime
+        commit_time = datetime.strptime(info["last-modified"], "%a, %d %b %Y %H:%M:%S %Z").astimezone()
 
         r.release_conn()
         r.close()

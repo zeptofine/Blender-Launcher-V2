@@ -2,7 +2,7 @@ import os
 import platform
 import sys
 from functools import cache
-from locale import LC_ALL, setlocale
+from locale import LC_ALL, getdefaultlocale, setlocale
 from pathlib import Path
 from subprocess import DEVNULL, PIPE, STDOUT, Popen, call, check_call, check_output
 
@@ -22,6 +22,7 @@ def get_platform():
 
     return platforms[sys.platform]
 
+
 @cache
 def get_platform_full():
     return f"{get_platform()} {os.name} {platform.release()}"
@@ -34,6 +35,13 @@ def set_locale():
         setlocale(LC_ALL, "eng_usa")
     elif platform in {"Linux", "macOS"}:
         setlocale(LC_ALL, "en_US.UTF-8")
+
+
+default_locale = getdefaultlocale(("LC_ALL",))[0]
+
+
+def reset_locale():
+    setlocale(LC_ALL, default_locale)
 
 
 def get_environment():
@@ -111,6 +119,7 @@ def _check_output(args):
 
     return check_output(args, shell=False, stderr=DEVNULL, stdin=DEVNULL)
 
+
 @cache
 def is_frozen():
     """
@@ -120,6 +129,7 @@ def is_frozen():
     """
 
     return bool(getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"))
+
 
 @cache
 def get_cwd():

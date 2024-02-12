@@ -160,7 +160,7 @@ class BuildInfo:
     def from_dict(cls, path: Path, blinfo: dict):
         try:
             dt = datetime.fromisoformat(blinfo["commit_time"])
-        except ValueError: # old file version compatibility
+        except ValueError:  # old file version compatibility
             dt = datetime.strptime(blinfo["commit_time"], "%d-%b-%y-%H:%M").astimezone()
         return cls(
             path.as_posix(),
@@ -236,8 +236,6 @@ def read_blender_version(
     archive_name=None,
     custom_exe=None,
 ) -> BuildInfo:
-    set_locale()
-
     if custom_exe is not None:
         exe_path = path / custom_exe
     elif old_build_info is not None and old_build_info.custom_executable:

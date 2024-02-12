@@ -12,23 +12,25 @@ from .build_info import parse_blender_ver
 
 ISO_EPOCH = datetime.fromtimestamp(0, tz=timezone.utc).isoformat()
 
+# TODO: Simplify this
+
 tabs = {
     "Library": 0,
     "Downloads": 1,
-    "User": 2
+    "User": 2,
 }
 
 library_pages = {
     "Stable Releases": 0,
     "Daily Builds": 1,
-    "Experimental Branches": 2
+    "Experimental Branches": 2,
 }
 
 
 downloads_pages = {
     "Stable Releases": 0,
     "Daily Builds": 1,
-    "Experimental Branches": 2
+    "Experimental Branches": 2,
 }
 
 
@@ -36,7 +38,7 @@ favorite_pages = {
     "Disable": 0,
     "Stable Releases": 1,
     "Daily Builds": 2,
-    "Experimental Branches": 3
+    "Experimental Branches": 3,
 }
 
 
@@ -45,7 +47,7 @@ library_subfolders = [
     "stable",
     "daily",
     "experimental",
-    "template"
+    "template",
 ]
 
 
@@ -54,13 +56,12 @@ proxy_types = {
     "HTTP": 1,
     "HTTPS": 2,
     "SOCKS4": 3,
-    "SOCKS5": 4
+    "SOCKS5": 4,
 }
 
 
 def get_settings():
-    return QSettings((get_cwd() / "Blender Launcher.ini").as_posix(),
-                     QSettings.Format.IniFormat)
+    return QSettings((get_cwd() / "Blender Launcher.ini").as_posix(), QSettings.Format.IniFormat)
 
 
 def get_library_folder():
@@ -122,12 +123,11 @@ def set_last_time_checked_utc(dt: datetime):
     get_settings().setValue("Internal/last_time_checked_utc", dt.isoformat())
 
 
-
 def get_launch_when_system_starts():
     if get_platform() == "Windows":
         import winreg
-        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
-                             r"SOFTWARE\Microsoft\Windows\CurrentVersion\Run")
+
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Run")
         path = sys.executable
         _, count, _ = winreg.QueryInfoKey(key)
 
@@ -145,14 +145,17 @@ def get_launch_when_system_starts():
 def set_launch_when_system_starts(is_checked):
     if get_platform() == "Windows":
         import winreg
-        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
-                             r"SOFTWARE\Microsoft\Windows\CurrentVersion\Run",
-                             0, winreg.KEY_SET_VALUE)
 
-        if (is_checked):
+        key = winreg.OpenKey(
+            winreg.HKEY_CURRENT_USER,
+            r"SOFTWARE\Microsoft\Windows\CurrentVersion\Run",
+            0,
+            winreg.KEY_SET_VALUE,
+        )
+
+        if is_checked:
             path = sys.executable
-            winreg.SetValueEx(key, "Blender Launcher",
-                              0, winreg.REG_SZ, path)
+            winreg.SetValueEx(key, "Blender Launcher", 0, winreg.REG_SZ, path)
         else:
             with contextlib.suppress(Exception):
                 winreg.DeleteValue(key, "Blender Launcher")
@@ -171,12 +174,14 @@ def set_launch_minimized_to_tray(is_checked):
 def get_enable_high_dpi_scaling():
     return get_settings().value("enable_high_dpi_scaling", defaultValue=True, type=bool)
 
+
 def set_enable_high_dpi_scaling(is_checked):
     get_settings().setValue("enable_high_dpi_scaling", is_checked)
 
 
 def get_sync_library_and_downloads_pages():
     return get_settings().value("sync_library_and_downloads_pages", defaultValue=True, type=bool)
+
 
 def set_sync_library_and_downloads_pages(is_checked):
     get_settings().setValue("sync_library_and_downloads_pages", is_checked)
@@ -193,6 +198,7 @@ def set_default_library_page(page):
 def get_mark_as_favorite():
     return get_settings().value("mark_as_favorite", defaultValue=0, type=int)
 
+
 def set_mark_as_favorite(page):
     get_settings().setValue("mark_as_favorite", favorite_pages[page])
 
@@ -208,12 +214,14 @@ def set_default_downloads_page(page):
 def get_default_tab():
     return get_settings().value("default_tab", defaultValue=0, type=int)
 
+
 def set_default_tab(tab):
     get_settings().setValue("default_tab", tabs[tab])
 
 
 def get_list_sorting_type(list_name):
     return get_settings().value(f"Internal/{list_name}_sorting_type", defaultValue=1, type=int)
+
 
 def set_list_sorting_type(list_name, sorting_type):
     get_settings().setValue(f"Internal/{list_name}_sorting_type", sorting_type.value)
@@ -222,12 +230,14 @@ def set_list_sorting_type(list_name, sorting_type):
 def get_enable_new_builds_notifications():
     return get_settings().value("enable_new_builds_notifications", defaultValue=True, type=bool)
 
+
 def set_enable_new_builds_notifications(is_checked):
     get_settings().setValue("enable_new_builds_notifications", is_checked)
 
 
 def get_enable_download_notifications():
     return get_settings().value("enable_download_notifications", defaultValue=True, type=bool)
+
 
 def set_enable_download_notifications(is_checked):
     get_settings().setValue("enable_download_notifications", is_checked)
@@ -245,7 +255,6 @@ def get_bash_arguments():
     return get_settings().value("bash_arguments", defaultValue="", type=str).strip()
 
 
-
 def set_bash_arguments(args):
     get_settings().setValue("bash_arguments", args.strip())
 
@@ -260,6 +269,7 @@ def set_install_template(is_checked):
 
 def get_show_tray_icon():
     return get_settings().value("show_tray_icon", defaultValue=True, type=bool)
+
 
 def set_show_tray_icon(is_checked):
     get_settings().setValue("show_tray_icon", is_checked)
@@ -291,6 +301,7 @@ def set_enable_quick_launch_key_seq(is_checked):
 
 def get_proxy_type():
     return get_settings().value("proxy/type", defaultValue=0, type=int)
+
 
 def set_proxy_type(proxy_type):
     get_settings().setValue("proxy/type", proxy_types[proxy_type])
@@ -347,6 +358,7 @@ def set_proxy_password(args):
 def get_use_custom_tls_certificates():
     return get_settings().value("use_custom_tls_certificates", defaultValue=True, type=bool)
 
+
 def set_use_custom_tls_certificates(is_checked):
     get_settings().setValue("use_custom_tls_certificates", is_checked)
 
@@ -394,6 +406,7 @@ def get_minimum_blender_stable_version() -> Version:
         v = settings.value("minimum_blender_stable_version", defaultValue=3.0, type=float)
         return Version(int(v), int(v * 100), 0)
 
+
 def set_minimum_blender_stable_version(v: Version):
     get_settings().setValue("minimum_blender_stable_version", f"{v.major}.{v.minor}")
 
@@ -401,15 +414,18 @@ def set_minimum_blender_stable_version(v: Version):
 def get_make_error_popup():
     return get_settings().value("error_popup", defaultValue=True, type=bool)
 
+
 def set_make_error_popup(v: bool):
     get_settings().setValue("error_popup", v)
 
+
 def get_default_worker_thread_count() -> int:
     cpu_count = os.cpu_count()
-    if cpu_count is None: # why can os.cpu_count() return None
+    if cpu_count is None:  # why can os.cpu_count() return None
         return 4
 
     return round(max(cpu_count * 3 / 4, 1))
+
 
 def get_worker_thread_count() -> int:
     v = get_settings().value("worker_thread_count", type=int)
@@ -418,11 +434,14 @@ def get_worker_thread_count() -> int:
 
     return v
 
+
 def set_worker_thread_count(v: int):
     get_settings().setValue("worker_thread_count", v)
 
+
 def get_use_system_titlebar():
     return get_settings().value("use_system_title_bar", defaultValue=False, type=bool)
+
 
 def set_use_system_titlebar(b: bool):
     get_settings().setValue("use_system_title_bar", b)
