@@ -49,6 +49,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger()
 
+
 class LibraryWidget(BaseBuildWidget):
     initialized = pyqtSignal()
 

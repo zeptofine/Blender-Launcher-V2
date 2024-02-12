@@ -83,7 +83,7 @@ class GeneralTabWidget(SettingsFormWidget):
         self.NewBuildsCheckFrequency.setEnabled(get_check_for_new_builds_automatically())
         self.NewBuildsCheckFrequency.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
         self.NewBuildsCheckFrequency.setToolTip("Time in hours between new builds check")
-        self.NewBuildsCheckFrequency.setMaximum(24*7*4) # 4 weeks?
+        self.NewBuildsCheckFrequency.setMaximum(24 * 7 * 4)  # 4 weeks?
         self.NewBuildsCheckFrequency.setMinimum(12)
         self.NewBuildsCheckFrequency.setSuffix("h")
         self.NewBuildsCheckFrequency.setValue(get_new_builds_check_frequency())
@@ -91,7 +91,6 @@ class GeneralTabWidget(SettingsFormWidget):
         self.CheckForNewBuildsOnStartup = QCheckBox()
         self.CheckForNewBuildsOnStartup.setChecked(get_check_for_new_builds_on_startup())
         self.CheckForNewBuildsOnStartup.clicked.connect(self.toggle_check_on_startup)
-
 
         # High Dpi Scaling
         self.EnableHighDpiScalingCheckBox = QCheckBox()

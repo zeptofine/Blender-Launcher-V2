@@ -49,7 +49,7 @@ class BuildInfo:
     def from_dict(cls, path: Path, blinfo: dict):
         try:
             dt = datetime.fromisoformat(blinfo["commit_time"])
-        except ValueError: # old file version compatibility
+        except ValueError:  # old file version compatibility
             dt = datetime.strptime(blinfo["commit_time"], "%d-%b-%y-%H:%M").astimezone()
         return cls(
             path.as_posix(),

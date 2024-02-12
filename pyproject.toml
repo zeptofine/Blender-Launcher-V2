@@ -43,7 +43,7 @@ line-length = 120
 target-version = "py39"
 
 [tool.ruff.lint]
-extend-ignore = ["F401", "E501", "B905", "SIM114", "A003", "SIM108"]
+extend-ignore = ["F401", "E501", "B905", "SIM114", "A003", "SIM108", "ISC001"]
 extend-select = [
   "A", # flake8-builtins
   "ASYNC", # flake8-async
