@@ -13,13 +13,13 @@ from shutil import copyfileobj
 from time import localtime, mktime, strftime
 from typing import TYPE_CHECKING
 
-import resources_rc
 from items.base_list_widget_item import BaseListWidgetItem
 from modules._platform import _popen, get_cwd, get_platform, is_frozen, set_locale
 from modules.connection_manager import ConnectionManager
 from modules.enums import MessageType
 from modules.settings import (
     create_library_folders,
+    get_check_for_new_builds_on_startup,
     get_default_downloads_page,
     get_default_library_page,
     get_default_tab,
@@ -62,6 +62,7 @@ from threads.scraper import Scraper
 from widgets.base_menu_widget import BaseMenuWidget
 from widgets.base_page_widget import BasePageWidget
 from widgets.base_tool_box_widget import BaseToolBoxWidget
+from widgets.datetime_widget import DATETIME_FORMAT
 from widgets.download_widget import DownloadState, DownloadWidget
 from widgets.foreign_build_widget import UnrecoBuildWidget
 from widgets.header import WHeaderButton, WindowHeader
@@ -70,6 +71,20 @@ from windows.base_window import BaseWindow
 from windows.dialog_window import DialogIcon, DialogWindow
 from windows.file_dialog_window import FileDialogWindow
 from windows.settings_window import SettingsWindow
+
+try:
+    import resources_rc
+except ImportError:
+    if is_frozen():
+        print("Failed to import cached resources! Blender-Launcher-V2 was built without resources.")
+    elif (Path.cwd() / "build_style.py").exists():
+        # TODO: Attempt to build the style and check if it fails
+        print("Resources were not built! Run python build_style.py to build the style.")
+    else:
+        raise
+
+    exit()
+
 
 try:
     from pynput import keyboard
@@ -144,6 +159,7 @@ class BlenderLauncher(BaseWindow):
         self.platform = get_platform()
         self.settings_window = None
         self.hk_listener = None
+        self.scraper = None
         self.last_time_checked = get_last_time_checked_utc()
 
         if self.platform == "macOS":
@@ -370,7 +386,7 @@ class BlenderLauncher(BaseWindow):
         self.statusbarLabel = QLabel()
         self.ForceCheckNewBuilds = QPushButton("Check")
         self.ForceCheckNewBuilds.setEnabled(False)
-        self.ForceCheckNewBuilds.clicked.connect(self.draw_downloads)
+        self.ForceCheckNewBuilds.clicked.connect(self.start_scraper)
         self.NewVersionButton = QPushButton()
         self.NewVersionButton.hide()
         self.NewVersionButton.clicked.connect(self.show_update_window)
@@ -401,7 +417,7 @@ class BlenderLauncher(BaseWindow):
         quick_launch_action = QAction(self.icons.quick_launch, "Blender", self)
         quick_launch_action.triggered.connect(self.quick_launch)
 
-        self.tray_menu = BaseMenuWidget()
+        self.tray_menu = BaseMenuWidget(parent=self)
         self.tray_menu.setFont(self.font_10)
         self.tray_menu.addActions([
             quick_launch_action,
@@ -697,8 +713,8 @@ class BlenderLauncher(BaseWindow):
 
             if self.timer is not None:
                 self.timer.cancel()
-
-            self.scraper.quit()
+            if self.scraper is not None:
+                self.scraper.quit()
             self.DownloadsStableListWidget.clear_()
             self.DownloadsDailyListWidget.clear_()
             self.DownloadsExperimentalListWidget.clear_()
@@ -718,6 +734,7 @@ class BlenderLauncher(BaseWindow):
             self.library_drawer.finished.connect(self.draw_downloads)
 
         self.task_queue.append(self.library_drawer)
+
     def reload_custom_builds(self):
         self.UserCustomListWidget.clear_()
 
@@ -728,20 +745,10 @@ class BlenderLauncher(BaseWindow):
 
 
     def draw_downloads(self):
-        self.set_status("Checking for new builds", False)
-
-        for page in self.DownloadsToolBox.pages:
-            page.set_info_label_text("Checking for new builds")
-
-        self.cashed_builds.clear()
-        self.new_downloads = False
-        self.app_state = AppState.CHECKINGBUILDS
-        self.scraper = Scraper(self, self.cm)
-        self.scraper.links.connect(self.draw_to_downloads)
-        self.scraper.new_bl_version.connect(self.set_version)
-        self.scraper.error.connect(self.connection_error)
-        self.scraper.finished.connect(self.scraper_finished)
-        self.scraper.start()
+        if get_check_for_new_builds_on_startup():
+            self.start_scraper()
+        else:
+            self.ready_to_scrape()
 
     def connection_error(self):
         print("connection_error")
@@ -754,6 +761,23 @@ class BlenderLauncher(BaseWindow):
         #     self.timer = threading.Timer(
         #         get_new_builds_check_frequency(), self.draw_downloads)
         #     self.timer.start()
+
+    def start_scraper(self):
+            self.set_status("Checking for new builds", False)
+
+            for page in self.DownloadsToolBox.pages:
+                page.set_info_label_text("Checking for new builds")
+
+            self.cashed_builds.clear()
+            self.new_downloads = False
+            self.app_state = AppState.CHECKINGBUILDS
+            self.scraper = Scraper(self, self.cm)
+            self.scraper.links.connect(self.draw_to_downloads)
+            self.scraper.new_bl_version.connect(self.set_version)
+            self.scraper.error.connect(self.connection_error)
+            self.scraper.finished.connect(self.scraper_finished)
+            self.scraper.start()
+
 
     def scraper_finished(self):
         if self.new_downloads:
@@ -781,8 +805,12 @@ class BlenderLauncher(BaseWindow):
         #         get_new_builds_check_frequency(), self.draw_downloads)
         #     self.timer.start()
         #     self.started = False
+        self.ready_to_scrape()
 
-        self.set_status("Last check at " + strftime("%H:%M", utcnow), True)
+    def ready_to_scrape(self):
+        self.app_state = AppState.IDLE
+        self.set_status("Last check at " + self.last_time_checked.strftime(DATETIME_FORMAT), True)
+
 
     def draw_from_cashed(self, build_info):
         if self.app_state == AppState.IDLE:
@@ -817,9 +845,6 @@ class BlenderLauncher(BaseWindow):
 
         installed = library_list_widget.widget_with_blinfo(build_info)
 
-        if installed is not None:
-            show_new = False
-
         if not downloads_list_widget.contains_build_info(build_info):
             item = BaseListWidgetItem(build_info.commit_time)
             widget = DownloadWidget(
@@ -834,20 +859,33 @@ class BlenderLauncher(BaseWindow):
         branch = Path(path).parent.name
 
         if branch in ("stable", "lts"):
-            list_widget = self.LibraryStableListWidget
+            library = self.LibraryStableListWidget
+            download = self.DownloadsStableListWidget
         elif branch == "daily":
-            list_widget = self.LibraryDailyListWidget
+            library = self.LibraryDailyListWidget
+            download = self.DownloadsDailyListWidget
         elif branch == "experimental":
-            list_widget = self.LibraryExperimentalListWidget
+            library = self.LibraryExperimentalListWidget
+            download = self.DownloadsExperimentalListWidget
         elif branch == "custom":
-            list_widget = self.UserCustomListWidget
+            library = self.UserCustomListWidget
+            download = None
         else:
-            return
+            return None
 
         item = BaseListWidgetItem()
-        widget = LibraryWidget(self, item, path, list_widget,
+        widget = LibraryWidget(self, item, path, library,
                                show_new)
-        list_widget.insert_item(item, widget)
+
+        if download is not None:
+            def _initialized():
+                dlw: DownloadWidget | None = download.widget_with_blinfo(widget.build_info)
+                if dlw is not None and not dlw.installed:
+                    dlw.setInstalled(widget)
+
+            widget.initialized.connect(_initialized)
+
+        library.insert_item(item, widget)
         return widget
 
     def draw_unrecognized(self, path):

@@ -364,17 +364,25 @@ def set_check_for_new_builds_automatically(is_checked):
 
 
 def get_new_builds_check_frequency():
-    """Time in seconds"""
+    """Time in hours"""
 
     settings = get_settings()
 
     if settings.contains("new_builds_check_frequency"):
         return settings.value("new_builds_check_frequency", type=int)
-    return 600
+    return 12
 
 
 def set_new_builds_check_frequency(frequency):
     get_settings().setValue("new_builds_check_frequency", frequency)
+
+
+def get_check_for_new_builds_on_startup():
+    return get_settings().value("buildcheck_on_startup", defaultValue=True, type=bool)
+
+
+def set_check_for_new_builds_on_startup(b: bool):
+    get_settings().setValue("buildcheck_on_startup", b)
 
 
 def get_minimum_blender_stable_version() -> Version:

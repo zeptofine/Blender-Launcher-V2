@@ -73,7 +73,7 @@ class DownloadWidget(BaseBuildWidget):
         self.cancelButton.setCursor(Qt.CursorShape.PointingHandCursor)
         self.cancelButton.hide()
 
-        self.main_hl = QHBoxLayout()
+        self.main_hl = QHBoxLayout(self)
         self.main_hl.setContentsMargins(2, 2, 0, 2)
         self.main_hl.setSpacing(0)
 
@@ -111,9 +111,9 @@ class DownloadWidget(BaseBuildWidget):
         self.subversionLabel.setIndent(20)
         self.subversionLabel.setToolTip(str(self.build_info.semversion))
 
-        self.branchLabel = ElidedTextLabel(branch_name)
-        self.commitTimeLabel = DateTimeWidget(self.build_info.commit_time, self.build_info.build_hash)
-        self.build_state_widget = BuildStateWidget(parent)
+        self.branchLabel = ElidedTextLabel(branch_name, self)
+        self.commitTimeLabel = DateTimeWidget(self.build_info.commit_time, self.build_info.build_hash, self)
+        self.build_state_widget = BuildStateWidget(parent, self)
 
         self.build_info_hl.addWidget(self.subversionLabel)
         self.build_info_hl.addWidget(self.branchLabel, stretch=1)
@@ -137,8 +137,6 @@ class DownloadWidget(BaseBuildWidget):
             self.setInstalled(installed)
         else:
             self.installedButton.hide()
-
-        self.setLayout(self.main_hl)
 
         if self.build_info.branch in "stable lts":
             self.menu.addAction(self.showReleaseNotesAction)

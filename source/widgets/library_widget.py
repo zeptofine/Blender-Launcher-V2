@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+import logging
 import os
 import re
 import subprocess
@@ -21,7 +22,7 @@ from modules.settings import (
 )
 from modules.shortcut import create_shortcut
 from PyQt5 import QtCore
-from PyQt5.QtCore import Qt, pyqtSlot
+from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import (
     QDragEnterEvent,
     QDragLeaveEvent,
@@ -46,9 +47,20 @@ from windows.dialog_window import DialogWindow
 if TYPE_CHECKING:
     from windows.main_window import BlenderLauncher
 
+logger = logging.getLogger()
 
 class LibraryWidget(BaseBuildWidget):
-    def __init__(self, parent: BlenderLauncher, item: BaseListWidgetItem, link, list_widget, show_new=False, parent_widget=None):
+    initialized = pyqtSignal()
+
+    def __init__(
+        self,
+        parent: BlenderLauncher,
+        item: BaseListWidgetItem,
+        link,
+        list_widget,
+        show_new=False,
+        parent_widget=None,
+    ):
         super().__init__(parent=parent)
         self.setAcceptDrops(True)
         self.setAttribute(Qt.WidgetAttribute.WA_Hover)
@@ -89,7 +101,7 @@ class LibraryWidget(BaseBuildWidget):
             self.infoLabel = QLabel("Loading build information...")
             self.infoLabel.setWordWrap(True)
 
-            self.launchButton = LeftIconButtonWidget("")
+            self.launchButton = LeftIconButtonWidget("", parent=self)
             self.launchButton.setFixedWidth(85)
             self.launchButton.setProperty("CancelButton", True)
 
@@ -122,7 +134,7 @@ class LibraryWidget(BaseBuildWidget):
         self.branch = self.build_info.branch
         self.item.date = build_info.commit_time
 
-        self.launchButton = LeftIconButtonWidget("Launch")
+        self.launchButton = LeftIconButtonWidget("Launch", parent=self)
         self.launchButton.setFixedWidth(85)
         self.launchButton.setProperty("LaunchButton", True)
         self._launch_icon = None
@@ -155,7 +167,7 @@ class LibraryWidget(BaseBuildWidget):
         self.layout.addWidget(self.branchLabel, stretch=1)
 
         if self.parent_widget is not None:
-            self.lineEdit = BaseLineEdit()
+            self.lineEdit = BaseLineEdit(self)
             self.lineEdit.setMaxLength(256)
             self.lineEdit.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
             self.lineEdit.escapePressed.connect(self.rename_branch_rejected)
@@ -172,13 +184,12 @@ class LibraryWidget(BaseBuildWidget):
         self.launchButton.setCursor(Qt.CursorShape.PointingHandCursor)
 
         # Context menu
-        self.menu_extended = BaseMenuWidget()
+        self.menu_extended = BaseMenuWidget(parent=self)
         self.menu_extended.setFont(self.parent.font_10)
 
         self.deleteAction = QAction("Delete From Drive", self)
         self.deleteAction.setIcon(self.parent.icons.delete)
         self.deleteAction.triggered.connect(self.ask_remove_from_drive)
-
 
         self.editAction = QAction("Edit build...", self)
         self.editAction.setIcon(self.parent.icons.settings)
@@ -192,7 +203,6 @@ class LibraryWidget(BaseBuildWidget):
             "\n(Appends `--open-last` to the execution arguments)"
             "\nSHORTCUT: Shift + Launch or Doubleclick"
         )
-
 
         self.addToQuickLaunchAction = QAction("Add To Quick Launch", self)
         self.addToQuickLaunchAction.setIcon(self.parent.icons.quick_launch)
@@ -228,7 +238,7 @@ class LibraryWidget(BaseBuildWidget):
         self.installTemplateAction = QAction("Install Template")
         self.installTemplateAction.triggered.connect(self.install_template)
 
-        self.debugMenu = BaseMenuWidget("Debug")
+        self.debugMenu = BaseMenuWidget("Debug", parent=self)
         self.debugMenu.setFont(self.parent.font_10)
 
         self.debugLogAction = QAction("Debug Log")
@@ -302,6 +312,8 @@ class LibraryWidget(BaseBuildWidget):
 
         if self.build_info.is_favorite and self.parent_widget is None:
             self.add_to_favorites()
+
+        self.initialized.emit()
 
     def context_menu(self):
         if self.is_damaged:
@@ -489,6 +501,7 @@ class LibraryWidget(BaseBuildWidget):
             else:
                 args += " --open-last"
 
+        logger.debug("Running build with args %s", str(args))
         proc = _popen(args)
         assert proc is not None
         if self.observer is None:

@@ -10,13 +10,13 @@ from widgets.base_menu_widget import BaseMenuWidget
 
 class BaseBuildWidget(QWidget):
     def __init__(self, parent):
-        super().__init__()
+        super().__init__(parent)
         self.parent = parent
 
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self.context_menu)
 
-        self.menu = BaseMenuWidget()
+        self.menu = BaseMenuWidget(parent=self)
         self.menu.setFont(self.parent.font_10)
 
         self.showReleaseNotesAction = QAction("Show Release Notes")

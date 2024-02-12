@@ -158,11 +158,15 @@ class BuildInfo:
 
     @classmethod
     def from_dict(cls, path: Path, blinfo: dict):
+        try:
+            dt = datetime.fromisoformat(blinfo["commit_time"])
+        except ValueError: # old file version compatibility
+            dt = datetime.strptime(blinfo["commit_time"], "%d-%b-%y-%H:%M").astimezone()
         return cls(
             path.as_posix(),
             blinfo["subversion"],
             blinfo["build_hash"],
-            datetime.strptime(blinfo["commit_time"], "%d-%b-%y-%H:%M").astimezone(),
+            dt,
             blinfo["branch"],
             blinfo["custom_name"],
             blinfo["is_favorite"],
@@ -177,7 +181,7 @@ class BuildInfo:
                     "branch": self.branch,
                     "subversion": self.subversion,
                     "build_hash": self.build_hash,
-                    "commit_time": self.commit_time.strftime("%d-%b-%y-%H:%M"),
+                    "commit_time": self.commit_time.isoformat(),
                     "custom_name": self.custom_name,
                     "is_favorite": self.is_favorite,
                     "custom_executable": self.custom_executable,
