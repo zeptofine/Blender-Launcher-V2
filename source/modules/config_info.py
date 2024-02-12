@@ -21,10 +21,7 @@ class ConfigInfo:
         if (self is None) or (other is None):  # what
             return False
 
-        return (
-            self.directory == other.directory
-            and self.target_version == other.target_version
-        )
+        return self.directory == other.directory and self.target_version == other.target_version
 
     def get_env(self) -> dict[str, str]:
         return {

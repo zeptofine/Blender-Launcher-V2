@@ -216,11 +216,14 @@ def get_default_tab():
 def set_default_tab(tab):
     get_settings().setValue("default_tab", tabs[tab])
 
+
 def get_default_preferences_tab():
     return get_settings().value("default_preferences_tab", defaultValue=0, type=int)
 
+
 def set_default_preferences_tab(tab):
     get_settings().setValue("default_preferences_tab", tabs[tab])
+
 
 def get_list_sorting_type(list_name):
     return get_settings().value(f"Internal/{list_name}_sorting_type", defaultValue=1, type=int)

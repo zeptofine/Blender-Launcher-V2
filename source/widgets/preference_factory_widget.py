@@ -25,7 +25,6 @@ class PreferenceFactoryWidget(BaseBuildWidget):
 
         self.list_widget = list_widget
 
-
         # box should highlight when dragged over
         self.layout: QHBoxLayout = QHBoxLayout()
         self.layout.setContentsMargins(2, 2, 0, 2)
