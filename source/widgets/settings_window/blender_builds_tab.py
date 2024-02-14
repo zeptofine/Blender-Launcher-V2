@@ -30,6 +30,7 @@ from PyQt5.QtWidgets import (
     QCheckBox,
     QComboBox,
     QDoubleSpinBox,
+    QFormLayout,
     QGridLayout,
     QHBoxLayout,
     QLabel,
@@ -82,7 +83,6 @@ class BlenderBuildsTabWidget(SettingsFormWidget):
         self.scraping_builds_layout.addWidget(self.CheckForNewBuildsOnStartup, 1, 0, 1, 2)
         self.scraping_builds_layout.addWidget(QLabel("Minimum stable build to scrape", self), 2, 0, 1, 1)
         self.scraping_builds_layout.addWidget(self.MinStableBlenderVer, 2, 1, 1, 1)
-
         self.buildcheck_settings.setLayout(self.scraping_builds_layout)
 
         # Downloading builds settings
@@ -108,33 +108,16 @@ class BlenderBuildsTabWidget(SettingsFormWidget):
         self.downloading_layout.addWidget(self.EnableMarkAsFavorite, 0, 0, 1, 1)
         self.downloading_layout.addWidget(self.MarkAsFavorite, 0, 1, 1, 1)
         self.downloading_layout.addWidget(self.InstallTemplate, 1, 0, 1, 2)
-
         self.download_settings.setLayout(self.downloading_layout)
 
-        # Blender Startup Arguments
-        self.BlenderStartupArguments = QLineEdit()
-        self.BlenderStartupArguments.setText(str(get_blender_startup_arguments()))
-        self.BlenderStartupArguments.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
-        self.BlenderStartupArguments.setCursorPosition(0)
-        self.BlenderStartupArguments.editingFinished.connect(self.update_blender_startup_arguments)
-
-        # Command Line Arguments
-        self.BashArguments = QLineEdit()
-        self.BashArguments.setText(str(get_bash_arguments()))
-        self.BashArguments.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
-        self.BashArguments.setCursorPosition(0)
-        self.BashArguments.editingFinished.connect(self.update_bash_arguments)
-
-        # Run Blender using blender-launcher.exe
-        self.LaunchBlenderNoConsole = QCheckBox()
-        self.LaunchBlenderNoConsole.clicked.connect(self.toggle_launch_blender_no_console)
-        self.LaunchBlenderNoConsole.setChecked(get_launch_blender_no_console())
+        # Launching builds settings
+        self.launching_settings = SettingsGroup("Launching Builds", parent=self)
 
         # Quick Launch Key Sequence
         self.EnableQuickLaunchKeySeq = QCheckBox()
+        self.EnableQuickLaunchKeySeq.setText("Quick Launch Global Shortcut")
         self.EnableQuickLaunchKeySeq.clicked.connect(self.toggle_enable_quick_launch_key_seq)
         self.EnableQuickLaunchKeySeq.setChecked(get_enable_quick_launch_key_seq())
-
         self.QuickLaunchKeySeq = QLineEdit()
         self.QuickLaunchKeySeq.setEnabled(get_enable_quick_launch_key_seq())
         self.QuickLaunchKeySeq.keyPressEvent = self._keyPressEvent
@@ -142,25 +125,39 @@ class BlenderBuildsTabWidget(SettingsFormWidget):
         self.QuickLaunchKeySeq.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
         self.QuickLaunchKeySeq.setCursorPosition(0)
         self.QuickLaunchKeySeq.editingFinished.connect(self.update_quick_launch_key_seq)
+        # Run Blender using blender-launcher.exe
+        self.LaunchBlenderNoConsole = QCheckBox()
+        self.LaunchBlenderNoConsole.setText("Hide Console On Startup")
+        self.LaunchBlenderNoConsole.clicked.connect(self.toggle_launch_blender_no_console)
+        self.LaunchBlenderNoConsole.setChecked(get_launch_blender_no_console())
+        # Blender Startup Arguments
+        self.BlenderStartupArguments = QLineEdit()
+        self.BlenderStartupArguments.setText(str(get_blender_startup_arguments()))
+        self.BlenderStartupArguments.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
+        self.BlenderStartupArguments.setCursorPosition(0)
+        self.BlenderStartupArguments.editingFinished.connect(self.update_blender_startup_arguments)
+        # Command Line Arguments
+        self.BashArguments = QLineEdit()
+        self.BashArguments.setText(str(get_bash_arguments()))
+        self.BashArguments.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
+        self.BashArguments.setCursorPosition(0)
+        self.BashArguments.editingFinished.connect(self.update_bash_arguments)
+
+        self.launching_layout = QFormLayout()
+        self.launching_layout.addRow(self.EnableQuickLaunchKeySeq, self.QuickLaunchKeySeq)
+        if get_platform() == "Windows":
+            self.launching_layout.addRow(self.LaunchBlenderNoConsole)
+        self.launching_layout.addRow(QLabel("Startup Arguments:", self))
+        self.launching_layout.addRow(self.BlenderStartupArguments)
+        if get_platform() == "Linux":
+            self.launching_layout.addRow(QLabel("Bash Arguments:", self))
+            self.launching_layout.addRow(self.BashArguments)
+        self.launching_settings.setLayout(self.launching_layout)
 
         # Layout
         self.addRow(self.buildcheck_settings)
         self.addRow(self.download_settings)
-        # self._addRow("Mark As Favorite", self.MarkAsFavorite)
-        # self._addRow("Install Template", self.InstallTemplate)
-
-        sub_layout = QHBoxLayout()
-        sub_layout.addWidget(self.EnableQuickLaunchKeySeq)
-        sub_layout.addWidget(self.QuickLaunchKeySeq)
-        self.QuickLaunchKeySeqRow = self._addRow("Quick Launch Global Shortcut", sub_layout)
-
-        if get_platform() == "Windows":
-            self._addRow("Hide Console On Startup", self.LaunchBlenderNoConsole)
-
-        self._addRow("Startup Arguments:", self.BlenderStartupArguments, True)
-
-        if get_platform() == "Linux":
-            self._addRow("Bash Arguments:", self.BashArguments, True)
+        self.addRow(self.launching_settings)
 
     def change_mark_as_favorite(self, page):
         set_mark_as_favorite(page)
