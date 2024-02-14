@@ -88,29 +88,12 @@ class DownloadWidget(BaseBuildWidget):
         self.progress_bar_hl.setContentsMargins(16, 0, 8, 0)
         self.main_hl.setSpacing(0)
 
-        if self.build_info.branch == "lts":
-            branch_name = "LTS"
-        elif self.build_info.branch == "daily":
-            branch = self.build_info.semversion.prerelease
-            if branch is not None:
-                branch = branch.rsplit(".", 1)[0].title()
-            else:
-                branch = self.build_info.subversion.split("-", 1)[-1].title()
-            branch_name = branch
-        elif self.build_info.branch == "stable":
-            branch_name = self.build_info.branch.title()
-        else:
-            branch = self.build_info.semversion.prerelease
-            if branch is None:
-                branch = str(self.build_info.semversion.finalize_version())
-            branch_name = branch.title()
-
         self.subversionLabel = QLabel(self.build_info.display_version)
         self.subversionLabel.setFixedWidth(85)
         self.subversionLabel.setIndent(20)
         self.subversionLabel.setToolTip(str(self.build_info.semversion))
 
-        self.branchLabel = ElidedTextLabel(branch_name, self)
+        self.branchLabel = ElidedTextLabel(self.build_info.display_label, self)
         self.commitTimeLabel = DateTimeWidget(self.build_info.commit_time, self.build_info.build_hash, self)
         self.build_state_widget = BuildStateWidget(parent, self)
 

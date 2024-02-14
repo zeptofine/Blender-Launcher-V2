@@ -86,9 +86,8 @@ def parse_blender_ver(s: str, search=False) -> Version:
         if "pre" in g.groupdict() and g.group("pre") is not None:
             prerelease = g.group("pre").casefold().strip("- ")
 
-        v = Version(major=major, minor=minor, patch=patch, prerelease=prerelease)
+        return Version(major=major, minor=minor, patch=patch, prerelease=prerelease)
         # print(f"Parsed {s} to {v} using {matcher}")
-        return v
 
 
 oldver_cutoff = Version(2, 83, 0)
@@ -134,6 +133,10 @@ class BuildInfo:
     def display_version(self):
         return self._display_version(self.semversion)
 
+    @property
+    def display_label(self):
+        return self._display_label(self.branch, self.semversion, self.subversion)
+
     @staticmethod
     @cache
     def _display_version(v: Version):
@@ -143,6 +146,29 @@ class BuildInfo:
                 pre = v.prerelease
             return f"{v.major}.{v.minor}{pre}"
         return str(v.finalize_version())
+
+    @staticmethod
+    @cache
+    def _display_label(branch: str, v: Version, subv: str):
+        if branch == "lts":
+            return "LTS"
+        if branch in ("patch", "experimental", "daily"):
+            b = v.prerelease
+            if b is not None:
+                return b.replace("-", " ").title()
+            return subv.split("-", 1)[-1].title()
+
+        if branch == "daily":
+            b = v.prerelease
+            if b is not None:
+                b = branch.rsplit(".", 1)[0].title()
+            else:
+                b = subv.split("-", 1)[-1].title()
+            return b
+        if v.prerelease is not None and v.prerelease.startswith("rc"):
+            return f"Release Candidate {v.prerelease[2:]}"
+
+        return branch.title()
 
     @staticmethod
     @cache

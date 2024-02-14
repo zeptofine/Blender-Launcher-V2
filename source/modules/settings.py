@@ -399,8 +399,9 @@ def set_check_for_new_builds_on_startup(b: bool):
 
 def get_minimum_blender_stable_version() -> Version:
     settings = get_settings()
-    v = settings.value("minimum_blender_stable_version", defaultValue=3.0, type=float)
-    return Version(int(v), int(v * 100 % 100), 0)
+    v = settings.value("minimum_blender_stable_version", defaultValue="3.0", type=str)
+    major, minor = v.split(".")
+    return Version(int(major), int(minor), 0)
 
 
 def set_minimum_blender_stable_version(v: Version):
