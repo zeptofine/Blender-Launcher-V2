@@ -14,7 +14,7 @@ from modules.settings import (
     set_launch_minimized_to_tray,
     set_launch_when_system_starts,
     set_library_folder,
-    set_make_error_popup,
+    set_make_error_notifications,
     set_show_tray_icon,
     set_use_system_titlebar,
     set_worker_thread_count,
@@ -64,20 +64,10 @@ class GeneralTabWidget(SettingsFormWidget):
         self.ShowTrayIconCheckBox.setChecked(get_show_tray_icon())
         self.ShowTrayIconCheckBox.clicked.connect(self.toggle_show_tray_icon)
 
-        # Use System Title Bar
-        self.UseSystemTitleBar = QCheckBox()
-        self.UseSystemTitleBar.setChecked(get_use_system_titlebar())
-        self.UseSystemTitleBar.clicked.connect(self.toggle_system_titlebar)
-
         # High Dpi Scaling
         self.EnableHighDpiScalingCheckBox = QCheckBox()
         self.EnableHighDpiScalingCheckBox.clicked.connect(self.toggle_enable_high_dpi_scaling)
         self.EnableHighDpiScalingCheckBox.setChecked(get_enable_high_dpi_scaling())
-
-        # Error popups
-        self.EnableErrorPopupsCheckBox = QCheckBox(self)
-        self.EnableErrorPopupsCheckBox.clicked.connect(self.toggle_enable_error_popups)
-        self.EnableErrorPopupsCheckBox.setChecked(get_make_error_popup())
 
         # Worker thread count
 
@@ -111,10 +101,8 @@ class GeneralTabWidget(SettingsFormWidget):
         self._addRow("Show Tray Icon", self.ShowTrayIconCheckBox)
         self.LaunchMinimizedToTrayRow = self._addRow("Launch Minimized To Tray", self.LaunchMinimizedToTrayCheckBox)
         self.LaunchMinimizedToTrayRow.setEnabled(get_show_tray_icon())
-        self._addRow("Use System Title Bar", self.UseSystemTitleBar)
 
         self._addRow("Enable High DPI Scaling", self.EnableHighDpiScalingCheckBox)
-        self._addRow("Enable Error Popups", self.EnableErrorPopupsCheckBox)
         self._addRow("Worker Thread Count", self.WorkerThreadCount)
 
     def set_library_folder(self):
@@ -146,15 +134,8 @@ class GeneralTabWidget(SettingsFormWidget):
         self.LaunchMinimizedToTrayRow.setEnabled(is_checked)
         self.parent.tray_icon.setVisible(is_checked)
 
-    def toggle_system_titlebar(self, is_checked):
-        set_use_system_titlebar(is_checked)
-        self.parent.update_system_titlebar(is_checked)
-
     def toggle_enable_high_dpi_scaling(self, is_checked):
         set_enable_high_dpi_scaling(is_checked)
-
-    def toggle_enable_error_popups(self, is_checked):
-        set_make_error_popup(is_checked)
 
     def set_worker_thread_count(self):
         set_worker_thread_count(self.WorkerThreadCount.value())
