@@ -399,16 +399,12 @@ def set_check_for_new_builds_on_startup(b: bool):
 
 def get_minimum_blender_stable_version() -> Version:
     settings = get_settings()
-    try:
-        v = parse_blender_ver(settings.value("minimum_blender_stable_version", defaultValue="3.0.0", type=str))
-        return Version(min(v.major, 100), min(v.minor, 100), min(v.patch, 100))
-    except TypeError:
-        v = settings.value("minimum_blender_stable_version", defaultValue=3.0, type=float)
-        return Version(int(v), int(v * 100), 0)
+    v = settings.value("minimum_blender_stable_version", defaultValue=3.0, type=float)
+    return Version(int(v), int(v * 100 % 100), 0)
 
 
 def set_minimum_blender_stable_version(v: Version):
-    get_settings().setValue("minimum_blender_stable_version", f"{v.major}.{v.minor}")
+    get_settings().setValue("minimum_blender_stable_version", float(f"{v.major}.{v.minor}"))
 
 
 def get_make_error_popup():
