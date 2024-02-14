@@ -1,26 +1,20 @@
 import os
 
 from modules.settings import (
-    get_check_for_new_builds_automatically,
-    get_check_for_new_builds_on_startup,
     get_enable_high_dpi_scaling,
     get_launch_minimized_to_tray,
     get_launch_when_system_starts,
     get_library_folder,
     get_make_error_popup,
-    get_new_builds_check_frequency,
     get_platform,
     get_show_tray_icon,
     get_use_system_titlebar,
     get_worker_thread_count,
-    set_check_for_new_builds_automatically,
-    set_check_for_new_builds_on_startup,
     set_enable_high_dpi_scaling,
     set_launch_minimized_to_tray,
     set_launch_when_system_starts,
     set_library_folder,
     set_make_error_popup,
-    set_new_builds_check_frequency,
     set_show_tray_icon,
     set_use_system_titlebar,
     set_worker_thread_count,
@@ -75,23 +69,6 @@ class GeneralTabWidget(SettingsFormWidget):
         self.UseSystemTitleBar.setChecked(get_use_system_titlebar())
         self.UseSystemTitleBar.clicked.connect(self.toggle_system_titlebar)
 
-        # New Builds Check Settings
-        self.CheckForNewBuildsAutomatically = QCheckBox()
-        self.CheckForNewBuildsAutomatically.setChecked(False)
-        self.CheckForNewBuildsAutomatically.clicked.connect(self.toggle_check_for_new_builds_automatically)
-        self.NewBuildsCheckFrequency = QSpinBox()
-        self.NewBuildsCheckFrequency.setEnabled(get_check_for_new_builds_automatically())
-        self.NewBuildsCheckFrequency.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
-        self.NewBuildsCheckFrequency.setToolTip("Time in hours between new builds check")
-        self.NewBuildsCheckFrequency.setMaximum(24 * 7 * 4)  # 4 weeks?
-        self.NewBuildsCheckFrequency.setMinimum(12)
-        self.NewBuildsCheckFrequency.setSuffix("h")
-        self.NewBuildsCheckFrequency.setValue(get_new_builds_check_frequency())
-        self.NewBuildsCheckFrequency.editingFinished.connect(self.new_builds_check_frequency_changed)
-        self.CheckForNewBuildsOnStartup = QCheckBox()
-        self.CheckForNewBuildsOnStartup.setChecked(get_check_for_new_builds_on_startup())
-        self.CheckForNewBuildsOnStartup.clicked.connect(self.toggle_check_on_startup)
-
         # High Dpi Scaling
         self.EnableHighDpiScalingCheckBox = QCheckBox()
         self.EnableHighDpiScalingCheckBox.clicked.connect(self.toggle_enable_high_dpi_scaling)
@@ -136,11 +113,6 @@ class GeneralTabWidget(SettingsFormWidget):
         self.LaunchMinimizedToTrayRow.setEnabled(get_show_tray_icon())
         self._addRow("Use System Title Bar", self.UseSystemTitleBar)
 
-        sub_layout = QHBoxLayout()
-        sub_layout.addWidget(self.CheckForNewBuildsAutomatically)
-        sub_layout.addWidget(self.NewBuildsCheckFrequency)
-        self._addRow("Check For New Builds Automatically", sub_layout)
-        self._addRow("Check For New Builds on Startup", self.CheckForNewBuildsOnStartup)
         self._addRow("Enable High DPI Scaling", self.EnableHighDpiScalingCheckBox)
         self._addRow("Enable Error Popups", self.EnableErrorPopupsCheckBox)
         self._addRow("Worker Thread Count", self.WorkerThreadCount)
@@ -177,17 +149,6 @@ class GeneralTabWidget(SettingsFormWidget):
     def toggle_system_titlebar(self, is_checked):
         set_use_system_titlebar(is_checked)
         self.parent.update_system_titlebar(is_checked)
-
-    def toggle_check_for_new_builds_automatically(self, is_checked):
-        set_check_for_new_builds_automatically(is_checked)
-        self.NewBuildsCheckFrequency.setEnabled(is_checked)
-
-    def new_builds_check_frequency_changed(self):
-        set_new_builds_check_frequency(self.NewBuildsCheckFrequency.value() * 60)
-
-    def toggle_check_on_startup(self, is_checked):
-        set_check_for_new_builds_on_startup(is_checked)
-        self.CheckForNewBuildsOnStartup.setChecked(is_checked)
 
     def toggle_enable_high_dpi_scaling(self, is_checked):
         set_enable_high_dpi_scaling(is_checked)
