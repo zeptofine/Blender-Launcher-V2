@@ -43,8 +43,8 @@ from .settings_group import SettingsGroup
 
 
 class BlenderBuildsTabWidget(SettingsFormWidget):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
 
         # Checking for builds settings
         self.buildcheck_settings = SettingsGroup("Checking For Builds", parent=self)

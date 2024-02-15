@@ -1,22 +1,16 @@
 import os
 
 from modules.settings import (
-    get_enable_high_dpi_scaling,
     get_launch_minimized_to_tray,
     get_launch_when_system_starts,
     get_library_folder,
-    get_make_error_popup,
     get_platform,
     get_show_tray_icon,
-    get_use_system_titlebar,
     get_worker_thread_count,
-    set_enable_high_dpi_scaling,
     set_launch_minimized_to_tray,
     set_launch_when_system_starts,
     set_library_folder,
-    set_make_error_notifications,
     set_show_tray_icon,
-    set_use_system_titlebar,
     set_worker_thread_count,
 )
 from PyQt5.QtCore import Qt
@@ -37,7 +31,6 @@ class GeneralTabWidget(SettingsFormWidget):
         self.LibraryFolderLineEdit.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
         self.LibraryFolderLineEdit.setReadOnly(True)
         self.LibraryFolderLineEdit.setCursorPosition(0)
-
         self.SetLibraryFolderButton = QPushButton(self.parent.icons.folder, "")
         self.SetLibraryFolderButton.clicked.connect(self.set_library_folder)
 
@@ -63,11 +56,6 @@ class GeneralTabWidget(SettingsFormWidget):
         self.ShowTrayIconCheckBox = QCheckBox()
         self.ShowTrayIconCheckBox.setChecked(get_show_tray_icon())
         self.ShowTrayIconCheckBox.clicked.connect(self.toggle_show_tray_icon)
-
-        # High Dpi Scaling
-        self.EnableHighDpiScalingCheckBox = QCheckBox()
-        self.EnableHighDpiScalingCheckBox.clicked.connect(self.toggle_enable_high_dpi_scaling)
-        self.EnableHighDpiScalingCheckBox.setChecked(get_enable_high_dpi_scaling())
 
         # Worker thread count
 
@@ -102,7 +90,6 @@ class GeneralTabWidget(SettingsFormWidget):
         self.LaunchMinimizedToTrayRow = self._addRow("Launch Minimized To Tray", self.LaunchMinimizedToTrayCheckBox)
         self.LaunchMinimizedToTrayRow.setEnabled(get_show_tray_icon())
 
-        self._addRow("Enable High DPI Scaling", self.EnableHighDpiScalingCheckBox)
         self._addRow("Worker Thread Count", self.WorkerThreadCount)
 
     def set_library_folder(self):
@@ -133,9 +120,6 @@ class GeneralTabWidget(SettingsFormWidget):
         set_show_tray_icon(is_checked)
         self.LaunchMinimizedToTrayRow.setEnabled(is_checked)
         self.parent.tray_icon.setVisible(is_checked)
-
-    def toggle_enable_high_dpi_scaling(self, is_checked):
-        set_enable_high_dpi_scaling(is_checked)
 
     def set_worker_thread_count(self):
         set_worker_thread_count(self.WorkerThreadCount.value())

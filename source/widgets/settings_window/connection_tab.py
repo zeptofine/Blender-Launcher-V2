@@ -20,8 +20,8 @@ from widgets.settings_form_widget import SettingsFormWidget
 
 
 class ConnectionTabWidget(SettingsFormWidget):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
 
         # Custom TLS certificates
         self.UseCustomCertificatesCheckBox = QCheckBox()

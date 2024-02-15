@@ -13,8 +13,8 @@ class SettingsFormWidgetRow:
 
 
 class SettingsFormWidget(QWidget):
-    def __init__(self, label_width=240):
-        super().__init__()
+    def __init__(self, label_width=240, parent=None):
+        super().__init__(parent)
 
         self.layout: QFormLayout = QFormLayout(self)
         self.layout.setContentsMargins(6, 0, 6, 0)

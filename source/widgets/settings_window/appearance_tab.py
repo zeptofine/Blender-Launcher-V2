@@ -4,6 +4,7 @@ from modules.settings import (
     get_default_library_page,
     get_default_tab,
     get_enable_download_notifications,
+    get_enable_high_dpi_scaling,
     get_enable_new_builds_notifications,
     get_sync_library_and_downloads_pages,
     get_use_system_titlebar,
@@ -12,6 +13,7 @@ from modules.settings import (
     set_default_library_page,
     set_default_tab,
     set_enable_download_notifications,
+    set_enable_high_dpi_scaling,
     set_enable_new_builds_notifications,
     set_make_error_notifications,
     set_sync_library_and_downloads_pages,
@@ -32,7 +34,7 @@ from .settings_group import SettingsGroup
 
 class AppearanceTabWidget(SettingsFormWidget):
     def __init__(self, parent):
-        super().__init__()
+        super().__init__(parent)
         self.parent = parent
 
         # Windows
@@ -43,9 +45,15 @@ class AppearanceTabWidget(SettingsFormWidget):
         self.UseSystemTitleBar.setText("Use System Title Bar")
         self.UseSystemTitleBar.setChecked(get_use_system_titlebar())
         self.UseSystemTitleBar.clicked.connect(self.toggle_system_titlebar)
+        # High Dpi Scaling
+        self.EnableHighDpiScalingCheckBox = QCheckBox()
+        self.EnableHighDpiScalingCheckBox.setText("Enable High DPI Scaling")
+        self.EnableHighDpiScalingCheckBox.clicked.connect(self.toggle_enable_high_dpi_scaling)
+        self.EnableHighDpiScalingCheckBox.setChecked(get_enable_high_dpi_scaling())
 
         self.window_layout = QVBoxLayout()
         self.window_layout.addWidget(self.UseSystemTitleBar)
+        self.window_layout.addWidget(self.EnableHighDpiScalingCheckBox)
         self.window_settings.setLayout(self.window_layout)
 
         # Notifications
@@ -108,6 +116,9 @@ class AppearanceTabWidget(SettingsFormWidget):
     def toggle_system_titlebar(self, is_checked):
         set_use_system_titlebar(is_checked)
         self.parent.update_system_titlebar(is_checked)
+
+    def toggle_enable_high_dpi_scaling(self, is_checked):
+        set_enable_high_dpi_scaling(is_checked)
 
     def change_default_tab(self, tab):
         set_default_tab(tab)
