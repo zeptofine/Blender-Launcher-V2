@@ -6,6 +6,7 @@ from PyQt5.QtNetwork import QLocalServer
 from PyQt5.QtWidgets import (
     QAction,
     QApplication,
+    QCheckBox,
     QFrame,
     QGridLayout,
     QHBoxLayout,
@@ -22,8 +23,9 @@ from PyQt5.QtWidgets import (
 
 class SettingsGroup(QFrame):
     collapsed = pyqtSignal(bool)
+    checked = pyqtSignal(bool)
 
-    def __init__(self, label: str, *, icons: Icons | None = None, parent=None):
+    def __init__(self, label: str, *, checkable=False, icons: Icons | None = None, parent=None):
         super().__init__(parent)
         self.setContentsMargins(0, 0, 0, 0)
         # self.setFrameStyle(QFrame.Shape.StyledPanel)
@@ -39,14 +41,26 @@ class SettingsGroup(QFrame):
         self._collapse_icon = icons.expand_less
         self._uncollapse_icon = icons.expand_more
 
-        self._label = QLabel(f" {label}")
         self.collapse_button = QPushButton(parent)
         self.collapse_button.setProperty("CollapseButton", True)
         self.collapse_button.setMaximumSize(20, 20)
         self.collapse_button.setIcon(self._collapse_icon)
         self.collapse_button.clicked.connect(self.toggle)
+        self._checkable = checkable
+
         self._layout.addWidget(self.collapse_button, 0, 0, 1, 1)
-        self._layout.addWidget(self._label, 0, 1, 1, 1)
+
+        if checkable:
+            self.checkbutton = QCheckBox(self)
+            self.label = None
+            self.checkbutton.setText(label)
+            self.checkbutton.clicked.connect(self.checked.emit)
+            self._layout.addWidget(self.checkbutton, 0, 1, 1, 1)
+
+        else:
+            self.checkbutton = None
+            self.label = QLabel(f" {label}")
+            self._layout.addWidget(self.label, 0, 1, 1, 1)
 
         self._widget = None
         self._collapsed = False
