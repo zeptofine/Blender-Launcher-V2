@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import re
+import sys
 import webbrowser
 from datetime import datetime, timezone
 from enum import Enum
@@ -82,7 +83,7 @@ except ImportError:
     else:
         raise
 
-    exit()
+    sys.exit()
 
 
 try:
@@ -161,7 +162,6 @@ class BlenderLauncher(BaseWindow):
         self.platform = get_platform()
         self.settings_window = None
         self.hk_listener = None
-        self.scraper = None
         self.last_time_checked = get_last_time_checked_utc()
 
         if self.platform == "macOS":
@@ -170,6 +170,12 @@ class BlenderLauncher(BaseWindow):
         # Setup window
         self.setWindowTitle("Blender Launcher")
         self.app.setWindowIcon(self.icons.taskbar)
+
+        # Setup scraper
+        self.scraper = Scraper(self, self.cm)
+        self.scraper.links.connect(self.draw_to_downloads)
+        self.scraper.error.connect(self.connection_error)
+        self.scraper.finished.connect(self.scraper_finished)
 
         # Set library folder from command line arguments
         if "-set-library-folder" in self.argv:
@@ -783,11 +789,8 @@ class BlenderLauncher(BaseWindow):
         self.cashed_builds.clear()
         self.new_downloads = False
         self.app_state = AppState.CHECKINGBUILDS
-        self.scraper = Scraper(self, self.cm)
-        self.scraper.links.connect(self.draw_to_downloads)
-        self.scraper.new_bl_version.connect(self.set_version)
-        self.scraper.error.connect(self.connection_error)
-        self.scraper.finished.connect(self.scraper_finished)
+
+        self.scraper.manager = self.cm
         self.scraper.start()
 
     def scraper_finished(self):
@@ -850,9 +853,8 @@ class BlenderLauncher(BaseWindow):
             downloads_list_widget = self.DownloadsExperimentalListWidget
             library_list_widget = self.LibraryExperimentalListWidget
 
-        installed = library_list_widget.widget_with_blinfo(build_info)
-
         if not downloads_list_widget.contains_build_info(build_info):
+            installed = library_list_widget.widget_with_blinfo(build_info)
             item = BaseListWidgetItem(build_info.commit_time)
             widget = DownloadWidget(
                 self,
