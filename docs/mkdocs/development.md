@@ -32,7 +32,7 @@
     python -m ensurepip
     python -m pip install --upgrade pdm
     # Enter the virtual Environment
-    pdm venv activate .venv
+    pdm venv activate
     # ^ Execute the command this returns with!
     ```
 
