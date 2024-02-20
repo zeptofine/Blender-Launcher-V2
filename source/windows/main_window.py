@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import re
+import sys
 import webbrowser
 from datetime import datetime, timezone
 from enum import Enum
@@ -82,7 +83,7 @@ except ImportError:
     else:
         raise
 
-    exit()
+    sys.exit()
 
 
 try:
