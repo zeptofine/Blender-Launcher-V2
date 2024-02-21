@@ -786,6 +786,11 @@ class BlenderLauncher(BaseWindow):
         for page in self.DownloadsToolBox.pages:
             page.set_info_label_text("Checking for new builds")
 
+        # Sometimes these builds end up being invalid, particularly when new builds are available, which, there usually
+        # are at least once every two days. They are so easily gathered there's little loss here
+        self.DownloadsDailyListWidget.clear_()
+        self.DownloadsExperimentalListWidget.clear_()
+
         self.cashed_builds.clear()
         self.new_downloads = False
         self.app_state = AppState.CHECKINGBUILDS
