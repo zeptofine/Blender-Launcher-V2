@@ -24,6 +24,18 @@
 
         pip install pdm
 
+2. Create the virtual environment
+
+    ```bash
+    python -m pip install virtualenv
+    python -m virtualenv --clear --download .venv
+    python -m ensurepip
+    python -m pip install --upgrade pdm
+    # Enter the virtual Environment
+    pdm venv activate
+    # ^ Execute the command this returns with!
+    ```
+
 2. Install dependencies
 
     === "Minimum set of packages for building executable"
@@ -38,20 +50,15 @@
         pdm install
         ```
 
-3. Enter the virtual environment
-
-        pdm venv activate
-
-
 ## Running Blender Launcher
-
-```bash
-python source/main.py
-```
 
 !!! info
 
     As of ([c90f33d](https://github.com/Victor-IX/Blender-Launcher-V2/commit/c90f33dfb710da509e50932bae3cbe5b588d8688)), cached Blender-Launcher-V2 files (such as resources_rc.py and global.qss) are no longer included in the source due to them artificially inflating git diffs. In order to generate them, run the `build_style.py` script located in the root project directory. running Blender Launcher without these being built will result in an error.
+
+```bash
+python source/main.py
+```
 
 ## Building Blender Launcher executable
 

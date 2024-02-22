@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
 import re
 import time
 from datetime import datetime, timezone
+from itertools import chain
 from pathlib import Path
 from typing import TYPE_CHECKING
 from urllib.parse import urljoin
@@ -18,6 +20,8 @@ from PyQt5.QtCore import QThread, pyqtSignal
 if TYPE_CHECKING:
     from modules.connection_manager import ConnectionManager
 
+logger = logging.getLogger()
+
 
 class Scraper(QThread):
     links = pyqtSignal(BuildInfo)
@@ -29,6 +33,7 @@ class Scraper(QThread):
         self.parent = parent
         self.manager: ConnectionManager = man
         self.platform = get_platform()
+        self.modified_date_cache: dict[str, datetime] = {}
         self.json_platform = {
             "Windows": "windows",
             "Linux": "linux",
@@ -73,11 +78,8 @@ class Scraper(QThread):
     def get_download_links(self):
         set_locale()
 
-        # Stable Builds
-        self.scrap_stable_releases()
-
-        # Daily, Experimental build
-        self.gather_automated_builds()
+        for build in chain(self.scrap_stable_releases(), self.gather_automated_builds()):
+            self.links.emit(build)
 
         reset_locale()
 
@@ -93,8 +95,7 @@ class Scraper(QThread):
             data = json.loads(r.data)
             for build in data:
                 if build["platform"] == self.json_platform and self.b3d_link.match(build["file_name"]):
-                    new_build = self.new_build_from_dict(build, branch_type)
-                    self.links.emit(new_build)
+                    yield self.new_build_from_dict(build, branch_type)
 
     def new_build_from_dict(self, build, branch_type):
         dt = datetime.fromtimestamp(build["file_mtime"], tz=timezone.utc)
@@ -134,7 +135,7 @@ class Scraper(QThread):
             build_info = self.new_blender_build(tag, url, branch_type)
 
             if build_info is not None:
-                self.links.emit(build_info)
+                yield build_info
 
         r.release_conn()
         r.close()
@@ -200,7 +201,7 @@ class Scraper(QThread):
 
         releases = soup.find_all(href=b3d_link)
         if not any(releases):
-            logging.info("Failed to gather stable releases")
+            logger.info("Failed to gather stable releases")
 
         minimum_version = get_minimum_blender_stable_version()
 
@@ -212,7 +213,21 @@ class Scraper(QThread):
 
             ver = parse_blender_ver(match.group(0))
             if ver >= minimum_version:
-                self.scrap_download_links(urljoin(url, href), "stable", stable=True)
+                # Check modified dates of folders, if available
+                date_sibling = release.find_next_sibling(string=True)
+                if date_sibling:
+                    date_str = " ".join(date_sibling.strip().split()[:2])
+                    with contextlib.suppress(ValueError):
+                        modified_date = datetime.strptime(date_str, "%d-%b-%Y %H:%M").astimezone(tz=timezone.utc)
+                        saved_date = self.modified_date_cache.get(href, None)
+                        if saved_date == modified_date:  # Folder has not been modified since last awake check
+                            logger.debug(f"Skipping {href}: {modified_date}")
+                            continue
+                        else:
+                            logger.debug(f"Caching {href}: {modified_date}")
+                            self.modified_date_cache[href] = modified_date
+
+                yield from self.scrap_download_links(urljoin(url, href), "stable", stable=True)
 
         r.release_conn()
         r.close()
