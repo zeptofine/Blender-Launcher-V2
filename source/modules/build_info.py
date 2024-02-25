@@ -20,11 +20,12 @@ matchers = tuple(
     map(
         re.compile,
         (  #                                                                                   # format                                 examples
-            r"(?P<ma>\d+)\.(?P<mi>\d+)\.(?P<pa>\d+)[ \-](?P<pre>((?!windows|linux)([^+]))*)",  # <major>.<minor>.<patch> <Prerelease>   2.80.0 Alpha  -> 2.80.0-alpha
+            r"(?P<ma>\d+)\.(?P<mi>\d+)\.(?P<pa>\d+)[ \-](?P<pre>[^+]*[^wli][^ndux][^s]?)",  # <major>.<minor>.<patch> <Prerelease>   2.80.0 Alpha  -> 2.80.0-alpha
             # r"(?P<ma>\d+)\.(?P<mi>\d+)\.(?P<pa>\d+)",  #                                       <major>.<minor>.<patch>                3.0.0         -> 3.0.0
+            r"(?P<ma>\d+)\.(?P<mi>\d+)[ \-](?P<pre>[^+]*[^wli][^ndux][^s]?)",
             r"(?P<ma>\d+)\.(?P<mi>\d+) \(sub (?P<pa>\d+)\)",  #                                  <major>.<minor> (sub <patch>)          2.80 (sub 75) -> 2.80.75
             r"(?P<ma>\d+)\.(?P<mi>\d+)$",  #                                                     <major>.<minor>                        2.79          -> 2.79.0
-            r"(?P<ma>\d+)\.(?P<mi>\d+)(?P<pre>[^-]{1,3})",  #                                    <major>.<minor><[chars]*(1-3)>         2.79rc1       -> 2.79.0-rc1
+            r"(?P<ma>\d+)\.(?P<mi>\d+)(?P<pre>[^-]{0,3})",  #                                    <major>.<minor><[chars]*(1-3)>         2.79rc1       -> 2.79.0-rc1
             r"(?P<ma>\d+)\.(?P<mi>\d+)(?P<pre>\D[^\.\s]*)?",  #                                  <major>.<minor><patch?>                2.79          -> 2.79.0       | 2.79b -> 2.79.0-b
         ),
     )
@@ -33,6 +34,7 @@ initial_cleaner = re.compile(r"(?!blender-)\d.*(?=-linux|-windows)")
 
 
 @cache
+@printer
 def parse_blender_ver(s: str, search=False) -> Version:
     """
     Converts Blender's different styles of versioning to a semver Version.
