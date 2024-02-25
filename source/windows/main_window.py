@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import re
+import sys
 import webbrowser
 from datetime import datetime, timezone
 from enum import Enum
@@ -84,7 +85,7 @@ except ImportError:
     else:
         raise
 
-    exit()
+    sys.exit()
 
 
 try:
@@ -163,7 +164,6 @@ class BlenderLauncher(BaseWindow):
         self.platform = get_platform()
         self.settings_window = None
         self.hk_listener = None
-        self.scraper = None
         self.last_time_checked = get_last_time_checked_utc()
 
         if self.platform == "macOS":
@@ -172,6 +172,12 @@ class BlenderLauncher(BaseWindow):
         # Setup window
         self.setWindowTitle("Blender Launcher")
         self.app.setWindowIcon(self.icons.taskbar)
+
+        # Setup scraper
+        self.scraper = Scraper(self, self.cm)
+        self.scraper.links.connect(self.draw_to_downloads)
+        self.scraper.error.connect(self.connection_error)
+        self.scraper.finished.connect(self.scraper_finished)
 
         # Set library folder from command line arguments
         if "-set-library-folder" in self.argv:
@@ -785,7 +791,7 @@ class BlenderLauncher(BaseWindow):
 
     def connection_error(self):
         print("connection_error")
-        set_locale()
+
         utcnow = strftime(("%H:%M"), localtime())
         self.set_status("Error: connection failed at " + utcnow)
         self.app_state = AppState.IDLE
@@ -801,14 +807,16 @@ class BlenderLauncher(BaseWindow):
         for page in self.DownloadsToolBox.pages:
             page.set_info_label_text("Checking for new builds")
 
+        # Sometimes these builds end up being invalid, particularly when new builds are available, which, there usually
+        # are at least once every two days. They are so easily gathered there's little loss here
+        self.DownloadsDailyListWidget.clear_()
+        self.DownloadsExperimentalListWidget.clear_()
+
         self.cashed_builds.clear()
         self.new_downloads = False
         self.app_state = AppState.CHECKINGBUILDS
-        self.scraper = Scraper(self, self.cm)
-        self.scraper.links.connect(self.draw_to_downloads)
-        self.scraper.new_bl_version.connect(self.set_version)
-        self.scraper.error.connect(self.connection_error)
-        self.scraper.finished.connect(self.scraper_finished)
+
+        self.scraper.manager = self.cm
         self.scraper.start()
 
     def scraper_finished(self):
@@ -820,7 +828,6 @@ class BlenderLauncher(BaseWindow):
                 if widget.build_info not in self.cashed_builds:
                     widget.destroy()
 
-        set_locale()
         utcnow = localtime()
         dt = datetime.fromtimestamp(mktime(utcnow), tz=timezone.utc)
         set_last_time_checked_utc(dt)
@@ -872,9 +879,8 @@ class BlenderLauncher(BaseWindow):
             downloads_list_widget = self.DownloadsExperimentalListWidget
             library_list_widget = self.LibraryExperimentalListWidget
 
-        installed = library_list_widget.widget_with_blinfo(build_info)
-
         if not downloads_list_widget.contains_build_info(build_info):
+            installed = library_list_widget.widget_with_blinfo(build_info)
             item = BaseListWidgetItem(build_info.commit_time)
             widget = DownloadWidget(
                 self,
