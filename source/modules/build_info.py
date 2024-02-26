@@ -34,7 +34,6 @@ initial_cleaner = re.compile(r"(?!blender-)\d.*(?=-linux|-windows)")
 
 
 @cache
-@printer
 def parse_blender_ver(s: str, search=False) -> Version:
     """
     Converts Blender's different styles of versioning to a semver Version.
