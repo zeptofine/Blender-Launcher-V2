@@ -412,7 +412,7 @@ def get_make_error_popup():
     return get_settings().value("error_popup", defaultValue=True, type=bool)
 
 
-def set_make_error_popup(v: bool):
+def set_make_error_notifications(v: bool):
     get_settings().setValue("error_popup", v)
 
 

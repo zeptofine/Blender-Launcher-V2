@@ -79,11 +79,11 @@ class SettingsWindow(BaseWindow):
         self.AppearanceTab.layout().addWidget(self.AppearanceTabWidget)
 
         self.ConnectionTab = TabWidget(self.TabWidget, "Connection")
-        self.ConnectionTabWidget = connection_tab.ConnectionTabWidget()
+        self.ConnectionTabWidget = connection_tab.ConnectionTabWidget(parent=self.parent)
         self.ConnectionTab.layout().addWidget(self.ConnectionTabWidget)
 
         self.BlenderBuildsTab = TabWidget(self.TabWidget, "Blender Builds")
-        self.BlenderBuildsTabWidget = blender_builds_tab.BlenderBuildsTabWidget()
+        self.BlenderBuildsTabWidget = blender_builds_tab.BlenderBuildsTabWidget(parent=self.parent)
         self.BlenderBuildsTab.layout().addWidget(self.BlenderBuildsTabWidget)
 
         self.resize(self.sizeHint())
