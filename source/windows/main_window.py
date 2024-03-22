@@ -33,6 +33,8 @@ from modules.settings import (
     get_make_error_popup,
     get_proxy_type,
     get_quick_launch_key_seq,
+    get_scrape_automated_builds,
+    get_scrape_stable_builds,
     get_show_tray_icon,
     get_sync_library_and_downloads_pages,
     get_use_system_titlebar,
@@ -175,6 +177,7 @@ class BlenderLauncher(BaseWindow):
         self.scraper = Scraper(self, self.cm)
         self.scraper.links.connect(self.draw_to_downloads)
         self.scraper.error.connect(self.connection_error)
+        self.scraper.stable_error.connect(self.scraper_error)
         self.scraper.finished.connect(self.scraper_finished)
 
         # Set library folder from command line arguments
@@ -780,11 +783,27 @@ class BlenderLauncher(BaseWindow):
         #         get_new_builds_check_frequency(), self.draw_downloads)
         #     self.timer.start()
 
+    @pyqtSlot(str)
+    def scraper_error(self, s: str):
+        self.DownloadsStablePageWidget.set_info_label_text(s)
+
     def start_scraper(self):
         self.set_status("Checking for new builds", False)
 
+        if get_scrape_stable_builds():
+            self.DownloadsStablePageWidget.set_info_label_text("Checking for new builds")
+        else:
+            self.DownloadsStablePageWidget.set_info_label_text("Checking for stable builds is disabled")
+
+
+        if get_scrape_automated_builds():
+            msg = "Checking for new builds"
+        else:
+            msg = "Checking for automated builds is disabled"
+
         for page in self.DownloadsToolBox.pages:
-            page.set_info_label_text("Checking for new builds")
+            if page is not self.DownloadsStablePageWidget:
+                page.set_info_label_text(msg)
 
         # Sometimes these builds end up being invalid, particularly when new builds are available, which, there usually
         # are at least once every two days. They are so easily gathered there's little loss here
@@ -813,8 +832,6 @@ class BlenderLauncher(BaseWindow):
         self.last_time_checked = dt
         self.app_state = AppState.IDLE
 
-        for page in self.DownloadsToolBox.pages:
-            page.set_info_label_text("No new builds available")
 
         # if get_check_for_new_builds_automatically() is True:
         #     self.timer = threading.Timer(

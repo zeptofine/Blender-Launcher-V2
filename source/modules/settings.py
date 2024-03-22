@@ -402,6 +402,19 @@ def set_minimum_blender_stable_version(v: float):
     get_settings().setValue("minimum_blender_stable_version", v)
 
 
+def get_scrape_stable_builds() -> bool:
+    return get_settings().value("scrape_stable_builds", defaultValue=True, type=bool)
+
+
+def set_scrape_stable_builds(b: bool):
+    get_settings().setValue("scrape_stable_builds", b)
+
+def get_scrape_automated_builds() -> bool:
+    return get_settings().value("scrape_automated_builds", defaultValue=True, type=bool)
+
+def set_scrape_automated_builds(b: bool):
+    get_settings().setValue("scrape_automated_builds", b)
+
 def get_make_error_popup():
     return get_settings().value("error_popup", defaultValue=True, type=bool)
 
