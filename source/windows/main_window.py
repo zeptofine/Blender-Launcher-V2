@@ -118,7 +118,7 @@ class BlenderLauncher(BaseWindow):
     quit_signal = pyqtSignal()
     quick_launch_fail_signal = pyqtSignal()
 
-    def __init__(self, app: QApplication, version, argv):
+    def __init__(self, app: QApplication, version, offline: bool = False):
         super().__init__(app=app, version=version)
         self.resize(640, 480)
         self.setMinimumSize(QSize(640, 480))
@@ -147,7 +147,7 @@ class BlenderLauncher(BaseWindow):
         # Global scope
         self.app = app
         self.version = version
-        self.argv = argv
+        self.offline = offline
         self.favorite: BaseBuildWidget | None = None
         self.status = "Unknown"
         self.is_force_check_on = False
@@ -177,26 +177,6 @@ class BlenderLauncher(BaseWindow):
         self.scraper.error.connect(self.connection_error)
         self.scraper.new_bl_version.connect(self.set_version)
         self.scraper.finished.connect(self.scraper_finished)
-
-        # Set library folder from command line arguments
-        if "-set-library-folder" in self.argv:
-            library_folder = self.argv[-1]
-
-            if set_library_folder(library_folder) is True:
-                create_library_folders(get_library_folder())
-                self.draw(True)
-            else:
-                self.dlg = DialogWindow(
-                    parent=self,
-                    title="Warning",
-                    text="Passed path is not a valid folder or<br>\
-                    it doesn't have write permissions!",
-                    accept_text="Quit",
-                    cancel_text=None,
-                )
-                self.dlg.accepted.connect(self.app.quit)
-
-            return
 
         # Check library folder
         if is_library_folder_valid() is False:
@@ -571,10 +551,10 @@ class BlenderLauncher(BaseWindow):
 
         # Run 'Blender Launcher Updater.exe' with '-update' flag
         if self.platform == "Windows":
-            _popen([dist.as_posix(), "-update", self.latest_tag])
+            _popen([dist.as_posix(), "update", self.latest_tag])
         elif self.platform == "Linux":
             os.chmod(dist.as_posix(), 0o744)
-            _popen(f'nohup "{dist.as_posix()}" -update {self.latest_tag}')
+            _popen(f'nohup "{dist.as_posix()}" update {self.latest_tag}')
 
         # Destroy currently running Blender Launcher instance
         self.server.close()
@@ -750,7 +730,7 @@ class BlenderLauncher(BaseWindow):
         self.library_drawer = DrawLibraryTask()
         self.library_drawer.found.connect(self.draw_to_library)
         self.library_drawer.unrecognized.connect(self.draw_unrecognized)
-        if "-offline" not in self.argv:
+        if not self.offline:
             self.library_drawer.finished.connect(self.draw_downloads)
 
         self.task_queue.append(self.library_drawer)
@@ -959,7 +939,6 @@ class BlenderLauncher(BaseWindow):
 
         latest_ver = re.sub(r"\D", "", latest_tag)
         current_ver = re.sub(r"\D", "", self.version)
-
         if int(latest_ver) > int(current_ver):
             if latest_tag not in self.notification_pool:
                 self.NewVersionButton.setText(f"Update to version {latest_tag.replace('v', '')}")
