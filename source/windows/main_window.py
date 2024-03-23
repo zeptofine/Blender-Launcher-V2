@@ -73,20 +73,6 @@ from windows.file_dialog_window import FileDialogWindow
 from windows.settings_window import SettingsWindow
 
 try:
-    import resources_rc
-except ImportError:
-    if is_frozen():
-        print("Failed to import cached resources! Blender-Launcher-V2 was built without resources.")
-    elif (Path.cwd() / "build_style.py").exists():
-        # TODO: Attempt to build the style and check if it fails
-        print("Resources were not built! Run python build_style.py to build the style.")
-    else:
-        raise
-
-    sys.exit()
-
-
-try:
     from pynput import keyboard
 
     HOTKEYS_AVAILABLE = True
