@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
+import shutil
 import sys
 from pathlib import Path
 
-from modules._platform import get_cwd, get_platform
+from modules._platform import _popen, get_cwd, get_launcher_name, get_platform, is_frozen
 
 version = "2.0.24"
 
@@ -117,8 +119,24 @@ def main():
             sys.exit(app.exec())
 
     if args.command == "update":
-        BlenderLauncherUpdater(app=app, version=version, release_tag=args.version)
-        sys.exit(app.exec())
+        if args.instanced or not is_frozen():
+            BlenderLauncherUpdater(app=app, version=version, release_tag=args.version)
+            sys.exit(app.exec())
+        else:
+            # Copy the launcher to the updater position
+            bl_exe, blu_exe = get_launcher_name()
+            cwd = get_cwd()
+            source = cwd / bl_exe
+            dist = cwd / blu_exe
+            shutil.copy(source, dist)
+
+            # Run the updater with the instanced flag
+            if get_platform() == "Windows":
+                _popen([blu_exe, "--instanced", "update"])
+            elif get_platform() == "Linux":
+                os.chmod(blu_exe, 0o744)
+                _popen(f'nohup "{blu_exe}" --instanced update')
+            sys.exit(0)
 
     # if args.command == "launch":
     #     ...

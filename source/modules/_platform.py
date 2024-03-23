@@ -24,6 +24,14 @@ def get_platform():
 
 
 @cache
+def get_launcher_name():
+    if sys.platform == "win32":
+        return ("Blender Launcher.exe", "Blender Launcher Updater.exe")
+
+    return ("Blender Launcher", "Blender Launcher Updater")
+
+
+@cache
 def get_platform_full():
     return f"{get_platform()} {os.name} {platform.release()}"
 
