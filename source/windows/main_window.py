@@ -175,6 +175,7 @@ class BlenderLauncher(BaseWindow):
         self.scraper = Scraper(self, self.cm)
         self.scraper.links.connect(self.draw_to_downloads)
         self.scraper.error.connect(self.connection_error)
+        self.scraper.new_bl_version.connect(self.set_version)
         self.scraper.finished.connect(self.scraper_finished)
 
         # Set library folder from command line arguments
