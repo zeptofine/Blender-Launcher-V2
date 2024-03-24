@@ -52,6 +52,9 @@ class Scraper(QThread):
         self.hash = re.compile(r"\w{12}")
         self.subversion = re.compile(r"-\d\.[a-zA-Z0-9.]+-")
 
+        self.scrape_stable = get_scrape_stable_builds()
+        self.scrape_automated = get_scrape_automated_builds()
+
     def run(self):
         self.get_download_links()
         latest_tag = self.get_latest_tag()
@@ -80,9 +83,9 @@ class Scraper(QThread):
         set_locale()
 
         scrapers = []
-        if get_scrape_stable_builds():
+        if self.scrape_stable:
             scrapers.append(self.scrap_stable_releases())
-        if get_scrape_automated_builds():
+        if self.scrape_automated:
             scrapers.append(self.scrape_automated_releases())
         for build in chain(*scrapers):
             self.links.emit(build)

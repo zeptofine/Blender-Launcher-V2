@@ -42,6 +42,8 @@ from modules.settings import (
     is_library_folder_valid,
     set_last_time_checked_utc,
     set_library_folder,
+    set_scrape_automated_builds,
+    set_scrape_stable_builds,
 )
 from modules.tasks import Task, TaskQueue, TaskWorker
 from PyQt5.QtCore import QSize, Qt, pyqtSignal, pyqtSlot
@@ -387,7 +389,11 @@ class BlenderLauncher(BaseWindow):
         self.statusbarLabel = QLabel()
         self.ForceCheckNewBuilds = QPushButton("Check")
         self.ForceCheckNewBuilds.setEnabled(False)
-        self.ForceCheckNewBuilds.clicked.connect(self.start_scraper)
+        self.ForceCheckNewBuilds.setToolTip(
+            "Check for new builds online<br>\
+            (Hold SHIFT to force check stable and automated builds)"
+        )
+        self.ForceCheckNewBuilds.clicked.connect(self.force_check)
         self.NewVersionButton = QPushButton()
         self.NewVersionButton.hide()
         self.NewVersionButton.clicked.connect(self.show_update_window)
@@ -775,16 +781,28 @@ class BlenderLauncher(BaseWindow):
     def scraper_error(self, s: str):
         self.DownloadsStablePageWidget.set_info_label_text(s)
 
-    def start_scraper(self):
+    def force_check(self):
+        if QApplication.queryKeyboardModifiers() & Qt.Modifier.SHIFT:  # Shift held while pressing check
+            # Ignore scrape_stable and scrape_automated settings
+            self.start_scraper(True, True)
+        else:
+            # Use settings
+            self.start_scraper()
+
+    def start_scraper(self, scrape_stable=None, scrape_automated=None):
         self.set_status("Checking for new builds", False)
 
-        if get_scrape_stable_builds():
+        if scrape_stable is None:
+            scrape_stable = get_scrape_stable_builds()
+        if scrape_automated is None:
+            scrape_automated = get_scrape_automated_builds()
+
+        if scrape_stable:
             self.DownloadsStablePageWidget.set_info_label_text("Checking for new builds")
         else:
             self.DownloadsStablePageWidget.set_info_label_text("Checking for stable builds is disabled")
 
-
-        if get_scrape_automated_builds():
+        if scrape_automated:
             msg = "Checking for new builds"
         else:
             msg = "Checking for automated builds is disabled"
@@ -802,6 +820,8 @@ class BlenderLauncher(BaseWindow):
         self.new_downloads = False
         self.app_state = AppState.CHECKINGBUILDS
 
+        self.scraper.scrape_stable = scrape_stable
+        self.scraper.scrape_automated = scrape_automated
         self.scraper.manager = self.cm
         self.scraper.start()
 
@@ -819,7 +839,6 @@ class BlenderLauncher(BaseWindow):
         set_last_time_checked_utc(dt)
         self.last_time_checked = dt
         self.app_state = AppState.IDLE
-
 
         # if get_check_for_new_builds_automatically() is True:
         #     self.timer = threading.Timer(
