@@ -12,6 +12,8 @@ from modules.settings import (
     get_new_builds_check_frequency,
     get_platform,
     get_quick_launch_key_seq,
+    get_scrape_automated_builds,
+    get_scrape_stable_builds,
     set_bash_arguments,
     set_blender_startup_arguments,
     set_check_for_new_builds_automatically,
@@ -23,6 +25,8 @@ from modules.settings import (
     set_minimum_blender_stable_version,
     set_new_builds_check_frequency,
     set_quick_launch_key_seq,
+    set_scrape_automated_builds,
+    set_scrape_stable_builds,
 )
 from PyQt5 import QtGui
 from PyQt5.QtCore import Qt
@@ -75,12 +79,24 @@ class BlenderBuildsTabWidget(SettingsFormWidget):
         self.CheckForNewBuildsOnStartup.clicked.connect(self.toggle_check_on_startup)
         self.CheckForNewBuildsOnStartup.setText("On startup")
 
+        # Scraping builds settings
+        self.ScrapeStableBuilds = QCheckBox(self)
+        self.ScrapeStableBuilds.setChecked(get_scrape_stable_builds())
+        self.ScrapeStableBuilds.clicked.connect(self.toggle_scrape_stable_builds)
+        self.ScrapeStableBuilds.setText("Scrape stable builds")
+        self.ScrapeAutomatedBuilds = QCheckBox(self)
+        self.ScrapeAutomatedBuilds.setChecked(get_scrape_automated_builds())
+        self.ScrapeAutomatedBuilds.clicked.connect(self.toggle_scrape_automated_builds)
+        self.ScrapeAutomatedBuilds.setText("Scrape automated builds (daily/experimental/patch)")
+
         self.scraping_builds_layout = QGridLayout()
         self.scraping_builds_layout.addWidget(self.CheckForNewBuildsAutomatically, 0, 0, 1, 1)
         self.scraping_builds_layout.addWidget(self.NewBuildsCheckFrequency, 0, 1, 1, 1)
         self.scraping_builds_layout.addWidget(self.CheckForNewBuildsOnStartup, 1, 0, 1, 2)
         self.scraping_builds_layout.addWidget(QLabel("Minimum stable build to scrape", self), 2, 0, 1, 1)
         self.scraping_builds_layout.addWidget(self.MinStableBlenderVer, 2, 1, 1, 1)
+        self.scraping_builds_layout.addWidget(self.ScrapeStableBuilds, 3, 0, 1, 2)
+        self.scraping_builds_layout.addWidget(self.ScrapeAutomatedBuilds, 4, 0, 1, 2)
         self.buildcheck_settings.setLayout(self.scraping_builds_layout)
 
         # Downloading builds settings
@@ -231,3 +247,11 @@ class BlenderBuildsTabWidget(SettingsFormWidget):
     def toggle_check_on_startup(self, is_checked):
         set_check_for_new_builds_on_startup(is_checked)
         self.CheckForNewBuildsOnStartup.setChecked(is_checked)
+
+    def toggle_scrape_stable_builds(self, is_checked):
+        set_scrape_stable_builds(is_checked)
+        self.ScrapeStableBuilds.setChecked(is_checked)
+
+    def toggle_scrape_automated_builds(self, is_checked):
+        set_scrape_automated_builds(is_checked)
+        self.ScrapeAutomatedBuilds.setChecked(is_checked)

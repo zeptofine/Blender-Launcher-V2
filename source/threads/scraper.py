@@ -14,7 +14,7 @@ from urllib.parse import urljoin
 from bs4 import BeautifulSoup, SoupStrainer
 from modules._platform import get_platform, reset_locale, set_locale
 from modules.build_info import BuildInfo, parse_blender_ver
-from modules.settings import get_minimum_blender_stable_version
+from modules.settings import get_minimum_blender_stable_version, get_scrape_automated_builds, get_scrape_stable_builds
 from PyQt5.QtCore import QThread, pyqtSignal
 
 if TYPE_CHECKING:
@@ -27,6 +27,7 @@ class Scraper(QThread):
     links = pyqtSignal(BuildInfo)
     new_bl_version = pyqtSignal(str)
     error = pyqtSignal()
+    stable_error = pyqtSignal(str)
 
     def __init__(self, parent, man):
         QThread.__init__(self)
@@ -50,6 +51,9 @@ class Scraper(QThread):
         self.b3d_link = re.compile(regex_filter, re.IGNORECASE)
         self.hash = re.compile(r"\w{12}")
         self.subversion = re.compile(r"-\d\.[a-zA-Z0-9.]+-")
+
+        self.scrape_stable = get_scrape_stable_builds()
+        self.scrape_automated = get_scrape_automated_builds()
 
     def run(self):
         self.get_download_links()
@@ -78,12 +82,17 @@ class Scraper(QThread):
     def get_download_links(self):
         set_locale()
 
-        for build in chain(self.scrap_stable_releases(), self.gather_automated_builds()):
+        scrapers = []
+        if self.scrape_stable:
+            scrapers.append(self.scrap_stable_releases())
+        if self.scrape_automated:
+            scrapers.append(self.scrape_automated_releases())
+        for build in chain(*scrapers):
             self.links.emit(build)
 
         reset_locale()
 
-    def gather_automated_builds(self):
+    def scrape_automated_releases(self):
         base_fmt = "https://builder.blender.org/download/{}/?format=json&v=1"
         for branch_type in ("daily", "experimental", "patch"):
             url = base_fmt.format(branch_type)
@@ -202,6 +211,8 @@ class Scraper(QThread):
         releases = soup.find_all(href=b3d_link)
         if not any(releases):
             logger.info("Failed to gather stable releases")
+            logger.info(content)
+            self.stable_error.emit("No releases were scraped from the site!<br>check -debug logs for more details.")
 
         minimum_version = get_minimum_blender_stable_version()
 
