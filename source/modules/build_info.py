@@ -4,14 +4,94 @@ import json
 import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from functools import cache
 from typing import TYPE_CHECKING
 
 from modules._platform import _check_output, get_platform, set_locale
 from modules.task import Task
-from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtCore import pyqtSignal
+from semver import Version
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+# TODO: Combine some of these
+matchers = tuple(
+    map(
+        re.compile,
+        (  #                                                                                   # format                                 examples
+            r"(?P<ma>\d+)\.(?P<mi>\d+)\.(?P<pa>\d+)[ \-](?P<pre>[^+]*[^wli][^ndux][^s]?)",  # <major>.<minor>.<patch> <Prerelease>   2.80.0 Alpha  -> 2.80.0-alpha
+            # r"(?P<ma>\d+)\.(?P<mi>\d+)\.(?P<pa>\d+)",  #                                       <major>.<minor>.<patch>                3.0.0         -> 3.0.0
+            r"(?P<ma>\d+)\.(?P<mi>\d+)[ \-](?P<pre>[^+]*[^wli][^ndux][^s]?)",
+            r"(?P<ma>\d+)\.(?P<mi>\d+) \(sub (?P<pa>\d+)\)",  #                                  <major>.<minor> (sub <patch>)          2.80 (sub 75) -> 2.80.75
+            r"(?P<ma>\d+)\.(?P<mi>\d+)$",  #                                                     <major>.<minor>                        2.79          -> 2.79.0
+            r"(?P<ma>\d+)\.(?P<mi>\d+)(?P<pre>[^-]{0,3})",  #                                    <major>.<minor><[chars]*(1-3)>         2.79rc1       -> 2.79.0-rc1
+            r"(?P<ma>\d+)\.(?P<mi>\d+)(?P<pre>\D[^\.\s]*)?",  #                                  <major>.<minor><patch?>                2.79          -> 2.79.0       | 2.79b -> 2.79.0-b
+        ),
+    )
+)
+initial_cleaner = re.compile(r"(?!blender-)\d.*(?=-linux|-windows)")
+
+
+@cache
+def parse_blender_ver(s: str, search=False) -> Version:
+    """
+    Converts Blender's different styles of versioning to a semver Version.
+    Assumes s is either a semantic version or a blender style version. Otherwise things might get messy
+    Versions ending with 'a' and 'b' will have a patch of 1 and 2.
+
+
+    Arguments:
+        s -- a blender version.
+
+    Returns:
+        Version
+    """
+    try:
+        return Version.parse(s)
+    except ValueError as e:
+        m = initial_cleaner.search(s)
+        if m is not None:
+            s = m.group()
+            try:
+                return Version.parse(s)
+            except ValueError:
+                pass
+
+        major = 0
+        minor = 0
+        patch = 0
+        prerelease = None
+
+        try:
+            g = None
+            if search:
+                for matcher in matchers:
+                    if (m := matcher.search(s)) is not None:
+                        g = m
+                        break
+            else:
+                for matcher in matchers:
+                    if (m := matcher.match(s)) is not None:
+                        g = m
+                        break
+            assert g is not None
+        except (StopIteration, AssertionError):
+            """No matcher gave any valid version"""
+            raise ValueError("No valid version found") from e
+
+        major = int(g.group("ma"))
+        minor = int(g.group("mi"))
+        if "pa" in g.groupdict():
+            patch = int(g.group("pa"))
+        if "pre" in g.groupdict() and g.group("pre") is not None:
+            prerelease = g.group("pre").casefold().strip("- ")
+
+        return Version(major=major, minor=minor, patch=patch, prerelease=prerelease)
+        # print(f"Parsed {s} to {v} using {matcher}")
+
+
+oldver_cutoff = Version(2, 83, 0)
 
 
 @dataclass
@@ -32,9 +112,6 @@ class BuildInfo:
     custom_executable: str | None = None
 
     def __post_init__(self):
-        if any(w in self.subversion.lower() for w in ["release", "rc"]):
-            self.subversion = re.sub("[a-zA-Z ]+", " Candidate ", self.subversion).rstrip()
-
         if self.branch == "stable" and self.subversion.startswith(self.lts_tags):
             self.branch = "lts"
 
@@ -44,6 +121,67 @@ class BuildInfo:
         if (self.build_hash is not None) and (other.build_hash is not None):
             return self.build_hash == other.build_hash
         return self.subversion == other.subversion
+
+    @property
+    def semversion(self):
+        return parse_blender_ver(self.subversion)
+
+    @property
+    def full_semversion(self):
+        return BuildInfo.get_semver(self.subversion, self.branch, self.build_hash)
+
+    @property
+    def display_version(self):
+        return self._display_version(self.semversion)
+
+    @property
+    def display_label(self):
+        return self._display_label(self.branch, self.semversion, self.subversion)
+
+    @staticmethod
+    @cache
+    def _display_version(v: Version):
+        if v < oldver_cutoff:
+            pre = ""
+            if v.prerelease:
+                pre = v.prerelease
+            return f"{v.major}.{v.minor}{pre}"
+        return str(v.finalize_version())
+
+    @staticmethod
+    @cache
+    def _display_label(branch: str, v: Version, subv: str):
+        if branch == "lts":
+            return "LTS"
+        if branch in ("patch", "experimental", "daily"):
+            b = v.prerelease
+            if b is not None:
+                return b.replace("-", " ").title()
+            return subv.split("-", 1)[-1].title()
+
+        if branch == "daily":
+            b = v.prerelease
+            if b is not None:
+                b = branch.rsplit(".", 1)[0].title()
+            else:
+                b = subv.split("-", 1)[-1].title()
+            return b
+        if v.prerelease is not None and v.prerelease.startswith("rc"):
+            return f"Release Candidate {v.prerelease[2:]}"
+
+        return branch.title()
+
+    @staticmethod
+    @cache
+    def get_semver(subversion, *s: str):
+        v = parse_blender_ver(subversion)
+        if not s:
+            return v
+        prerelease = ""
+        if v.prerelease:
+            prerelease = f"{v.prerelease}+"
+        prerelease += ".".join(s_ for s_ in s if s_)
+        return v.replace(prerelease=prerelease)
 
     @classmethod
     def from_dict(cls, path: Path, blinfo: dict):
@@ -239,6 +377,7 @@ def read_build_info(
 class ReadBuildTask(Task):
     path: Path
     archive_name: str | None = None
+    version: Version | None = None
     custom_exe: str | None = None
     auto_write: bool = True
 
@@ -247,8 +386,14 @@ class ReadBuildTask(Task):
 
     def run(self):
         try:
-            build_info = read_build_info(self.path, self.archive_name, self.custom_exe, self.auto_write)
+            auto_write = self.auto_write and self.version is None
+            build_info = read_build_info(self.path, self.archive_name, self.custom_exe, auto_write)
+            if self.version is not None:
+                build_info.subversion = str(self.version)
+                if self.auto_write:
+                    build_info.write_to(self.path)
             self.finished.emit(build_info)
+
         except Exception as e:
             self.failure.emit(e)
             raise
