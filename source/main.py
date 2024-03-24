@@ -1,16 +1,20 @@
 from __future__ import annotations
 
-import argparse
+import gettext
 import logging
 import os
 import shutil
 import sys
+from argparse import ArgumentParser
 from pathlib import Path
 
 import modules._resources_rc
+from modules import argument_parsing as ap
 from modules._platform import _popen, get_cwd, get_launcher_name, get_platform, is_frozen
 
 version = "2.0.24"
+
+_ = gettext.gettext
 
 # Setup logging config
 _format = "[%(asctime)s:%(levelname)s] %(message)s"
@@ -47,12 +51,23 @@ cli_help = """
     """
 
 
+def add_help(parser: ArgumentParser):
+    parser.add_argument(
+        parser.prefix_chars + "h",
+        parser.prefix_chars * 2 + "help",
+        action="store_true",
+        help="show this help message and exit",
+    )
+
+
 def main():
-    parser = argparse.ArgumentParser(description=f"Blender Launcher V2 ({version})")
+    parser = ArgumentParser(description=f"Blender Launcher V2 ({version})", add_help=False)
+    add_help(parser)
 
     subparsers = parser.add_subparsers(dest="command")
 
-    update_parser = subparsers.add_parser("update", help="Update the application to a new version.")
+    update_parser = subparsers.add_parser("update", help="Update the application to a new version.", add_help=False)
+    add_help(update_parser)
     update_parser.add_argument("version", help="Version to update to.", nargs="?")
 
     parser.add_argument("-debug", help="Enable debug logging.", action="store_true")
@@ -70,20 +85,27 @@ def main():
         action="store_true",
     )
 
-    # launch_parser = subparsers.add_parser(
-    #     "launch",
-    #     help="Launch a specific version of Blender. If no file or version is specified, the prioritized build is chosen.",
-    # )
-    # launch_parser.add_argument(
-    #     "--file",
-    #     help="Path to .blend file to open.",
-    # )
-    # launch_parser.add_argument(
-    #     "--version",
-    #     help="Version to launch. Version will be automatically detected if not specified.",
-    # )
+    # possible launch_parser
+    # args:
+    #   "launch":               Launch a specific version of Blender. If no file or version is specified,
+    #                            the favorite build is chosen. If there is no favorite build, TODO: BUILD_CHOOSER
+    #   "-f" | "--file":        Path to a specific Blender file to launch.
+    #   "-v" | "--version":     Version to launch. If not specified, the latest stable release is used.
 
-    args = parser.parse_args()
+    args, argv = parser.parse_known_args()
+    if argv:
+        msg = _("unrecognized arguments: ") + " ".join(argv)
+        ap.error(parser, msg)
+
+    # Custom help is necessary for frozen Windows builds
+    if args.help:
+        ap.show_help(parser, update_parser, args)
+        sys.exit(0)
+
+    if args.debug:
+        logging.root.setLevel(logging.DEBUG)
+    else:
+        logging.root.setLevel(logging.INFO)
 
     from modules.settings import set_library_folder
     from PyQt5.QtCore import QByteArray
@@ -93,13 +115,8 @@ def main():
     from windows.main_window import BlenderLauncher
     from windows.update_window import BlenderLauncherUpdater
 
-    if args.debug:
-        logging.root.setLevel(logging.DEBUG)
-    else:
-        logging.root.setLevel(logging.INFO)
-
     # Create an instance of application and set its core properties
-    app = QApplication(sys.argv)
+    app = QApplication([])
     app.setStyle("Fusion")
     app.setApplicationVersion(version)
 

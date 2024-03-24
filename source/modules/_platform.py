@@ -1,3 +1,4 @@
+import argparse
 import os
 import platform
 import sys
@@ -5,6 +6,7 @@ from functools import cache
 from locale import LC_ALL, getdefaultlocale, setlocale
 from pathlib import Path
 from subprocess import DEVNULL, PIPE, STDOUT, Popen, call, check_call, check_output
+from tempfile import NamedTemporaryFile
 
 
 @cache
@@ -50,6 +52,36 @@ default_locale = getdefaultlocale(("LC_ALL",))[0]
 
 def reset_locale():
     setlocale(LC_ALL, default_locale)
+
+
+def show_windows_help(parser: argparse.ArgumentParser):
+    with (
+        NamedTemporaryFile("w+", suffix=".bat", delete=False) as f,
+        NamedTemporaryFile("w+", suffix=".txt", delete=False) as help_txt_file,
+    ):
+        help_txt_file.write(parser.format_help())
+        help_txt_file.flush()
+        help_txt_file.close()
+
+        lines = [f"echo{' ' + line if line else '.'}" for line in parser.format_help().splitlines()]
+        echos = "\n".join(lines)
+        f.write(
+            f"""
+            @echo off
+            cls
+            {echos}
+            pause
+            """
+        )
+
+        f.flush()
+        f.close()
+        call(["cmd", "/c", f.name])
+        try:
+            os.unlink(f.name)
+            os.unlink(help_txt_file.name)
+        except FileNotFoundError:
+            pass
 
 
 def get_environment():
