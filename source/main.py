@@ -1,6 +1,7 @@
 import logging
 import sys
 
+import modules._resources_rc
 from modules._platform import get_cwd, get_platform
 from PyQt5.QtCore import QByteArray
 from PyQt5.QtNetwork import QLocalSocket
