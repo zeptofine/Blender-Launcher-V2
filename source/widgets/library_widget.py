@@ -140,22 +140,11 @@ class LibraryWidget(BaseBuildWidget):
         self.launchButton.setProperty("LaunchButton", True)
         self._launch_icon = None
 
-        if self.branch == "lts":
-            branch_name = "LTS"
-        elif (self.parent_widget is not None) and self.build_info.custom_name:
-            branch_name = self.build_info.custom_name
-        elif self.branch == "daily":
-            s = self.build_info.subversion.split(" ", 1)
-            branch_name = s[len(s) > 1]  # if there is a second one, select it. otherwise select the old one
-
-        else:
-            branch_name = re.sub(r"(\-|\_)", " ", self.build_info.branch).title()
-
-        sub = self.build_info.subversion.split(" ", 1)
-        self.subversionLabel = QLabel(sub[0])
+        self.subversionLabel = QLabel(self.build_info.display_version)
         self.subversionLabel.setFixedWidth(85)
         self.subversionLabel.setIndent(20)
-        self.branchLabel = ElidedTextLabel(self.build_info.custom_name or branch_name)
+        self.subversionLabel.setToolTip(str(self.build_info.semversion))
+        self.branchLabel = ElidedTextLabel(self.build_info.custom_name or self.build_info.display_label)
         self.commitTimeLabel = DateTimeWidget(self.build_info.commit_time, self.build_info.build_hash)
 
         self.build_state_widget = BuildStateWidget(self.parent)

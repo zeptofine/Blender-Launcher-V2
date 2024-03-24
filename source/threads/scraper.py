@@ -12,7 +12,7 @@ from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup, SoupStrainer
 from modules._platform import get_platform, reset_locale, set_locale
-from modules.build_info import BuildInfo
+from modules.build_info import BuildInfo, parse_blender_ver
 from modules.settings import get_minimum_blender_stable_version
 from PyQt5.QtCore import QThread, pyqtSignal
 
@@ -102,22 +102,22 @@ class Scraper(QThread):
 
     def new_build_from_dict(self, build, branch_type):
         dt = datetime.fromtimestamp(build["file_mtime"], tz=timezone.utc)
-        subversion = build["version"]
+
+        subversion = parse_blender_ver(build["version"])
         build_var = ""
         if build["patch"] is not None and branch_type != "daily":
             build_var = build["patch"]
-
         if build["release_cycle"] is not None and branch_type == "daily":
             build_var = build["release_cycle"]
-
         if build["branch"] and branch_type == "experimental":
             build_var = build["branch"]
+
         if build_var:
-            subversion = f"{subversion} {build_var}"
+            subversion = subversion.replace(prerelease=build_var)
 
         return BuildInfo(
             build["url"],
-            subversion,
+            str(subversion),
             build["hash"],
             dt,
             branch_type,
@@ -161,8 +161,7 @@ class Scraper(QThread):
         if match:
             build_hash = match[-1].replace("-", "")
 
-        match = re.search(self.subversion, stem)
-        subversion = match.group(0).replace("-", "")
+        subversion = parse_blender_ver(stem, search=True)
         branch = branch_type
         if branch_type != "stable":
             build_var = ""
@@ -182,13 +181,13 @@ class Scraper(QThread):
                 branch = build_var
             elif branch_type == "daily":
                 branch = "daily"
-                subversion = f"{subversion} {build_var}"
+                subversion = subversion.replace(prerelease=build_var)
 
         commit_time = datetime.strptime(info["last-modified"], "%a, %d %b %Y %H:%M:%S %Z").astimezone()
 
         r.release_conn()
         r.close()
-        return BuildInfo(link, subversion, build_hash, commit_time, branch)
+        return BuildInfo(link, str(subversion), build_hash, commit_time, branch)
 
     def scrap_stable_releases(self):
         url = "https://download.blender.org/release/"
@@ -212,8 +211,11 @@ class Scraper(QThread):
         for release in releases:
             href = release["href"]
             match = re.search(subversion, href)
+            if match is None:
+                continue
 
-            if float(match.group(0)) >= minimum_version:
+            ver = parse_blender_ver(match.group(0))
+            if ver >= minimum_version:
                 # Check modified dates of folders, if available
                 date_sibling = release.find_next_sibling(string=True)
                 if date_sibling:

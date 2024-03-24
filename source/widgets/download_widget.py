@@ -5,7 +5,7 @@ from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
-from modules.build_info import BuildInfo, ReadBuildTask
+from modules.build_info import BuildInfo, ReadBuildTask, parse_blender_ver
 from modules.enums import MessageType
 from modules.settings import get_install_template, get_library_folder
 from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
@@ -42,7 +42,7 @@ class DownloadWidget(BaseBuildWidget):
         self.parent: BlenderLauncher = parent
         self.list_widget = list_widget
         self.item = item
-        self.build_info = build_info
+        self.build_info: BuildInfo = build_info
         self.show_new = show_new
         self.installed: LibraryWidget | None = None
         self.state = DownloadState.IDLE
@@ -88,19 +88,12 @@ class DownloadWidget(BaseBuildWidget):
         self.progress_bar_hl.setContentsMargins(16, 0, 8, 0)
         self.main_hl.setSpacing(0)
 
-        if self.build_info.branch == "lts":
-            branch_name = "LTS"
-        elif self.build_info.branch == "daily":
-            branch_name = self.build_info.subversion.split(" ", 1)[-1].title()
-        else:
-            branch_name = self.build_info.subversion.split(" ", 1)[-1]
-            # branch_name = re.sub(
-            #     r"(\-|\_)", " ", self.build_info.branch).title()
-
-        self.subversionLabel = QLabel(self.build_info.subversion.split(" ", 1)[0])
+        self.subversionLabel = QLabel(self.build_info.display_version)
         self.subversionLabel.setFixedWidth(85)
         self.subversionLabel.setIndent(20)
-        self.branchLabel = ElidedTextLabel(branch_name, self)
+        self.subversionLabel.setToolTip(str(self.build_info.semversion))
+
+        self.branchLabel = ElidedTextLabel(self.build_info.display_label, self)
         self.commitTimeLabel = DateTimeWidget(self.build_info.commit_time, self.build_info.build_hash, self)
         self.build_state_widget = BuildStateWidget(parent, self)
 
@@ -251,9 +244,14 @@ class DownloadWidget(BaseBuildWidget):
             archive_name = Path(self.build_info.link).stem
 
         assert self.build_dir is not None
+
+        # If the returned version from the executable is invalid it might break loading.
+        ver = parse_blender_ver(self.build_dir.name, search=True)
+
         a = ReadBuildTask(
             self.build_dir,
             archive_name=archive_name,
+            version=ver,
         )
         a.finished.connect(self.download_rename)
         a.failure.connect(lambda: print("Reading failed"))
@@ -261,7 +259,7 @@ class DownloadWidget(BaseBuildWidget):
 
     def download_rename(self, build_info: BuildInfo):
         self.set_state(DownloadState.RENAMING)
-        new_name = f"blender-{build_info.subversion}+{build_info.branch}.{build_info.build_hash}"
+        new_name = f"blender-{build_info.full_semversion}"
         assert self.build_dir is not None
         t = RenameTask(
             src=self.build_dir,

@@ -56,6 +56,7 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from semver import Version
 from threads.library_drawer import DrawLibraryTask
 from threads.remover import RemovalTask
 from threads.scraper import Scraper
@@ -353,7 +354,7 @@ class BlenderLauncher(BaseWindow):
 
         version_status = self.version
         if not is_frozen():  # Add an asterisk to the statusbar version if running from source
-            version_status = f"*{version_status}"
+            version_status = f"{version_status}"
 
         # Status bar
         self.status_bar = QStatusBar(self)
@@ -915,10 +916,11 @@ class BlenderLauncher(BaseWindow):
     def set_version(self, latest_tag):
         if "dev" in self.version:
             return
+        latest = Version.parse(latest_tag[1:])
+        current = Version.parse(self.version)
+        logging.debug(f"Latest version on GitHub is {latest}")
 
-        latest_ver = re.sub(r"\D", "", latest_tag)
-        current_ver = re.sub(r"\D", "", self.version)
-        if int(latest_ver) > int(current_ver):
+        if latest > current:
             if latest_tag not in self.notification_pool:
                 self.NewVersionButton.setText(f"Update to version {latest_tag.replace('v', '')}")
                 self.NewVersionButton.show()

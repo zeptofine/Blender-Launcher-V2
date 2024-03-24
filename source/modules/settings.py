@@ -6,6 +6,9 @@ from pathlib import Path
 
 from modules._platform import get_cwd, get_platform
 from PyQt5.QtCore import QSettings
+from semver import Version
+
+from .build_info import parse_blender_ver
 
 ISO_EPOCH = datetime.fromtimestamp(0, tz=timezone.utc).isoformat()
 
@@ -394,12 +397,15 @@ def set_check_for_new_builds_on_startup(b: bool):
     get_settings().setValue("buildcheck_on_startup", b)
 
 
-def get_minimum_blender_stable_version() -> float:
-    return get_settings().value("minimum_blender_stable_version", defaultValue=3.0, type=float)
+def get_minimum_blender_stable_version() -> Version:
+    settings = get_settings()
+    v = settings.value("minimum_blender_stable_version", defaultValue="3.0", type=str)
+    major, minor = v.split(".")
+    return Version(int(major), int(minor), 0)
 
 
-def set_minimum_blender_stable_version(v: float):
-    get_settings().setValue("minimum_blender_stable_version", v)
+def set_minimum_blender_stable_version(v: Version):
+    get_settings().setValue("minimum_blender_stable_version", float(f"{v.major}.{v.minor}"))
 
 
 def get_make_error_popup():
