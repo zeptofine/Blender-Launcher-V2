@@ -7,6 +7,7 @@ from modules._platform import set_locale
 from PyQt5.QtWidgets import QListWidgetItem
 
 if TYPE_CHECKING:
+    from semver import Version
     from widgets.base_list_widget import BaseListWidget
 
 
@@ -45,11 +46,8 @@ class BaseListWidgetItem(QListWidgetItem):
         ):
             return False
 
-        this_match = re.search(r"\d+\.\d+", this_widget.build_info.subversion)
-        other_match = re.search(r"\d+\.\d+", other_widget.build_info.subversion)
-
-        this_version = float(this_match.group(0))
-        other_version = float(other_match.group(0))
+        this_version: Version = this_widget.build_info.semversion
+        other_version: Version = other_widget.build_info.semversion
 
         if this_version == other_version:
             return self.compare_datetime(other)

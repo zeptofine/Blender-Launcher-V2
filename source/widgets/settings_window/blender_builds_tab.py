@@ -29,14 +29,13 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
     QCheckBox,
     QComboBox,
-    QDoubleSpinBox,
     QFormLayout,
     QGridLayout,
-    QHBoxLayout,
     QLabel,
     QLineEdit,
     QSpinBox,
 )
+from widgets.sem_version_edit import SemVersionEdit
 from widgets.settings_form_widget import SettingsFormWidget
 
 from .settings_group import SettingsGroup
@@ -50,11 +49,10 @@ class BlenderBuildsTabWidget(SettingsFormWidget):
         self.buildcheck_settings = SettingsGroup("Checking For Builds", parent=self)
 
         # Minimum stable blender download version (this is mainly for cleanliness and speed)
-        self.MinStableBlenderVer = QDoubleSpinBox()
-        self.MinStableBlenderVer.setMinimum(2.4)
-        self.MinStableBlenderVer.setValue(get_minimum_blender_stable_version())
-        self.MinStableBlenderVer.setSingleStep(0.1)
-        self.MinStableBlenderVer.valueChanged.connect(set_minimum_blender_stable_version)
+        self.MinStableBlenderVer = SemVersionEdit(v=get_minimum_blender_stable_version(), parent=self, use_patch=False)
+        self.MinStableBlenderVer.version_changed.connect(set_minimum_blender_stable_version)
+        self.MinStableBlenderVer.major.setMinimum(2)
+
         # Whether to check for new builds based on a timer
         self.CheckForNewBuildsAutomatically = QCheckBox()
         self.CheckForNewBuildsAutomatically.setChecked(False)
