@@ -7,6 +7,7 @@ import shutil
 import sys
 from pathlib import Path
 
+import modules._resources_rc
 from modules._platform import _popen, get_cwd, get_launcher_name, get_platform, is_frozen
 
 version = "2.0.24"
