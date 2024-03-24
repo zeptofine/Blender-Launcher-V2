@@ -374,7 +374,7 @@ class BlenderLauncher(BaseWindow):
 
         version_status = self.version
         if not is_frozen():  # Add an asterisk to the statusbar version if running from source
-            version_status = f"*{version_status}"
+            version_status = f"{version_status}"
 
         # Status bar
         self.status_bar = QStatusBar(self)
