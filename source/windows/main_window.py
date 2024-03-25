@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import re
+import shutil
 import sys
 import webbrowser
 from datetime import datetime, timezone
@@ -10,12 +11,11 @@ from enum import Enum
 from functools import partial
 from pathlib import Path
 from platform import version
-from shutil import copyfileobj
 from time import localtime, mktime, strftime
 from typing import TYPE_CHECKING
 
 from items.base_list_widget_item import BaseListWidgetItem
-from modules._platform import _popen, get_cwd, get_platform, is_frozen, set_locale
+from modules._platform import _popen, get_cwd, get_launcher_name, get_platform, is_frozen, set_locale
 from modules.connection_manager import ConnectionManager
 from modules.enums import MessageType
 from modules.settings import (
@@ -109,7 +109,7 @@ class BlenderLauncher(BaseWindow):
     quit_signal = pyqtSignal()
     quick_launch_fail_signal = pyqtSignal()
 
-    def __init__(self, app: QApplication, version, argv):
+    def __init__(self, app: QApplication, version, offline: bool = False):
         super().__init__(app=app, version=version)
         self.resize(640, 480)
         self.setMinimumSize(QSize(640, 480))
@@ -138,7 +138,7 @@ class BlenderLauncher(BaseWindow):
         # Global scope
         self.app = app
         self.version = version
-        self.argv = argv
+        self.offline = offline
         self.favorite: BaseBuildWidget | None = None
         self.status = "Unknown"
         self.is_force_check_on = False
@@ -169,26 +169,6 @@ class BlenderLauncher(BaseWindow):
         self.scraper.stable_error.connect(self.scraper_error)
         self.scraper.new_bl_version.connect(self.set_version)
         self.scraper.finished.connect(self.scraper_finished)
-
-        # Set library folder from command line arguments
-        if "-set-library-folder" in self.argv:
-            library_folder = self.argv[-1]
-
-            if set_library_folder(library_folder) is True:
-                create_library_folders(get_library_folder())
-                self.draw(True)
-            else:
-                self.dlg = DialogWindow(
-                    parent=self,
-                    title="Warning",
-                    text="Passed path is not a valid folder or<br>\
-                    it doesn't have write permissions!",
-                    accept_text="Quit",
-                    cancel_text=None,
-                )
-                self.dlg.accepted.connect(self.app.quit)
-
-            return
 
         # Check library folder
         if is_library_folder_valid() is False:
@@ -549,28 +529,21 @@ class BlenderLauncher(BaseWindow):
 
             return
 
-        # Create copy if 'Blender Launcher.exe' file
+        # Create copy of 'Blender Launcher.exe' file
         # to act as an updater program
-        if self.platform == "Windows":
-            bl_exe = "Blender Launcher.exe"
-            blu_exe = "Blender Launcher Updater.exe"
-        elif self.platform == "Linux":
-            bl_exe = "Blender Launcher"
-            blu_exe = "Blender Launcher Updater"
+        bl_exe, blu_exe = get_launcher_name()
 
         cwd = get_cwd()
         source = cwd / bl_exe
         dist = cwd / blu_exe
-
-        with open(source.as_posix(), "rb") as f1, open(dist.as_posix(), "wb") as f2:
-            copyfileobj(f1, f2)
+        shutil.copy(source, dist)
 
         # Run 'Blender Launcher Updater.exe' with '-update' flag
         if self.platform == "Windows":
-            _popen([dist.as_posix(), "-update", self.latest_tag])
+            _popen([dist.as_posix(), "--instanced", "update", self.latest_tag])
         elif self.platform == "Linux":
             os.chmod(dist.as_posix(), 0o744)
-            _popen(f'nohup "{dist.as_posix()}" -update {self.latest_tag}')
+            _popen(f'nohup "{dist.as_posix()}" --instanced update {self.latest_tag}')
 
         # Destroy currently running Blender Launcher instance
         self.server.close()
@@ -746,7 +719,7 @@ class BlenderLauncher(BaseWindow):
         self.library_drawer = DrawLibraryTask()
         self.library_drawer.found.connect(self.draw_to_library)
         self.library_drawer.unrecognized.connect(self.draw_unrecognized)
-        if "-offline" not in self.argv:
+        if not self.offline:
             self.library_drawer.finished.connect(self.draw_downloads)
 
         self.task_queue.append(self.library_drawer)
