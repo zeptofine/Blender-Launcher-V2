@@ -4,7 +4,6 @@ import contextlib
 import json
 import logging
 import re
-import time
 from datetime import datetime, timezone
 from itertools import chain
 from pathlib import Path
@@ -21,6 +20,27 @@ if TYPE_CHECKING:
     from modules.connection_manager import ConnectionManager
 
 logger = logging.getLogger()
+
+
+def get_latest_tag(
+    connection_manager: ConnectionManager,
+    url="https://github.com/Victor-IX/Blender-Launcher-V2/releases/latest",
+) -> str | None:
+    r = connection_manager.request(
+        "GET",
+        url,
+    )
+
+    if r is None:
+        return None
+
+    url = r.geturl()
+    tag = url.rsplit("/", 1)[-1]
+
+    r.release_conn()
+    r.close()
+
+    return tag
 
 
 class Scraper(QThread):
@@ -57,27 +77,10 @@ class Scraper(QThread):
 
     def run(self):
         self.get_download_links()
-        latest_tag = self.get_latest_tag()
+        latest_tag = get_latest_tag(self.manager)
         if latest_tag is not None:
             self.new_bl_version.emit(latest_tag)
         self.manager.manager.clear()
-
-    def get_latest_tag(self) -> str | None:
-        r = self.manager.request(
-            "GET",
-            "https://github.com/Victor-IX/Blender-Launcher-V2/releases/latest",
-        )
-
-        if r is None:
-            return None
-
-        url = r.geturl()
-        tag = url.rsplit("/", 1)[-1]
-
-        r.release_conn()
-        r.close()
-
-        return tag
 
     def get_download_links(self):
         set_locale()
