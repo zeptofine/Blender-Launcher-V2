@@ -103,7 +103,6 @@ venv.bak/
 
 # mkdocs documentation
 docs/site
-docs/mkdocs/.obsidian/*
 
 # mypy
 .mypy_cache/
