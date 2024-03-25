@@ -11,6 +11,7 @@ import modules._resources_rc
 from modules import argument_parsing as ap
 from modules._platform import _popen, get_cwd, get_launcher_name, get_platform, is_frozen
 from PyQt5.QtWidgets import QApplication
+from windows.dialog_window import DialogWindow
 
 version = "2.0.24"
 
@@ -121,7 +122,6 @@ def main():
 
 def start_set_library_folder(app: QApplication, lib_folder: str):
     from modules.settings import set_library_folder
-    from windows.dialog_window import DialogWindow
 
     if set_library_folder(str(lib_folder)):
         logging.info(f"Library folder set to {lib_folder!s}")
