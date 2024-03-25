@@ -74,7 +74,7 @@ python source/main.py
         .\build_win.bat
         ```
 
-    1. Look for bundled app under `Blender-Launcher-V2\dist\release` folder
+    2. Look for bundled app under `Blender-Launcher-V2\dist\release` folder
 
 === "Linux"
 
@@ -84,4 +84,44 @@ python source/main.py
         sh build_linux.sh
         ```
 
-    1. Look for bundled app under `Blender-Launcher-V2\dist\release` folder
+    2. Look for bundled app under `Blender-Launcher-V2\dist\release` folder
+
+
+## Documentation
+
+### Preview the Documentation
+
+=== "Windows"
+   1. Run the batch file
+        ```
+        .\mkdocs\mkdocs_serve.bat
+        ```
+   2. [Open the Documentation](http://127.0.0.1:8000/) in a web browser.
+
+=== "Linux"
+    1. Run the shell script file
+        ```
+        #TODO Linux Command
+        ```
+    2. [Open the Documentation](http://127.0.0.1:8000/) in a web browser.
+
+### Update the Documentation
+
+!!! warning "Note"
+    You should never edit the documentation in the gh-pages branch; this branch is used to publish the documentation.
+
+Make the desired modifications in the .md files.
+
+### Publish the Documentation
+
+=== "Windows"
+   1. Run the batch file
+        ```
+        .\mkdocs\mkdocs_publish.bat
+        ```
+
+=== "Linux"
+    1. Run the shell script file
+        ```
+        #TODO Linux Command
+        ```
