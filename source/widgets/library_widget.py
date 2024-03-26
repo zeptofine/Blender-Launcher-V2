@@ -478,7 +478,8 @@ class LibraryWidget(BaseBuildWidget):
 
         elif platform == "macOS":
             b3d_exe = Path(self.link) / "Blender" / "Blender.app"
-            args = f"open -W -n {b3d_exe.as_posix()}"
+            args = f"open -W -n {b3d_exe.as_posix()} --args"
+
 
         if blendfile is not None:
             if isinstance(args, list):
