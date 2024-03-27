@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import re
+import shlex
 import shutil
 import sys
 import webbrowser
@@ -1034,5 +1035,10 @@ class BlenderLauncher(BaseWindow):
             exe = (cwd / "Blender Launcher").as_posix()
             os.chmod(exe, 0o744)
             _popen('nohup "' + exe + '" -instanced')
+        elif self.platform == "macOS":
+            # sys.executable should be something like /.../Blender Launcher.app/Contents/MacOS/Blender Launcher
+            app = Path(sys.executable).parent.parent.parent
+            _popen(f"open -n {shlex.quote(str(app))}")
+
 
         self.destroy()
