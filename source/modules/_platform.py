@@ -177,3 +177,16 @@ def get_cwd():
         return Path(os.path.dirname(sys.executable))
 
     return Path.cwd()
+
+@cache
+def get_config_path():
+    platform = get_platform()
+
+    config_path = ""
+    if platform == "Windows":
+        config_path = os.getenv("LOCALAPPDATA")
+    elif platform in {"Linux", "macOS"}:
+        config_path = os.getenv("XDG_CONFIG_HOME")
+    if not config_path:
+        return os.getcwd()
+    return os.path.join(config_path, "Blender Launcher")

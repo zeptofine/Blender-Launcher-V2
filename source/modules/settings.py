@@ -4,7 +4,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from modules._platform import get_cwd, get_platform
+from modules._platform import get_cwd, get_platform, get_config_path
 from PyQt5.QtCore import QSettings
 from semver import Version
 
@@ -61,7 +61,10 @@ proxy_types = {
 
 
 def get_settings():
-    return QSettings((get_cwd() / "Blender Launcher.ini").as_posix(), QSettings.Format.IniFormat)
+    config_path = Path(get_config_path())
+    if not config_path.is_dir():
+        config_path.mkdir()
+    return QSettings((config_path.absolute() / "Blender Launcher.ini").as_posix(), QSettings.Format.IniFormat)
 
 
 def get_library_folder():
