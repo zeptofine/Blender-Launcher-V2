@@ -9,7 +9,7 @@ from pathlib import Path
 
 import modules._resources_rc
 from modules import argument_parsing as ap
-from modules._platform import _popen, get_cwd, get_launcher_name, get_platform, is_frozen
+from modules._platform import _popen, get_cwd, get_launcher_name, get_platform, is_frozen, get_cache_path
 from PyQt5.QtWidgets import QApplication
 from windows.dialog_window import DialogWindow
 
@@ -19,9 +19,12 @@ _ = gettext.gettext
 
 # Setup logging config
 _format = "[%(asctime)s:%(levelname)s] %(message)s"
+cache_path = Path(get_cache_path())
+if not cache_path.is_dir():
+    cache_path.mkdir()
 logging.basicConfig(
     format=_format,
-    handlers=[logging.FileHandler(get_cwd() / "Blender Launcher.log"), logging.StreamHandler(stream=sys.stdout)],
+    handlers=[logging.FileHandler(cache_path.absolute() / "Blender Launcher.log"), logging.StreamHandler(stream=sys.stdout)],
 )
 logger = logging.getLogger(__name__)
 
