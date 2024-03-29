@@ -1,10 +1,11 @@
 import contextlib
 import os
+import shutil
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from modules._platform import get_cwd, get_platform
+from modules._platform import get_cwd, get_platform, get_config_path
 from PyQt5.QtCore import QSettings
 from semver import Version
 
@@ -61,7 +62,10 @@ proxy_types = {
 
 
 def get_settings():
-    return QSettings((get_cwd() / "Blender Launcher.ini").as_posix(), QSettings.Format.IniFormat)
+    config_path = Path(get_config_path())
+    if not config_path.is_dir():
+        config_path.mkdir()
+    return QSettings((config_path.absolute() / "Blender Launcher.ini").as_posix(), QSettings.Format.IniFormat)
 
 
 def get_library_folder():
@@ -458,3 +462,12 @@ def get_use_system_titlebar():
 
 def set_use_system_titlebar(b: bool):
     get_settings().setValue("use_system_title_bar", b)
+
+def migrate_config():
+    config_path = Path(get_config_path())
+    old_config = Path(get_cwd()) / "Blender Launcher.ini"
+    new_config = config_path     / "Blender Launcher.ini"
+    if old_config.is_file() and not new_config.is_file():
+        if not config_path.is_dir():
+            config_path.mkdir()
+        shutil.move(old_config.resolve(), new_config.resolve())
