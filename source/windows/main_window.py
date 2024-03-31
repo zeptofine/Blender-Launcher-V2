@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import re
+import shlex
 import shutil
 import sys
 import webbrowser
@@ -44,6 +45,7 @@ from modules.settings import (
     set_library_folder,
     set_scrape_automated_builds,
     set_scrape_stable_builds,
+    migrate_config,
 )
 from modules.tasks import Task, TaskQueue, TaskWorker
 from PyQt5.QtCore import QSize, Qt, pyqtSignal, pyqtSlot
@@ -170,6 +172,7 @@ class BlenderLauncher(BaseWindow):
         self.scraper.new_bl_version.connect(self.set_version)
         self.scraper.finished.connect(self.scraper_finished)
 
+        migrate_config()
         # Check library folder
         if is_library_folder_valid() is False:
             self.dlg = DialogWindow(
@@ -1034,5 +1037,10 @@ class BlenderLauncher(BaseWindow):
             exe = (cwd / "Blender Launcher").as_posix()
             os.chmod(exe, 0o744)
             _popen('nohup "' + exe + '" -instanced')
+        elif self.platform == "macOS":
+            # sys.executable should be something like /.../Blender Launcher.app/Contents/MacOS/Blender Launcher
+            app = Path(sys.executable).parent.parent.parent
+            _popen(f"open -n {shlex.quote(str(app))}")
+
 
         self.destroy()
