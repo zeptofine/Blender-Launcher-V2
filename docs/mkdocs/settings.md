@@ -6,24 +6,18 @@
 
 To open the **Settings Window** use button with gear icon on top left of the **Main Window**. All changes saved automatically.
 
-??? image "Screenshots"
+## General
 
-    <figure>
-      <img src="../imgs/settings_window.png"/>
-      <figcaption>Settings Window</figcaption>
-    </figure>
+![alt text](imgs/settings_window_general.png)
 
-## Library Folder
+### Library Folder
 
 **Library Folder** - a directory on hard drive, where all downloaded builds are stored. For detailed information check [Library Folder](library_folder.md) page.
 
-## System
+### Launch When System Starts
 
-### Taskbar Icon Color
-
-:   Determines the color of the **Blender Launcher** icon in taskbar so it is both readable in light and dark system themes. To apply changes application should be restarted.
-
-### Launch When System Starts [Windows only]
+!!! info
+    This is only working on Windows
 
 :   Determines if **Blender Launcher** will run when system starts.
 
@@ -35,57 +29,133 @@ To open the **Settings Window** use button with gear icon on top left of the **M
 
 :   Determines if **Main Window** will pop up when user execute **Blender Launcher** or only tray icon will be shown.
 
-## Interface
+### Worker Thread Count
 
-### Default Tab
+:   Set the maximal number of **CPU Thread Blender** Launcher can use
 
-:   Set what tab of will be opened when **Blender Launcher** starts.
+## Appearance
 
-### Sync Library & Downloads Pages
+![alt text](imgs/settings_window_appearance.png)
 
-:   Determines if pages of Library and Downloads tabs will be automatically matched between each over.
+### Window
 
-### Default Library Page
+#### Use System Title Bar
 
-:   Sets what page of Library tab will be opened when **Blender Launcher** starts.
-
-### Default Downloads Page
-
-:   Sets what page of Downloads tab will be opened when **Blender Launcher** starts.
-
-### Enable High DPI Scaling
+#### Enable High DPI Scaling
 
 :   Determines if **Blender Launcher** user interface will automatically scale based on the monitor's pixel density. To apply changes application should be restarted.
 
-## Notifications
 
-### When New Builds Are Available
+### Notifications
+
+#### New Available Build
 
 :   Show OS notifications when new new builds of Blender are available in Downloads tab.
 
-### When Downloading Finished
+#### Finished Downloading
 
 :   Show OS notifications when build finished downloading and added to Library tab.
 
-## New Build Actions
+#### Errors
+
+:   Show OS nitification when an error occur on the Blender Launcher
+
+### Tabs
+
+#### Default Tab
+
+:   Set what tab of will be opened when **Blender Launcher** starts.
+
+#### Sync Library & Downloads
+
+:   Determines if pages of Library and Downloads tabs will be automatically matched between each over.
+
+#### Default Library Page
+
+:   Sets what page of Library tab will be opened when **Blender Launcher** starts.
+
+#### Default Downloads Page
+
+:   Sets what page of Downloads tab will be opened when **Blender Launcher** starts.
+
+## Connection
+
+![alt text](imgs/settings_window_connection.png)
+
+
+### Proxy
+
+:   TODO
+
+#### Use Custom TLS Certificates
+
+:   TODO
+
+#### Type
+
+:   TODO
+
+#### IP
+
+:   TODO
+
+#### Proxy User
+
+:   TODO
+
+#### Password
+
+:   TODO
+
+## Blender Builds
+
+![alt text](imgs/settings_window_blenderbuilds.png)
+
+### Checking For Builds
+
+#### Check Automatically
+
+:   Automatically check if a new build have been release and send a notification it there is a new one available
+
+#### On Startup
+
+:   If Blender launcher will check for new build when lunch
+
+#### Min Stable Build to Scrape
+
+:   set the minimum blender version to scape, this reduce the request amont and sppeed up the build gatering time
+
+#### Scrape Stable Builds
+
+:   If the Blender Luancher will gather the Stable build, disabeling this will spped up the gatering of the daly build
+
+#### Scrape Automated Builds
+
+:   If the Blender Laucher will gather the automated daly build (daly, experimental, patch) 
+
+### Downloading & Saving build
 
 Actions that will be performed on newly added build to Library tab right after downloading is finished.
 
-### Mark As Favorite
+#### Mark As Favorite
 
 :   Mark every newly added build to Library tab as favorite depending on branch type.
 
-### Install Template
+#### Install Template
 
 :   Installs template on newly added build to Library tab.
 
-## Blender Launching
+### Launching Builds
 
-### Quick Launch Global Shortcut
+#### Quick Launch Global SHC
 
 :   Launches build added to quick launch via user defined key sequence.
 
-### Hide Console On Startup [Windows only]
+#### Hide Console On Startup
+
+!!! info
+    This is only working on Windows
+
 
 :   Launch Blender via `blender-launcher.exe` to hide console on startup. Works on Blender version 3.0 and higher.
 
@@ -93,7 +163,7 @@ Actions that will be performed on newly added build to Library tab right after d
 
         When using this feature number of running instances will not be shown.
 
-### Startup Arguments
+#### Startup Arguments
 
 :   Adds specific instructions as if Blender was launching from the command line (after the blender executable i.e. `blender [args …]`).
 
@@ -105,7 +175,10 @@ Actions that will be performed on newly added build to Library tab right after d
 
 :   List of commands can be found on Blender manual [Command Line Arguments](https://docs.blender.org/manual/en/latest/advanced/command_line/arguments.html) page.
 
-### Bash Arguments [Linux only]
+#### Bash Arguments
+
+!!! info
+    This is only working on Windows
 
 :   Adds specific instructions as if Blender was launching from the command line (before the blender executable i.e. `[args …] blender`).
 
