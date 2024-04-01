@@ -21,10 +21,14 @@
 
 ### Automatic update
 
+!!! warning "v1.15.1 and lower"
+    Automatic updates are not available if you are using a version of the blender launcher prior to the `1.15.2` version.
+    To update, you need to do a manual update of the blender launcher.
+
 1. Press the `Update to version %.%.%` button on the right bottom corner
-1. Wait until downloading and extracting process is finished
-1. Wait for ~5-30 second while new version is configured and automatically launched
-1. Enjoy!
+2. Wait until downloading and extracting process is finished
+3. Wait for ~5-30 second while new version is configured and automatically launched
+4. Enjoy!
 
 ## Important Notes
 
