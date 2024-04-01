@@ -409,7 +409,7 @@ def get_minimum_blender_stable_version() -> Version:
 
 
 def set_minimum_blender_stable_version(v: Version):
-    get_settings().setValue("minimum_blender_stable_version", float(f"{v.major}.{v.minor}"))
+    get_settings().setValue("minimum_blender_stable_version", f"{v.major}.{v.minor}")
 
 
 def get_scrape_stable_builds() -> bool:
