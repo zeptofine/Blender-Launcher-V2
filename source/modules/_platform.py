@@ -178,6 +178,7 @@ def get_cwd():
 
     return Path.cwd()
 
+
 @cache
 def get_config_path():
     platform = get_platform()
@@ -193,6 +194,24 @@ def get_config_path():
     if not config_path:
         return get_cwd()
     return os.path.join(config_path, "Blender Launcher")
+
+
+@cache
+def local_config():
+    return get_cwd() / "Blender Launcher.ini"
+
+
+@cache
+def user_config():
+    return Path(get_config_path()) / "Blender Launcher.ini"
+
+
+def get_config_file():
+    # Prioritize local settings for portability
+    if (local := local_config()).exists():
+        return local
+    return user_config()
+
 
 @cache
 def get_cache_path():

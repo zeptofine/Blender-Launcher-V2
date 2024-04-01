@@ -9,7 +9,7 @@ from pathlib import Path
 
 import modules._resources_rc
 from modules import argument_parsing as ap
-from modules._platform import _popen, get_cwd, get_launcher_name, get_platform, is_frozen, get_cache_path
+from modules._platform import _popen, get_cache_path, get_cwd, get_launcher_name, get_platform, is_frozen
 from PyQt5.QtWidgets import QApplication
 from windows.dialog_window import DialogWindow
 
