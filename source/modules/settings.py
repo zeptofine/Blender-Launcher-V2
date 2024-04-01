@@ -464,11 +464,11 @@ def set_use_system_titlebar(b: bool):
     get_settings().setValue("use_system_title_bar", b)
 
 
-def migrate_config():
+def migrate_config(force=False):
     config_path = Path(get_config_path())
     old_config = local_config()
     new_config = user_config()
-    if old_config.is_file() and not new_config.is_file():
+    if (old_config.is_file() and not new_config.is_file()) or force:
         if not config_path.is_dir():
             config_path.mkdir()
         shutil.move(old_config.resolve(), new_config.resolve())

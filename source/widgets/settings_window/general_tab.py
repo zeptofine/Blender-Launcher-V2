@@ -8,6 +8,7 @@ from modules.settings import (
     get_platform,
     get_show_tray_icon,
     get_worker_thread_count,
+    migrate_config,
     set_launch_minimized_to_tray,
     set_launch_when_system_starts,
     set_library_folder,
@@ -95,11 +96,11 @@ class GeneralTabWidget(SettingsFormWidget):
         self._addRow("Worker Thread Count", self.WorkerThreadCount)
 
         if get_config_file() != user_config():
-            button = QPushButton("Migrate local settings to user settings", self)
-            button.setProperty("CollapseButton", True)
-            button.clicked.connect(self.migrate_confirmation)
+            self.migrate_button = QPushButton("Migrate local settings to user settings", self)
+            self.migrate_button.setProperty("CollapseButton", True)
+            self.migrate_button.clicked.connect(self.migrate_confirmation)
 
-            self.addRow(button)
+            self.addRow(self.migrate_button)
 
     def set_library_folder(self):
         library_folder = str(get_library_folder())
@@ -133,4 +134,14 @@ class GeneralTabWidget(SettingsFormWidget):
     def set_worker_thread_count(self):
         set_worker_thread_count(self.WorkerThreadCount.value())
 
-    def migrate_confirmation(self): ...
+    def migrate_confirmation(self):
+        text = f"Are you sure you want to move<br>{get_config_file()}<br>to<br>{user_config()}?"
+        if user_config().exists():
+            text = f'<font color="red">WARNING:</font> The user settings already exist!<br>{text}'
+        dlg = DialogWindow(text=text, parent=self.parent)
+        dlg.accepted.connect(self.migrate)
+
+    def migrate(self):
+        migrate_config(force=True)
+        self.migrate_button.hide()
+        # Most getters should get the settings from the new position, so a restart should not be required
