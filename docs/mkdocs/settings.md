@@ -4,7 +4,7 @@
 
 ## Settings Window
 
-To open the **Settings Window** use button with gear icon on top left of the **Main Window**. All changes saved automatically.
+To open the **Settings Window**, use the button with a gear icon on the top left of the **Main Window**. All changes are saved automatically.
 
 ## General
 
@@ -12,26 +12,26 @@ To open the **Settings Window** use button with gear icon on top left of the **M
 
 ### Library Folder
 
-**Library Folder** - a directory on hard drive, where all downloaded builds are stored. For detailed information check [Library Folder](library_folder.md) page.
+**Library Folder** - a directory on the hard drive where all downloaded builds are stored. For detailed information, check the [Library Folder](library_folder.md) page.
 
 ### Launch When System Starts
 
 !!! info
-    This is only working on Windows
+    This only works on Windows.
 
-:   Determines if **Blender Launcher** will run when system starts.
+:   Determines if **Blender Launcher** will run when the system starts.
 
 ### Show Tray Icon
 
-:   Toggles visibility of tray icon. If option is disabled, **Blender Launcher** will shut down after closing its **Main Window**.
+:   Toggles the visibility of the tray icon. If the option is disabled, **Blender Launcher** will shut down after closing its **Main Window**.
 
 ### Launch Minimized To Tray
 
-:   Determines if **Main Window** will pop up when user execute **Blender Launcher** or only tray icon will be shown.
+:   Determines if the **Main Window** will pop up when the user executes **Blender Launcher**, or only the tray icon will be shown.
 
 ### Worker Thread Count
 
-:   Set the maximal number of **CPU Thread Blender** Launcher can use
+:   Sets the maximal number of **CPU Thread Blender** Launcher can use.
 
 ## Appearance
 
@@ -43,45 +43,43 @@ To open the **Settings Window** use button with gear icon on top left of the **M
 
 #### Enable High DPI Scaling
 
-:   Determines if **Blender Launcher** user interface will automatically scale based on the monitor's pixel density. To apply changes application should be restarted.
-
+:   Determines if the **Blender Launcher** user interface will automatically scale based on the monitor's pixel density. To apply changes, the application should be restarted.
 
 ### Notifications
 
 #### New Available Build
 
-:   Show OS notifications when new new builds of Blender are available in Downloads tab.
+:   Show OS notifications when new builds of Blender are available in the Downloads tab.
 
 #### Finished Downloading
 
-:   Show OS notifications when build finished downloading and added to Library tab.
+:   Show OS notifications when a build finished downloading and is added to the Library tab.
 
 #### Errors
 
-:   Show OS nitification when an error occur on the Blender Launcher
+:   Show OS notification when an error occurs on the Blender Launcher.
 
 ### Tabs
 
 #### Default Tab
 
-:   Set what tab of will be opened when **Blender Launcher** starts.
+:   Set which tab will be opened when **Blender Launcher** starts.
 
 #### Sync Library & Downloads
 
-:   Determines if pages of Library and Downloads tabs will be automatically matched between each over.
+:   Determines if the pages of Library and Downloads tabs will be automatically matched with each other.
 
 #### Default Library Page
 
-:   Sets what page of Library tab will be opened when **Blender Launcher** starts.
+:   Sets which page of the Library tab will be opened when **Blender Launcher** starts.
 
 #### Default Downloads Page
 
-:   Sets what page of Downloads tab will be opened when **Blender Launcher** starts.
+:   Sets which page of the Downloads tab will be opened when **Blender Launcher** starts.
 
 ## Connection
 
 ![alt text](imgs/settings_window_connection.png)
-
 
 ### Proxy
 
@@ -115,59 +113,58 @@ To open the **Settings Window** use button with gear icon on top left of the **M
 
 #### Check Automatically
 
-:   Automatically check if a new build have been release and send a notification it there is a new one available
+:   Automatically check if a new build has been released and send a notification if there is a new one available.
 
 #### On Startup
 
-:   If Blender launcher will check for new build when lunch
+:   If Blender launcher will check for a new build when launched.
 
 #### Min Stable Build to Scrape
 
-:   set the minimum blender version to scape, this reduce the request amont and sppeed up the build gatering time
+:   Set the minimum Blender version to scrape; this reduces the request amount and speeds up the build gathering time.
 
 #### Scrape Stable Builds
 
-:   If the Blender Luancher will gather the Stable build, disabeling this will spped up the gatering of the daly build
+:   If the Blender Launcher will gather the Stable build, disabling this will speed up the gathering of the daily build.
 
 #### Scrape Automated Builds
 
-:   If the Blender Laucher will gather the automated daly build (daly, experimental, patch) 
+:   If the Blender Launcher will gather the automated daily build (daily, experimental, patch).
 
 ### Downloading & Saving build
 
-Actions that will be performed on newly added build to Library tab right after downloading is finished.
+Actions that will be performed on newly added builds to Library tab right after downloading is finished.
 
 #### Mark As Favorite
 
-:   Mark every newly added build to Library tab as favorite depending on branch type.
+:   Mark every newly added build to the Library tab as favorite depending on the branch type.
 
 #### Install Template
 
-:   Installs template on newly added build to Library tab.
+:   Installs a template on newly added builds to the Library tab.
 
 ### Launching Builds
 
 #### Quick Launch Global SHC
 
-:   Launches build added to quick launch via user defined key sequence.
+:   Launches builds added to quick launch via a user-defined key sequence.
 
 #### Hide Console On Startup
 
 !!! info
-    This is only working on Windows
+    This only works on Windows.
 
-
-:   Launch Blender via `blender-launcher.exe` to hide console on startup. Works on Blender version 3.0 and higher.
+:   Launch Blender via `blender-launcher.exe` to hide the console on startup. Works on Blender version 3.0 and higher.
 
     !!! warning "Known Issues"
 
-        When using this feature number of running instances will not be shown.
+        When using this feature, the number of running instances will not be shown.
 
 #### Startup Arguments
 
-:   Adds specific instructions as if Blender was launching from the command line (after the blender executable i.e. `blender [args …]`).
+:   Adds specific instructions as if Blender were launching from the command line (after the blender executable i.e. `blender [args …]`).
 
-:   For example `-W` (force opening Blender in fullscreen mode) argument internally will produce following command:
+:   For example, the `-W` (force opening Blender in fullscreen mode) argument internally will produce the following command:
 
     ```
     %path to blender executable% -W
@@ -178,12 +175,13 @@ Actions that will be performed on newly added build to Library tab right after d
 #### Bash Arguments
 
 !!! info
-    This is only working on Windows
+    This only works on Windows.
 
-:   Adds specific instructions as if Blender was launching from the command line (before the blender executable i.e. `[args …] blender`).
+:   Adds specific instructions as if Blender were launching from the command line (before the blender executable i.e. `[args …] blender`).
 
-:   For example `env __NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia` (force Blender to use dedicated graphics card) arguments internally will produce following command:
+:   For example, `env __NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia` (force Blender to use a dedicated graphics card) arguments internally will produce the following command:
 
     ```
     env __NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia nohup %path to blender executable% %startup arguments%
     ```
+```
