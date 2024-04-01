@@ -16,7 +16,7 @@ from time import localtime, mktime, strftime
 from typing import TYPE_CHECKING
 
 from items.base_list_widget_item import BaseListWidgetItem
-from modules._platform import _popen, get_cwd, get_launcher_name, get_platform, is_frozen, set_locale
+from modules._platform import _popen, get_cwd, get_launcher_name, get_platform, is_frozen
 from modules.connection_manager import ConnectionManager
 from modules.enums import MessageType
 from modules.settings import (
@@ -43,9 +43,6 @@ from modules.settings import (
     is_library_folder_valid,
     set_last_time_checked_utc,
     set_library_folder,
-    set_scrape_automated_builds,
-    set_scrape_stable_builds,
-    migrate_config,
 )
 from modules.tasks import Task, TaskQueue, TaskWorker
 from PyQt5.QtCore import QSize, Qt, pyqtSignal, pyqtSlot
@@ -172,7 +169,6 @@ class BlenderLauncher(BaseWindow):
         self.scraper.new_bl_version.connect(self.set_version)
         self.scraper.finished.connect(self.scraper_finished)
 
-        migrate_config()
         # Check library folder
         if is_library_folder_valid() is False:
             self.dlg = DialogWindow(
@@ -1041,6 +1037,5 @@ class BlenderLauncher(BaseWindow):
             # sys.executable should be something like /.../Blender Launcher.app/Contents/MacOS/Blender Launcher
             app = Path(sys.executable).parent.parent.parent
             _popen(f"open -n {shlex.quote(str(app))}")
-
 
         self.destroy()
