@@ -94,7 +94,7 @@ python source/main.py
 === "Windows"
    1. Run the batch file
         ```
-        .\mkdocs\mkdocs_serve.bat
+        .\script\mkdocs_serve.bat
         ```
    2. [Open the Documentation](http://127.0.0.1:8000/) in a web browser.
 
@@ -117,7 +117,7 @@ Make the desired modifications in the .md files.
 === "Windows"
    1. Run the batch file
         ```
-        .\mkdocs\mkdocs_publish.bat
+        .\script\mkdocs_publish.bat
         ```
 
 === "Linux"
