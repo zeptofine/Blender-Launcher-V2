@@ -178,7 +178,7 @@ class LibraryWidget(BaseBuildWidget):
         self.deleteAction.setIcon(self.parent.icons.delete)
         self.deleteAction.triggered.connect(self.ask_remove_from_drive)
 
-        self.editAction = QAction("Edit build...", self)
+        self.editAction = QAction("Edit Build...", self)
         self.editAction.setIcon(self.parent.icons.settings)
         self.editAction.triggered.connect(self.edit_build)
 
