@@ -60,15 +60,15 @@ class AppearanceTabWidget(SettingsFormWidget):
         self.notification_settings = SettingsGroup("Notifications", parent=self)
 
         self.EnableNewBuildsNotifications = QCheckBox()
-        self.EnableNewBuildsNotifications.setText("Notify when new builds are available")
+        self.EnableNewBuildsNotifications.setText("New Available Build")
         self.EnableNewBuildsNotifications.clicked.connect(self.toggle_enable_new_builds_notifications)
         self.EnableNewBuildsNotifications.setChecked(get_enable_new_builds_notifications())
         self.EnableDownloadNotifications = QCheckBox()
-        self.EnableDownloadNotifications.setText("Notify when downloads finish")
+        self.EnableDownloadNotifications.setText("Finished Downloading")
         self.EnableDownloadNotifications.clicked.connect(self.toggle_enable_download_notifications)
         self.EnableDownloadNotifications.setChecked(get_enable_download_notifications())
         self.EnableErrorNotifications = QCheckBox()
-        self.EnableErrorNotifications.setText("Notify when errors occur")
+        self.EnableErrorNotifications.setText("Errors")
         self.EnableErrorNotifications.clicked.connect(self.toggle_enable_download_notifications)
         self.EnableErrorNotifications.setChecked(get_enable_download_notifications())
 
