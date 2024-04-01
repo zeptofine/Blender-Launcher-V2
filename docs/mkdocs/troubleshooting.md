@@ -27,7 +27,7 @@ Before creating an issue, please check the following:
     === "Windows"
 
         ```
-        "Blender Launcher.exe" -debug
+        .\"Blender Launcher.exe" -debug
         ```
 
     === "Linux"
