@@ -83,27 +83,25 @@ To open the **Settings Window**, use the button with a gear icon on the top left
 
 ### Proxy
 
-:   TODO
-
 #### Use Custom TLS Certificates
 
-:   TODO
+:   Enables the use of custom TLS certificates for secure communication with the proxy server.
 
 #### Type
 
-:   TODO
+:   Specifies the type of proxy server to connect to (e.g., HTTP, SOCKS).
 
 #### IP
 
-:   TODO
+:   Specifies the IP address of the proxy server and port number through which Blender Launcher will connect to the proxy server.
 
 #### Proxy User
 
-:   TODO
+:   Specifies the username required to authenticate with the proxy server, if applicable.
 
 #### Password
 
-:   TODO
+:   Specifies the password required to authenticate with the proxy server, if applicable.
 
 ## Blender Builds
 
