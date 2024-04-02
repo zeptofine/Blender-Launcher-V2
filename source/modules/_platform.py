@@ -187,7 +187,11 @@ def get_config_path():
     if platform == "Windows":
         config_path = os.getenv("LOCALAPPDATA")
     elif platform == "Linux":
-        config_path = os.getenv("XDG_CONFIG_HOME")
+        # Borrowed from platformdirs
+        path = os.environ.get("XDG_CONFIG_HOME", "")
+        if not path.strip():
+            path = os.path.expanduser("~/.config")
+        config_path = path
     elif platform == "macOS":
         config_path = os.path.expanduser("~/Library/Application Support")
 
@@ -221,7 +225,10 @@ def get_cache_path():
     if platform == "Windows":
         cache_path = os.getenv("LOCALAPPDATA")
     elif platform == "Linux":
-        cache_path = os.getenv("XDG_CACHE_HOME")
+        # Borrowed from platformdirs
+        path = os.environ.get("XDG_CACHE_HOME", "")
+        if not path.strip():
+            path = os.path.expanduser("~/.cache")
     elif platform == "macOS":
         cache_path = os.path.expanduser("~/Library/Logs")
     if not cache_path:
