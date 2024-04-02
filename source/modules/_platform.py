@@ -227,3 +227,7 @@ def get_cache_path():
     if not cache_path:
         return os.getcwd()
     return os.path.join(cache_path, "Blender Launcher")
+
+
+def stable_cache_path():
+    return Path(get_cache_path(), "stable_builds.json")

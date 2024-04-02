@@ -11,8 +11,9 @@ from typing import TYPE_CHECKING
 from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup, SoupStrainer
-from modules._platform import get_platform, reset_locale, set_locale
+from modules._platform import get_platform, reset_locale, set_locale, stable_cache_path
 from modules.build_info import BuildInfo, parse_blender_ver
+from modules.scraper_cache import StableCache
 from modules.settings import get_minimum_blender_stable_version, get_scrape_automated_builds, get_scrape_stable_builds
 from PyQt5.QtCore import QThread, pyqtSignal
 
@@ -54,7 +55,17 @@ class Scraper(QThread):
         self.parent = parent
         self.manager: ConnectionManager = man
         self.platform = get_platform()
-        self.modified_date_cache: dict[str, datetime] = {}
+
+        self.cache_path = stable_cache_path()
+
+        if self.cache_path.exists():
+            with stable_cache_path().open("r", encoding="utf-8") as f:
+                cache = json.load(f)
+                self.cache = StableCache.from_dict(cache)
+                logging.debug(f"Loaded cache from {self.cache_path!r}")
+        else:
+            self.cache = StableCache()
+
         self.json_platform = {
             "Windows": "windows",
             "Linux": "linux",
@@ -218,7 +229,7 @@ class Scraper(QThread):
             self.stable_error.emit("No releases were scraped from the site!<br>check -debug logs for more details.")
 
         minimum_version = get_minimum_blender_stable_version()
-
+        cache_modified = False
         for release in releases:
             href = release["href"]
             match = re.search(subversion, href)
@@ -233,15 +244,32 @@ class Scraper(QThread):
                     date_str = " ".join(date_sibling.strip().split()[:2])
                     with contextlib.suppress(ValueError):
                         modified_date = datetime.strptime(date_str, "%d-%b-%Y %H:%M").astimezone(tz=timezone.utc)
-                        saved_date = self.modified_date_cache.get(href, None)
-                        if saved_date == modified_date:  # Folder has not been modified since last awake check
-                            logger.debug(f"Skipping {href}: {modified_date}")
-                            continue
+                        if ver not in self.cache:
+                            logger.debug(f"Creating new folder for version {ver}")
+                            folder = self.cache.new_build(ver)
                         else:
-                            logger.debug(f"Caching {href}: {modified_date}")
-                            self.modified_date_cache[href] = modified_date
+                            folder = self.cache[ver]
+
+                        if folder.modified_date != modified_date:
+                            builds = list(self.scrap_download_links(urljoin(url, href), "stable", stable=True))
+                            logger.debug(f"Caching {href}: {modified_date} (previous was {folder.modified_date})")
+
+                            folder.assets = builds
+                            folder.modified_date = modified_date
+
+                            cache_modified = True
+                        else:
+                            logger.debug(f"Skipping {href}: {modified_date}")
+                        builds = self.cache[ver].assets
+                        yield from builds
+                        continue
 
                 yield from self.scrap_download_links(urljoin(url, href), "stable", stable=True)
+
+        if cache_modified:
+            with self.cache_path.open("w", encoding="utf-8") as f:
+                json.dump(self.cache.to_dict(), f)
+                logging.debug(f"Saved cache to {self.cache_path}")
 
         r.release_conn()
         r.close()

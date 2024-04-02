@@ -184,13 +184,13 @@ class BuildInfo:
         return v.replace(prerelease=prerelease)
 
     @classmethod
-    def from_dict(cls, path: Path, blinfo: dict):
+    def from_dict(cls, link: str, blinfo: dict):
         try:
             dt = datetime.fromisoformat(blinfo["commit_time"])
         except ValueError:  # old file version compatibility
             dt = datetime.strptime(blinfo["commit_time"], "%d-%b-%y-%H:%M").astimezone()
         return cls(
-            path.as_posix(),
+            link,
             blinfo["subversion"],
             blinfo["build_hash"],
             dt,
@@ -348,7 +348,7 @@ def read_build_info(
         with blinfo.open(encoding="utf-8") as file:
             data = json.load(file)
 
-        build_info = BuildInfo.from_dict(path, data["blinfo"][0])
+        build_info = BuildInfo.from_dict(path.as_posix(), data["blinfo"][0])
 
         # Check if file version changed
         if ("file_version" not in data) or (data["file_version"] != BuildInfo.file_version):
