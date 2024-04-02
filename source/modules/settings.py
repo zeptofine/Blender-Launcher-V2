@@ -10,7 +10,8 @@ from modules._platform import get_config_file, get_config_path, get_cwd, get_pla
 from PyQt5.QtCore import QSettings
 from semver import Version
 
-ISO_EPOCH = datetime.fromtimestamp(0, tz=timezone.utc).isoformat()
+EPOCH = datetime.fromtimestamp(0, tz=timezone.utc)
+ISO_EPOCH = EPOCH.isoformat()
 
 # TODO: Simplify this
 
