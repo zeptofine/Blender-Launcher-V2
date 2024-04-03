@@ -14,6 +14,7 @@ from modules.settings import (
     get_use_custom_tls_certificates,
 )
 from PyQt5.QtCore import QObject, pyqtSignal
+from semver import Version
 from urllib3 import PoolManager, ProxyManager, make_headers
 from urllib3.contrib.socks import SOCKSProxyManager
 
@@ -35,7 +36,7 @@ REQUEST_MANAGER = Union[PoolManager, ProxyManager, SOCKSProxyManager]
 class ConnectionManager(QObject):
     error = pyqtSignal()
 
-    def __init__(self, version, proxy_type=None) -> None:
+    def __init__(self, version: Version, proxy_type=None) -> None:
         super().__init__()
         self.version = version
         if proxy_type is None:
@@ -44,7 +45,7 @@ class ConnectionManager(QObject):
         self.manager: REQUEST_MANAGER | None = None
 
         # Basic Headers
-        self._headers = {"user-agent": f"Blender-Launcher-v2/{self.version} ({get_platform_full()})"}
+        self._headers = {"user-agent": f"Blender-Launcher-v2/{self.version!s} ({get_platform_full()})"}
 
         # Get custom certificates file path
         if is_frozen() is True:
