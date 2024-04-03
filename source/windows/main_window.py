@@ -40,6 +40,7 @@ from modules.settings import (
     get_sync_library_and_downloads_pages,
     get_use_system_titlebar,
     get_worker_thread_count,
+    get_use_pre_release_builds,
     is_library_folder_valid,
     set_last_time_checked_utc,
     set_library_folder,
@@ -168,6 +169,9 @@ class BlenderLauncher(BaseWindow):
         self.scraper.stable_error.connect(self.scraper_error)
         self.scraper.new_bl_version.connect(self.set_version)
         self.scraper.finished.connect(self.scraper_finished)
+
+        # Vesrion Update
+        self.pre_release_build = get_use_pre_release_builds
 
         # Check library folder
         if is_library_folder_valid() is False:
@@ -952,7 +956,14 @@ class BlenderLauncher(BaseWindow):
         if "dev" in self.version:
             return
         latest = Version.parse(latest_tag[1:])
-        current = Version.parse(self.version)
+        
+        if not get_use_pre_release_builds():
+            current = "0.0.0"
+            print("Current version is not a pre-release build")
+        else:
+            current = Version.parse(self.version)
+            print("Current version is a pre-release build")
+        
         logging.debug(f"Latest version on GitHub is {latest}")
 
         if latest > current:
