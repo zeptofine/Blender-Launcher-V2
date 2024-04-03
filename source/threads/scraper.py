@@ -56,35 +56,18 @@ def get_latest_pre_release_tag(
     if r is None:
         return None
 
-    pre_release_tags = []
     parsed_data = json.loads(r.data)
 
-    for release in parsed_data:
-        if release.get("prerelease", False):
-            pre_release_tags.append(release["tag_name"])
-
-    valid_pre_release_tags = []
-    for tag in pre_release_tags:
-        tag = tag.lstrip("v")
-        print(f"Checking pre-release tag: {tag}")
-        if semver.VersionInfo.is_valid(tag):
-            valid_pre_release_tags.append(tag)
-            print(f"Valid pre-release tag: {tag}")
-        else:
-            print(f"Invalid pre-release tag: {tag}")
+    pre_release_tags = [release["tag_name"].lstrip("v") for release in parsed_data if release.get("prerelease", False)]
+    valid_pre_release_tags = [tag for tag in pre_release_tags if semver.VersionInfo.is_valid(tag)]
 
     if valid_pre_release_tags:
         tag = max(valid_pre_release_tags, key=semver.VersionInfo.parse)
-        tag = f"v{tag}"
-    else:
-        tag = None
-
-    print(tag)
-
+        return f"v{tag}"
     r.release_conn()
     r.close()
 
-    return tag
+    return None
 
 
 class Scraper(QThread):
