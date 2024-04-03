@@ -108,7 +108,7 @@ class BlenderLauncher(BaseWindow):
     quit_signal = pyqtSignal()
     quick_launch_fail_signal = pyqtSignal()
 
-    def __init__(self, app: QApplication, version, offline: bool = False):
+    def __init__(self, app: QApplication, version: Version, offline: bool = False):
         super().__init__(app=app, version=version)
         self.resize(640, 480)
         self.setMinimumSize(QSize(640, 480))
@@ -136,7 +136,7 @@ class BlenderLauncher(BaseWindow):
 
         # Global scope
         self.app = app
-        self.version = version
+        self.version: Version = version
         self.offline = offline
         self.favorite: BaseBuildWidget | None = None
         self.status = "Unknown"
@@ -356,10 +356,6 @@ class BlenderLauncher(BaseWindow):
         self.LibraryToolBox.setCurrentIndex(get_default_library_page())
         self.DownloadsToolBox.setCurrentIndex(get_default_downloads_page())
 
-        version_status = self.version
-        if not is_frozen():  # Add an asterisk to the statusbar version if running from source
-            version_status = f"{version_status}"
-
         # Status bar
         self.status_bar = QStatusBar(self)
         self.setStatusBar(self.status_bar)
@@ -376,7 +372,7 @@ class BlenderLauncher(BaseWindow):
         self.NewVersionButton = QPushButton()
         self.NewVersionButton.hide()
         self.NewVersionButton.clicked.connect(self.show_update_window)
-        self.statusbarVersion = QPushButton(version_status)
+        self.statusbarVersion = QPushButton(str(self.version))
         self.statusbarVersion.clicked.connect(self.show_changelog)
         self.statusbarVersion.setToolTip(
             "The version of Blender Launcher that is currently run. Press to check changelog."
@@ -481,7 +477,7 @@ class BlenderLauncher(BaseWindow):
             self.quick_launch()
 
     def show_changelog(self):
-        url = f"https://github.com/Victor-IX/Blender-Launcher-V2/releases/tag/v{self.version}"
+        url = f"https://github.com/Victor-IX/Blender-Launcher-V2/releases/tag/v{self.version!s}"
         webbrowser.open(url)
 
     def toggle_sync_library_and_downloads_pages(self, is_sync):
@@ -949,10 +945,10 @@ class BlenderLauncher(BaseWindow):
         self.statusbarLabel.setText(self.status)
 
     def set_version(self, latest_tag):
-        if "dev" in self.version:
+        if self.version.build is not None and "dev" in self.version.build:
             return
         latest = Version.parse(latest_tag[1:])
-        current = Version.parse(self.version)
+        current = self.version
         logging.debug(f"Latest version on GitHub is {latest}")
 
         if latest > current:
@@ -997,7 +993,7 @@ class BlenderLauncher(BaseWindow):
         assert self.socket is not None
         data = self.socket.readAll()
 
-        if str(data, encoding="ascii") != self.version:
+        if str(data, encoding="ascii") != str(self.version):
             self.dlg = DialogWindow(
                 parent=self,
                 title="Warning",
