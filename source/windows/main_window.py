@@ -957,6 +957,7 @@ class BlenderLauncher(BaseWindow):
             return
         latest = Version.parse(latest_tag[1:])
         
+        # Set the verison to 0.0.0 to force update to the latest stable version
         if not get_use_pre_release_builds() and "rc" in self.version:
             current = "0.0.0"
         else:
