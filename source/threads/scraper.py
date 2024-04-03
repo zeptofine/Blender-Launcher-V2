@@ -226,7 +226,13 @@ class Scraper(QThread):
         if not any(releases):
             logger.info("Failed to gather stable releases")
             logger.info(content)
-            self.stable_error.emit("No releases were scraped from the site!<br>check -debug logs for more details.")
+            self.stable_error.emit(
+                "No releases were scraped from the site!<br>Using cached links.<br>check -debug logs for more details.<br>"
+            )
+            # Use cached links
+            for build in self.cache.folders.values():
+                yield from build.assets
+            return
 
         minimum_version = get_minimum_blender_stable_version()
         cache_modified = False
