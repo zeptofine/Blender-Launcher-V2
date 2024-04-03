@@ -957,12 +957,10 @@ class BlenderLauncher(BaseWindow):
             return
         latest = Version.parse(latest_tag[1:])
         
-        if not get_use_pre_release_builds():
+        if not get_use_pre_release_builds() and "rc" in self.version:
             current = "0.0.0"
-            print("Current version is not a pre-release build")
         else:
             current = Version.parse(self.version)
-            print("Current version is a pre-release build")
         
         logging.debug(f"Latest version on GitHub is {latest}")
 
