@@ -14,7 +14,12 @@ from bs4 import BeautifulSoup, SoupStrainer
 from modules._platform import get_platform, reset_locale, set_locale, stable_cache_path
 from modules.build_info import BuildInfo, parse_blender_ver
 from modules.scraper_cache import StableCache
-from modules.settings import get_minimum_blender_stable_version, get_scrape_automated_builds, get_scrape_stable_builds
+from modules.settings import (
+    get_minimum_blender_stable_version,
+    get_scrape_automated_builds,
+    get_scrape_stable_builds,
+    get_use_pre_release_builds,
+)
 from PyQt5.QtCore import QThread, pyqtSignal
 
 if TYPE_CHECKING:
@@ -25,7 +30,7 @@ logger = logging.getLogger()
 
 def get_latest_tag(
     connection_manager: ConnectionManager,
-    url="https://github.com/Victor-IX/Blender-Launcher-V2/releases/latest",
+    url,
 ) -> str | None:
     r = connection_manager.request(
         "GET",
@@ -85,10 +90,17 @@ class Scraper(QThread):
 
         self.scrape_stable = get_scrape_stable_builds()
         self.scrape_automated = get_scrape_automated_builds()
+        self.pre_release_build = get_use_pre_release_builds
 
     def run(self):
         self.get_download_links()
-        latest_tag = get_latest_tag(self.manager)
+
+        if self.pre_release_build:
+            url = "https://github.com/Victor-IX/Blender-Launcher-V2/releases/tag/v2.1.0"
+            latest_tag = get_latest_tag(self.manager, url)
+        else:
+            url = "https://github.com/Victor-IX/Blender-Launcher-V2/releases/latest"
+            latest_tag = get_latest_tag(self.manager, url)
         if latest_tag is not None:
             self.new_bl_version.emit(latest_tag)
         self.manager.manager.clear()

@@ -457,6 +457,14 @@ def set_worker_thread_count(v: int):
     get_settings().setValue("worker_thread_count", v)
 
 
+def get_use_pre_release_builds():
+    return get_settings().value("use_pre_release_builds", defaultValue=False, type=bool)
+
+
+def set_use_pre_release_builds(b: bool):
+    get_settings().setValue("use_pre_release_builds", b)
+
+
 def get_use_system_titlebar():
     return get_settings().value("use_system_title_bar", defaultValue=False, type=bool)
 
