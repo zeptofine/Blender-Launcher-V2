@@ -58,7 +58,7 @@ def get_latest_pre_release_tag(
 
     parsed_data = json.loads(r.data)
 
-    pre_release_tags = [release["tag_name"].lstrip("v") for release in parsed_data if release.get("prerelease", False)]
+    pre_release_tags = [release["tag_name"].lstrip("v") for release in parsed_data]
     valid_pre_release_tags = [tag for tag in pre_release_tags if semver.VersionInfo.is_valid(tag)]
 
     if valid_pre_release_tags:
