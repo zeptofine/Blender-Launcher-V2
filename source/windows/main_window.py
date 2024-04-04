@@ -962,12 +962,13 @@ class BlenderLauncher(BaseWindow):
         logging.debug(f"Latest version on GitHub is {latest}")
 
         if latest > current:
-            if latest_tag not in self.notification_pool:
-                self.NewVersionButton.setText(f"Update to version {latest_tag.replace('v', '')}")
-                self.NewVersionButton.show()
-                self.show_message("New version of Blender Launcher is available!", value=latest_tag)
-
+            self.NewVersionButton.setText(f"Update to version {latest_tag.replace('v', '')}")
+            self.NewVersionButton.show()
+            self.show_message("New version of Blender Launcher is available!", value=latest_tag)
             self.latest_tag = latest_tag
+        else:
+            self.NewVersionButton.hide()
+
 
     def show_settings_window(self):
         self.settings_window = SettingsWindow(parent=self)
