@@ -8,6 +8,7 @@ from modules.settings import (
     get_platform,
     get_show_tray_icon,
     get_worker_thread_count,
+    get_use_pre_release_builds,
     migrate_config,
     set_launch_minimized_to_tray,
     set_launch_when_system_starts,
@@ -15,6 +16,7 @@ from modules.settings import (
     set_show_tray_icon,
     set_worker_thread_count,
     user_config,
+    set_use_pre_release_builds,
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QCheckBox, QHBoxLayout, QLineEdit, QPushButton, QSpinBox, QWidget
@@ -61,7 +63,6 @@ class GeneralTabWidget(SettingsFormWidget):
         self.ShowTrayIconCheckBox.clicked.connect(self.toggle_show_tray_icon)
 
         # Worker thread count
-
         self.WorkerThreadCount = QSpinBox()
 
         self.WorkerThreadCount.setToolTip(
@@ -83,6 +84,11 @@ class GeneralTabWidget(SettingsFormWidget):
 
             self.WorkerThreadCount.valueChanged.connect(warn_values_above_cpu)
 
+        # Pre-release builds
+        self.PreReleaseBuildsCheckBox = QCheckBox()
+        self.PreReleaseBuildsCheckBox.setChecked(get_use_pre_release_builds())
+        self.PreReleaseBuildsCheckBox.clicked.connect(self.toggle_use_pre_release_builds)
+
         # Layout
         self._addRow("Library Folder", self.LibraryFolderWidget, new_line=True)
 
@@ -94,6 +100,8 @@ class GeneralTabWidget(SettingsFormWidget):
         self.LaunchMinimizedToTrayRow.setEnabled(get_show_tray_icon())
 
         self._addRow("Worker Thread Count", self.WorkerThreadCount)
+
+        self._addRow("Use Pre-release Builds", self.PreReleaseBuildsCheckBox)
 
         if get_config_file() != user_config():
             self.migrate_button = QPushButton("Migrate local settings to user settings", self)
@@ -133,6 +141,9 @@ class GeneralTabWidget(SettingsFormWidget):
 
     def set_worker_thread_count(self):
         set_worker_thread_count(self.WorkerThreadCount.value())
+
+    def toggle_use_pre_release_builds(self, is_checked):
+        set_use_pre_release_builds(is_checked)
 
     def migrate_confirmation(self):
         text = f"Are you sure you want to move<br>{get_config_file()}<br>to<br>{user_config()}?"

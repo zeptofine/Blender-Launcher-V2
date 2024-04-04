@@ -4,6 +4,7 @@ import contextlib
 import json
 import logging
 import re
+import semver
 from datetime import datetime, timezone
 from itertools import chain
 from pathlib import Path
@@ -14,7 +15,12 @@ from bs4 import BeautifulSoup, SoupStrainer
 from modules._platform import get_platform, reset_locale, set_locale, stable_cache_path
 from modules.build_info import BuildInfo, parse_blender_ver
 from modules.scraper_cache import StableCache
-from modules.settings import get_minimum_blender_stable_version, get_scrape_automated_builds, get_scrape_stable_builds
+from modules.settings import (
+    get_minimum_blender_stable_version,
+    get_scrape_automated_builds,
+    get_scrape_stable_builds,
+    get_use_pre_release_builds,
+)
 from PyQt5.QtCore import QThread, pyqtSignal
 
 if TYPE_CHECKING:
@@ -25,12 +31,9 @@ logger = logging.getLogger()
 
 def get_latest_tag(
     connection_manager: ConnectionManager,
-    url="https://github.com/Victor-IX/Blender-Launcher-V2/releases/latest",
+    url,
 ) -> str | None:
-    r = connection_manager.request(
-        "GET",
-        url,
-    )
+    r = connection_manager.request("GET", url)
 
     if r is None:
         return None
@@ -42,6 +45,29 @@ def get_latest_tag(
     r.close()
 
     return tag
+
+
+def get_latest_pre_release_tag(
+    connection_manager: ConnectionManager,
+    url,
+) -> str | None:
+    r = connection_manager.request("GET", url)
+
+    if r is None:
+        return None
+
+    parsed_data = json.loads(r.data)
+
+    pre_release_tags = [release["tag_name"].lstrip("v") for release in parsed_data]
+    valid_pre_release_tags = [tag for tag in pre_release_tags if semver.VersionInfo.is_valid(tag)]
+
+    if valid_pre_release_tags:
+        tag = max(valid_pre_release_tags, key=semver.VersionInfo.parse)
+        return f"v{tag}"
+    r.release_conn()
+    r.close()
+
+    return None
 
 
 class Scraper(QThread):
@@ -88,7 +114,14 @@ class Scraper(QThread):
 
     def run(self):
         self.get_download_links()
-        latest_tag = get_latest_tag(self.manager)
+
+        if get_use_pre_release_builds():
+            url = "https://api.github.com/repos/Victor-IX/Blender-Launcher-V2/releases"
+            latest_tag = get_latest_pre_release_tag(self.manager, url)
+        else:
+            url = "https://github.com/Victor-IX/Blender-Launcher-V2/releases/latest"
+            latest_tag = get_latest_tag(self.manager, url)
+
         if latest_tag is not None:
             self.new_bl_version.emit(latest_tag)
         self.manager.manager.clear()

@@ -38,6 +38,7 @@ from modules.settings import (
     get_scrape_stable_builds,
     get_show_tray_icon,
     get_sync_library_and_downloads_pages,
+    get_use_pre_release_builds,
     get_use_system_titlebar,
     get_worker_thread_count,
     is_library_folder_valid,
@@ -168,6 +169,9 @@ class BlenderLauncher(BaseWindow):
         self.scraper.stable_error.connect(self.scraper_error)
         self.scraper.new_bl_version.connect(self.set_version)
         self.scraper.finished.connect(self.scraper_finished)
+
+        # Vesrion Update
+        self.pre_release_build = get_use_pre_release_builds
 
         # Check library folder
         if is_library_folder_valid() is False:
@@ -948,16 +952,23 @@ class BlenderLauncher(BaseWindow):
         if self.version.build is not None and "dev" in self.version.build:
             return
         latest = Version.parse(latest_tag[1:])
-        current = self.version
+
+        # Set the verison to 0.0.0 to force update to the latest stable version
+        if not get_use_pre_release_builds() and self.version.prerelease is not None and "rc" in self.version.prerelease:
+            current = Version(0, 0, 0)
+        else:
+            current = self.version
+
         logging.debug(f"Latest version on GitHub is {latest}")
 
         if latest > current:
-            if latest_tag not in self.notification_pool:
-                self.NewVersionButton.setText(f"Update to version {latest_tag.replace('v', '')}")
-                self.NewVersionButton.show()
-                self.show_message("New version of Blender Launcher is available!", value=latest_tag)
-
+            self.NewVersionButton.setText(f"Update to version {latest_tag.replace('v', '')}")
+            self.NewVersionButton.show()
+            self.show_message("New version of Blender Launcher is available!", value=latest_tag)
             self.latest_tag = latest_tag
+        else:
+            self.NewVersionButton.hide()
+
 
     def show_settings_window(self):
         self.settings_window = SettingsWindow(parent=self)
