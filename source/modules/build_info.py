@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from functools import cache
@@ -166,8 +167,16 @@ class BuildInfo:
             else:
                 b = subv.split("-", 1)[-1].title()
             return b
-        if v.prerelease is not None and v.prerelease.startswith("rc"):
-            return f"Release Candidate {v.prerelease[2:]}"
+        if v.prerelease is not None:
+            if v.prerelease.startswith("rc"):
+                return f"Release Candidate {v.prerelease[2:]}"
+            if sys.platform == "darwin" and branch == "stable":
+                pre = v.prerelease
+                if pre.startswith("macos"):
+                    pre = pre.removeprefix("macos-")
+                return f"{branch.title()} - {pre}"
+
+
 
         return branch.title()
 
