@@ -226,9 +226,9 @@ def get_cache_path():
         cache_path = os.getenv("LOCALAPPDATA")
     elif platform == "Linux":
         # Borrowed from platformdirs
-        path = os.environ.get("XDG_CACHE_HOME", "")
-        if not path.strip():
-            path = os.path.expanduser("~/.cache")
+        cache_path = os.environ.get("XDG_CACHE_HOME", "")
+        if not cache_path.strip():
+            cache_path = os.path.expanduser("~/.cache")
     elif platform == "macOS":
         cache_path = os.path.expanduser("~/Library/Logs")
     if not cache_path:
