@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import ssl
 import sys
-from typing import Union
+from typing import TYPE_CHECKING, Union
 
 from modules._platform import get_cwd, get_platform_full, is_frozen
 from modules.settings import (
@@ -14,9 +14,11 @@ from modules.settings import (
     get_use_custom_tls_certificates,
 )
 from PyQt5.QtCore import QObject, pyqtSignal
-from semver import Version
 from urllib3 import PoolManager, ProxyManager, make_headers
 from urllib3.contrib.socks import SOCKSProxyManager
+
+if TYPE_CHECKING:
+    from semver import Version
 
 proxy_types_chemes = {
     1: "http://",

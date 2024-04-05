@@ -4,13 +4,13 @@ import contextlib
 import json
 import logging
 import re
-import semver
 from datetime import datetime, timezone
 from itertools import chain
 from pathlib import Path
 from typing import TYPE_CHECKING
 from urllib.parse import urljoin
 
+import semver
 from bs4 import BeautifulSoup, SoupStrainer
 from modules._platform import get_platform, reset_locale, set_locale, stable_cache_path
 from modules.build_info import BuildInfo, parse_blender_ver

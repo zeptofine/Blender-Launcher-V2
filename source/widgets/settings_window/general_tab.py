@@ -7,16 +7,16 @@ from modules.settings import (
     get_library_folder,
     get_platform,
     get_show_tray_icon,
-    get_worker_thread_count,
     get_use_pre_release_builds,
+    get_worker_thread_count,
     migrate_config,
     set_launch_minimized_to_tray,
     set_launch_when_system_starts,
     set_library_folder,
     set_show_tray_icon,
+    set_use_pre_release_builds,
     set_worker_thread_count,
     user_config,
-    set_use_pre_release_builds,
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QCheckBox, QHBoxLayout, QLineEdit, QPushButton, QSpinBox, QWidget
