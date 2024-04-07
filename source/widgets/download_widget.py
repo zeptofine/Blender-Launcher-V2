@@ -250,8 +250,14 @@ class DownloadWidget(BaseBuildWidget):
 
         a = ReadBuildTask(
             self.build_dir,
+            info=BuildInfo(
+                str(self.build_dir),
+                subversion=str(ver),
+                build_hash=None,
+                commit_time=self.build_info.commit_time,
+                branch=self.build_info.branch,
+            ),
             archive_name=archive_name,
-            version=ver,
         )
         a.finished.connect(self.download_rename)
         a.failure.connect(lambda: print("Reading failed"))
