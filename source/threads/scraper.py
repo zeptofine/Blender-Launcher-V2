@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+from distutils.command import build
 import json
 import logging
 import re
@@ -56,14 +57,26 @@ def get_latest_pre_release_tag(
     if r is None:
         return None
 
+    try:
+        parsed_data = json.loads(r.data)
+    except json.JSONDecodeError:
+        return None
+
+    platform = get_platform()
     parsed_data = json.loads(r.data)
-
-    pre_release_tags = [release["tag_name"].lstrip("v") for release in parsed_data]
-    valid_pre_release_tags = [tag for tag in pre_release_tags if semver.VersionInfo.is_valid(tag)]
-
-    if valid_pre_release_tags:
-        tag = max(valid_pre_release_tags, key=semver.VersionInfo.parse)
+    platform_valid_tags = []
+    
+    for release in parsed_data:
+        for asset in release["assets"]:
+            if asset["name"].endswith(".zip") and platform.lower() in asset["name"].lower():
+                platform_valid_tags.append(release["tag_name"])
+    
+    pre_release_tags = [release.lstrip("v") for release in platform_valid_tags]
+              
+    if pre_release_tags:
+        tag = max(pre_release_tags, key=semver.VersionInfo.parse)
         return f"v{tag}"
+    
     r.release_conn()
     r.close()
 
