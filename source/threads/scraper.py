@@ -116,10 +116,10 @@ class Scraper(QThread):
         self.get_download_links()
 
         if get_use_pre_release_builds():
-            url = "https://api.github.com/repos/Victor-IX/Blender-Launcher-V2/releases"
+            url = "https://api.github.com/repos/Victor-IX/Blender-Launcher-V2-Test/releases"
             latest_tag = get_latest_pre_release_tag(self.manager, url)
         else:
-            url = "https://github.com/Victor-IX/Blender-Launcher-V2/releases/latest"
+            url = "https://github.com/Victor-IX/Blender-Launcher-V2-Test/releases/latest"
             latest_tag = get_latest_tag(self.manager, url)
 
         if latest_tag is not None:
