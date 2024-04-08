@@ -1,5 +1,7 @@
 from __future__ import annotations
+from operator import contains
 
+import distro
 import contextlib
 from distutils.command import build
 import json
@@ -63,20 +65,32 @@ def get_latest_pre_release_tag(
         return None
 
     platform = get_platform()
+
+    if platform.lower() == "linux":
+        for key in (
+            distro.id().title(),
+            distro.like().title(),
+            distro.id(),
+            distro.like(),
+        ):
+            if "ubuntu" in key.lower():
+                platform = "Ubuntu"
+                break
+
     parsed_data = json.loads(r.data)
     platform_valid_tags = []
-    
+
     for release in parsed_data:
         for asset in release["assets"]:
             if asset["name"].endswith(".zip") and platform.lower() in asset["name"].lower():
                 platform_valid_tags.append(release["tag_name"])
-    
+
     pre_release_tags = [release.lstrip("v") for release in platform_valid_tags]
-              
+
     if pre_release_tags:
         tag = max(pre_release_tags, key=semver.VersionInfo.parse)
         return f"v{tag}"
-    
+
     r.release_conn()
     r.close()
 
