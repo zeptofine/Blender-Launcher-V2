@@ -15,8 +15,8 @@ from threads.scraper import get_latest_tag
 from widgets.base_progress_bar_widget import BaseProgressBarWidget
 from windows.base_window import BaseWindow
 
-release_link = "https://github.com/Victor-IX/Blender-Launcher-V2-Test/releases/download/{0}/Blender_Launcher_{0}_{1}_x64.zip"
-api_link = "https://api.github.com/repos/Victor-IX/Blender-Launcher-V2-Test/releases/tags/{}"
+release_link = "https://github.com/Victor-IX/Blender-Launcher-V2/releases/download/{0}/Blender_Launcher_{0}_{1}_x64.zip"
+api_link = "https://api.github.com/repos/Victor-IX/Blender-Launcher-V2/releases/tags/{}"
 
 
 # this only shows relevant sections of the response
@@ -63,7 +63,7 @@ class BlenderLauncherUpdater(BaseWindow):
 
         if release_tag is None:
             assert self.manager is not None
-            release_tag = get_latest_tag(self.cm, "https://github.com/Victor-IX/Blender-Launcher-V2-Test/releases/latest")
+            release_tag = get_latest_tag(self.cm, "https://github.com/Victor-IX/Blender-Launcher-V2/releases/latest")
             if release_tag is None:
                 # This is ok because release_tag can only be None when
                 # update is invoked from CLI without a release tag
