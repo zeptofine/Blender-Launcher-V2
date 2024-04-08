@@ -249,9 +249,9 @@ def fill_blender_info(exe: Path, info: BuildInfo | None = None) -> tuple[datetim
                     "%Y-%m-%d %H:%M",
                 ).astimezone()
             except Exception:
-                strptime = datetime.now(tz=timezone.utc)
+                strptime = datetime.now().astimezone()
         else:
-            strptime = datetime.now(tz=timezone.utc)
+            strptime = datetime.now().astimezone()
     else:
         strptime = info.commit_time
 

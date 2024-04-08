@@ -807,7 +807,7 @@ class BlenderLauncher(BaseWindow):
                     widget.destroy()
 
         utcnow = localtime()
-        dt = datetime.fromtimestamp(mktime(utcnow), tz=timezone.utc)
+        dt = datetime.fromtimestamp(mktime(utcnow)).astimezone()
         set_last_time_checked_utc(dt)
         self.last_time_checked = dt
         self.app_state = AppState.IDLE
@@ -968,7 +968,6 @@ class BlenderLauncher(BaseWindow):
             self.latest_tag = latest_tag
         else:
             self.NewVersionButton.hide()
-
 
     def show_settings_window(self):
         self.settings_window = SettingsWindow(parent=self)
