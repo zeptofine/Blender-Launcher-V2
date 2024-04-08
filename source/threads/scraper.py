@@ -1,9 +1,7 @@
 from __future__ import annotations
-from operator import contains
 
 import distro
 import contextlib
-from distutils.command import build
 import json
 import logging
 import re
@@ -86,9 +84,10 @@ def get_latest_pre_release_tag(
                 platform_valid_tags.append(release["tag_name"])
 
     pre_release_tags = [release.lstrip("v") for release in platform_valid_tags]
+    valid_pre_release_tags = [tag for tag in pre_release_tags if semver.VersionInfo.is_valid(tag)]
 
-    if pre_release_tags:
-        tag = max(pre_release_tags, key=semver.VersionInfo.parse)
+    if valid_pre_release_tags:
+        tag = max(valid_pre_release_tags, key=semver.VersionInfo.parse)
         return f"v{tag}"
 
     r.release_conn()
