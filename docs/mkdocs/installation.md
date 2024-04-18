@@ -48,7 +48,7 @@ Install from AUR [blender-launcher-bin](https://aur.archlinux.org/packages/blend
 
 !!! info "About AUR Packages"
 
-    - The packages are based on this repo, but the AUR repos are not maintained by the maintainers
+    - The AUR packages are based on this repo, but they are not maintained by core contributors of BLV2. 
 
 !!! info "Blender Version Manager Users"
 
