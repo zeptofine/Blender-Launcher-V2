@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import distro
 import contextlib
 import json
 import logging
@@ -56,14 +57,39 @@ def get_latest_pre_release_tag(
     if r is None:
         return None
 
-    parsed_data = json.loads(r.data)
+    try:
+        parsed_data = json.loads(r.data)
+    except json.JSONDecodeError:
+        return None
 
-    pre_release_tags = [release["tag_name"].lstrip("v") for release in parsed_data]
+    platform = get_platform()
+
+    if platform.lower() == "linux":
+        for key in (
+            distro.id().title(),
+            distro.like().title(),
+            distro.id(),
+            distro.like(),
+        ):
+            if "ubuntu" in key.lower():
+                platform = "Ubuntu"
+                break
+
+    parsed_data = json.loads(r.data)
+    platform_valid_tags = []
+
+    for release in parsed_data:
+        for asset in release["assets"]:
+            if asset["name"].endswith(".zip") and platform.lower() in asset["name"].lower():
+                platform_valid_tags.append(release["tag_name"])
+
+    pre_release_tags = [release.lstrip("v") for release in platform_valid_tags]
     valid_pre_release_tags = [tag for tag in pre_release_tags if semver.VersionInfo.is_valid(tag)]
 
     if valid_pre_release_tags:
         tag = max(valid_pre_release_tags, key=semver.VersionInfo.parse)
         return f"v{tag}"
+
     r.release_conn()
     r.close()
 
