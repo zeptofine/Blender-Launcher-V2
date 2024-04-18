@@ -46,6 +46,10 @@ Install from AUR [blender-launcher-bin](https://aur.archlinux.org/packages/blend
     - Make sure that OS GLIBC version is 2.27 or higher otherwise try to build **Blender Launcher** from source manually following [Development](development.md) documentation page.
     - Consider installing [TopIcons Plus](https://extensions.gnome.org/extension/1031/topicons/) extension for proper tray icon support.
 
+!!! info "About AUR Packages"
+
+    - The packages are based on this repo, but the AUR repos are not maintained by the maintainers
+
 !!! info "Blender Version Manager Users"
 
     Since **Blender Launcher** is written from scratch with a different concept in mind it is strongly recommended not to use a **Root Folder** as **Library Folder**. Otherwise delete all builds from **Root Folder** or move them to `%Library Folder%\daily` directory.
