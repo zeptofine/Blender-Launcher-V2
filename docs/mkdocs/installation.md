@@ -10,6 +10,11 @@
 1. If this is a first launch, program will ask for choosing [Library Folder](library_folder.md)
 1. Enjoy!
 
+### For Archlinux Users
+
+Install from AUR [blender-launcher-bin](https://aur.archlinux.org/packages/blender-launcher-bin) or [blender-launcher-git](https://aur.archlinux.org/packages/blender-launcher-git) for experimental features
+
+
 ## Updating Blender Launcher
 
 ### Manual update
@@ -40,6 +45,10 @@
 
     - Make sure that OS GLIBC version is 2.27 or higher otherwise try to build **Blender Launcher** from source manually following [Development](development.md) documentation page.
     - Consider installing [TopIcons Plus](https://extensions.gnome.org/extension/1031/topicons/) extension for proper tray icon support.
+
+!!! info "About AUR Packages"
+
+    - The packages are based on this repo, but the AUR repos are not maintained by the maintainers
 
 !!! info "Blender Version Manager Users"
 
