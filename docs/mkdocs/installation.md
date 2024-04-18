@@ -10,6 +10,11 @@
 1. If this is a first launch, program will ask for choosing [Library Folder](library_folder.md)
 1. Enjoy!
 
+### For Archlinux Users
+
+Install from AUR [blender-launcher-bin](https://aur.archlinux.org/packages/blender-launcher-bin) or [blender-launcher-git](https://aur.archlinux.org/packages/blender-launcher-git) for experimental features
+
+
 ## Updating Blender Launcher
 
 ### Manual update
