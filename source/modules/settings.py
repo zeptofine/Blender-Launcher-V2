@@ -3,15 +3,15 @@ import os
 import shutil
 import sys
 from datetime import datetime, timezone
+from functools import cache
 from pathlib import Path
 
-from modules._platform import get_cwd, get_platform, get_config_path
+from modules._platform import get_config_file, get_config_path, get_cwd, get_platform, local_config, user_config
 from PyQt5.QtCore import QSettings
 from semver import Version
 
-from .build_info import parse_blender_ver
-
-ISO_EPOCH = datetime.fromtimestamp(0, tz=timezone.utc).isoformat()
+EPOCH = datetime.fromtimestamp(0, tz=timezone.utc)
+ISO_EPOCH = EPOCH.isoformat()
 
 # TODO: Simplify this
 
@@ -62,10 +62,11 @@ proxy_types = {
 
 
 def get_settings():
-    config_path = Path(get_config_path())
-    if not config_path.is_dir():
-        config_path.mkdir()
-    return QSettings((config_path.absolute() / "Blender Launcher.ini").as_posix(), QSettings.Format.IniFormat)
+    file = get_config_file()
+    if not file.parent.is_dir():
+        file.parent.mkdir(parents=True)
+
+    return QSettings(get_config_file().as_posix(), QSettings.Format.IniFormat)
 
 
 def get_library_folder():
@@ -409,7 +410,7 @@ def get_minimum_blender_stable_version() -> Version:
 
 
 def set_minimum_blender_stable_version(v: Version):
-    get_settings().setValue("minimum_blender_stable_version", float(f"{v.major}.{v.minor}"))
+    get_settings().setValue("minimum_blender_stable_version", f"{v.major}.{v.minor}")
 
 
 def get_scrape_stable_builds() -> bool:
@@ -456,6 +457,14 @@ def set_worker_thread_count(v: int):
     get_settings().setValue("worker_thread_count", v)
 
 
+def get_use_pre_release_builds():
+    return get_settings().value("use_pre_release_builds", defaultValue=False, type=bool)
+
+
+def set_use_pre_release_builds(b: bool):
+    get_settings().setValue("use_pre_release_builds", b)
+
+
 def get_use_system_titlebar():
     return get_settings().value("use_system_title_bar", defaultValue=False, type=bool)
 
@@ -463,11 +472,12 @@ def get_use_system_titlebar():
 def set_use_system_titlebar(b: bool):
     get_settings().setValue("use_system_title_bar", b)
 
-def migrate_config():
+
+def migrate_config(force=False):
     config_path = Path(get_config_path())
-    old_config = Path(get_cwd()) / "Blender Launcher.ini"
-    new_config = config_path     / "Blender Launcher.ini"
-    if old_config.is_file() and not new_config.is_file():
+    old_config = local_config()
+    new_config = user_config()
+    if (old_config.is_file() and not new_config.is_file()) or force:
         if not config_path.is_dir():
             config_path.mkdir()
         shutil.move(old_config.resolve(), new_config.resolve())

@@ -9,11 +9,17 @@ from pathlib import Path
 
 import modules._resources_rc
 from modules import argument_parsing as ap
-from modules._platform import _popen, get_cwd, get_launcher_name, get_platform, is_frozen, get_cache_path
+from modules._platform import _popen, get_cache_path, get_cwd, get_launcher_name, get_platform, is_frozen
 from PyQt5.QtWidgets import QApplication
+from semver import Version
 from windows.dialog_window import DialogWindow
 
-version = "2.0.24"
+version = Version(
+    2,
+    1,
+    24,
+    # prerelease="rc.1",
+)
 
 _ = gettext.gettext
 
@@ -24,7 +30,10 @@ if not cache_path.is_dir():
     cache_path.mkdir()
 logging.basicConfig(
     format=_format,
-    handlers=[logging.FileHandler(cache_path.absolute() / "Blender Launcher.log"), logging.StreamHandler(stream=sys.stdout)],
+    handlers=[
+        logging.FileHandler(cache_path.absolute() / "Blender Launcher.log"),
+        logging.StreamHandler(stream=sys.stdout),
+    ],
 )
 logger = logging.getLogger(__name__)
 
@@ -100,7 +109,7 @@ def main():
     # Create an instance of application and set its core properties
     app = QApplication([])
     app.setStyle("Fusion")
-    app.setApplicationVersion(version)
+    app.setApplicationVersion(str(version))
 
     set_lib_folder: Path | None = args.set_library_folder
     if set_lib_folder is not None:
@@ -174,7 +183,7 @@ def check_for_instance():
     socket.connectToServer("blender-launcher-server")
     is_running = socket.waitForConnected()
     if is_running:
-        socket.write(QByteArray(version.encode()))
+        socket.write(QByteArray(str(version).encode()))
         socket.waitForBytesWritten()
         socket.close()
         sys.exit()

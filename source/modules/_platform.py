@@ -178,6 +178,7 @@ def get_cwd():
 
     return Path.cwd()
 
+
 @cache
 def get_config_path():
     platform = get_platform()
@@ -185,11 +186,36 @@ def get_config_path():
     config_path = ""
     if platform == "Windows":
         config_path = os.getenv("LOCALAPPDATA")
-    elif platform in {"Linux", "macOS"}:
-        config_path = os.getenv("XDG_CONFIG_HOME")
+    elif platform == "Linux":
+        # Borrowed from platformdirs
+        path = os.environ.get("XDG_CONFIG_HOME", "")
+        if not path.strip():
+            path = os.path.expanduser("~/.config")
+        config_path = path
+    elif platform == "macOS":
+        config_path = os.path.expanduser("~/Library/Application Support")
+
     if not config_path:
-        return os.getcwd()
+        return get_cwd()
     return os.path.join(config_path, "Blender Launcher")
+
+
+@cache
+def local_config():
+    return get_cwd() / "Blender Launcher.ini"
+
+
+@cache
+def user_config():
+    return Path(get_config_path()) / "Blender Launcher.ini"
+
+
+def get_config_file():
+    # Prioritize local settings for portability
+    if (local := local_config()).exists():
+        return local
+    return user_config()
+
 
 @cache
 def get_cache_path():
@@ -198,8 +224,17 @@ def get_cache_path():
     cache_path = ""
     if platform == "Windows":
         cache_path = os.getenv("LOCALAPPDATA")
-    elif platform in {"Linux", "macOS"}:
-        cache_path = os.getenv("XDG_CACHE_HOME")
+    elif platform == "Linux":
+        # Borrowed from platformdirs
+        cache_path = os.environ.get("XDG_CACHE_HOME", "")
+        if not cache_path.strip():
+            cache_path = os.path.expanduser("~/.cache")
+    elif platform == "macOS":
+        cache_path = os.path.expanduser("~/Library/Logs")
     if not cache_path:
         return os.getcwd()
     return os.path.join(cache_path, "Blender Launcher")
+
+
+def stable_cache_path():
+    return Path(get_cache_path(), "stable_builds.json")

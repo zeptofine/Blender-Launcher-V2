@@ -16,7 +16,7 @@ from time import localtime, mktime, strftime
 from typing import TYPE_CHECKING
 
 from items.base_list_widget_item import BaseListWidgetItem
-from modules._platform import _popen, get_cwd, get_launcher_name, get_platform, is_frozen, set_locale
+from modules._platform import _popen, get_cwd, get_launcher_name, get_platform, is_frozen
 from modules.connection_manager import ConnectionManager
 from modules.enums import MessageType
 from modules.settings import (
@@ -38,14 +38,12 @@ from modules.settings import (
     get_scrape_stable_builds,
     get_show_tray_icon,
     get_sync_library_and_downloads_pages,
+    get_use_pre_release_builds,
     get_use_system_titlebar,
     get_worker_thread_count,
     is_library_folder_valid,
     set_last_time_checked_utc,
     set_library_folder,
-    set_scrape_automated_builds,
-    set_scrape_stable_builds,
-    migrate_config,
 )
 from modules.tasks import Task, TaskQueue, TaskWorker
 from PyQt5.QtCore import QSize, Qt, pyqtSignal, pyqtSlot
@@ -111,7 +109,7 @@ class BlenderLauncher(BaseWindow):
     quit_signal = pyqtSignal()
     quick_launch_fail_signal = pyqtSignal()
 
-    def __init__(self, app: QApplication, version, offline: bool = False):
+    def __init__(self, app: QApplication, version: Version, offline: bool = False):
         super().__init__(app=app, version=version)
         self.resize(640, 480)
         self.setMinimumSize(QSize(640, 480))
@@ -139,7 +137,7 @@ class BlenderLauncher(BaseWindow):
 
         # Global scope
         self.app = app
-        self.version = version
+        self.version: Version = version
         self.offline = offline
         self.favorite: BaseBuildWidget | None = None
         self.status = "Unknown"
@@ -172,7 +170,9 @@ class BlenderLauncher(BaseWindow):
         self.scraper.new_bl_version.connect(self.set_version)
         self.scraper.finished.connect(self.scraper_finished)
 
-        migrate_config()
+        # Vesrion Update
+        self.pre_release_build = get_use_pre_release_builds
+
         # Check library folder
         if is_library_folder_valid() is False:
             self.dlg = DialogWindow(
@@ -360,10 +360,6 @@ class BlenderLauncher(BaseWindow):
         self.LibraryToolBox.setCurrentIndex(get_default_library_page())
         self.DownloadsToolBox.setCurrentIndex(get_default_downloads_page())
 
-        version_status = self.version
-        if not is_frozen():  # Add an asterisk to the statusbar version if running from source
-            version_status = f"{version_status}"
-
         # Status bar
         self.status_bar = QStatusBar(self)
         self.setStatusBar(self.status_bar)
@@ -380,7 +376,7 @@ class BlenderLauncher(BaseWindow):
         self.NewVersionButton = QPushButton()
         self.NewVersionButton.hide()
         self.NewVersionButton.clicked.connect(self.show_update_window)
-        self.statusbarVersion = QPushButton(version_status)
+        self.statusbarVersion = QPushButton(str(self.version))
         self.statusbarVersion.clicked.connect(self.show_changelog)
         self.statusbarVersion.setToolTip(
             "The version of Blender Launcher that is currently run. Press to check changelog."
@@ -485,7 +481,7 @@ class BlenderLauncher(BaseWindow):
             self.quick_launch()
 
     def show_changelog(self):
-        url = f"https://github.com/Victor-IX/Blender-Launcher-V2/releases/tag/v{self.version}"
+        url = f"https://github.com/Victor-IX/Blender-Launcher-V2/releases/tag/v{self.version!s}"
         webbrowser.open(url)
 
     def toggle_sync_library_and_downloads_pages(self, is_sync):
@@ -811,7 +807,7 @@ class BlenderLauncher(BaseWindow):
                     widget.destroy()
 
         utcnow = localtime()
-        dt = datetime.fromtimestamp(mktime(utcnow), tz=timezone.utc)
+        dt = datetime.fromtimestamp(mktime(utcnow)).astimezone()
         set_last_time_checked_utc(dt)
         self.last_time_checked = dt
         self.app_state = AppState.IDLE
@@ -953,19 +949,25 @@ class BlenderLauncher(BaseWindow):
         self.statusbarLabel.setText(self.status)
 
     def set_version(self, latest_tag):
-        if "dev" in self.version:
+        if self.version.build is not None and "dev" in self.version.build:
             return
         latest = Version.parse(latest_tag[1:])
-        current = Version.parse(self.version)
+
+        # Set the verison to 0.0.0 to force update to the latest stable version
+        if not get_use_pre_release_builds() and self.version.prerelease is not None and "rc" in self.version.prerelease:
+            current = Version(0, 0, 0)
+        else:
+            current = self.version
+
         logging.debug(f"Latest version on GitHub is {latest}")
 
         if latest > current:
-            if latest_tag not in self.notification_pool:
-                self.NewVersionButton.setText(f"Update to version {latest_tag.replace('v', '')}")
-                self.NewVersionButton.show()
-                self.show_message("New version of Blender Launcher is available!", value=latest_tag)
-
+            self.NewVersionButton.setText(f"Update to version {latest_tag.replace('v', '')}")
+            self.NewVersionButton.show()
+            self.show_message("New version of Blender Launcher is available!", value=latest_tag)
             self.latest_tag = latest_tag
+        else:
+            self.NewVersionButton.hide()
 
     def show_settings_window(self):
         self.settings_window = SettingsWindow(parent=self)
@@ -1001,7 +1003,7 @@ class BlenderLauncher(BaseWindow):
         assert self.socket is not None
         data = self.socket.readAll()
 
-        if str(data, encoding="ascii") != self.version:
+        if str(data, encoding="ascii") != str(self.version):
             self.dlg = DialogWindow(
                 parent=self,
                 title="Warning",
@@ -1041,6 +1043,5 @@ class BlenderLauncher(BaseWindow):
             # sys.executable should be something like /.../Blender Launcher.app/Contents/MacOS/Blender Launcher
             app = Path(sys.executable).parent.parent.parent
             _popen(f"open -n {shlex.quote(str(app))}")
-
 
         self.destroy()

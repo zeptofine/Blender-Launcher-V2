@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import ssl
 import sys
-from typing import Union
+from typing import TYPE_CHECKING, Union
 
 from modules._platform import get_cwd, get_platform_full, is_frozen
 from modules.settings import (
@@ -16,6 +16,9 @@ from modules.settings import (
 from PyQt5.QtCore import QObject, pyqtSignal
 from urllib3 import PoolManager, ProxyManager, make_headers
 from urllib3.contrib.socks import SOCKSProxyManager
+
+if TYPE_CHECKING:
+    from semver import Version
 
 proxy_types_chemes = {
     1: "http://",
@@ -35,7 +38,7 @@ REQUEST_MANAGER = Union[PoolManager, ProxyManager, SOCKSProxyManager]
 class ConnectionManager(QObject):
     error = pyqtSignal()
 
-    def __init__(self, version, proxy_type=None) -> None:
+    def __init__(self, version: Version, proxy_type=None) -> None:
         super().__init__()
         self.version = version
         if proxy_type is None:
@@ -44,7 +47,7 @@ class ConnectionManager(QObject):
         self.manager: REQUEST_MANAGER | None = None
 
         # Basic Headers
-        self._headers = {"user-agent": f"Blender Launcher/{self.version} ({get_platform_full()})"}
+        self._headers = {"user-agent": f"Blender-Launcher-v2/{self.version!s} ({get_platform_full()})"}
 
         # Get custom certificates file path
         if is_frozen() is True:

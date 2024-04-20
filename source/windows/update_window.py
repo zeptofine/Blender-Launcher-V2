@@ -63,7 +63,7 @@ class BlenderLauncherUpdater(BaseWindow):
 
         if release_tag is None:
             assert self.manager is not None
-            release_tag = get_latest_tag(self.cm)
+            release_tag = get_latest_tag(self.cm, "https://github.com/Victor-IX/Blender-Launcher-V2/releases/latest")
             if release_tag is None:
                 # This is ok because release_tag can only be None when
                 # update is invoked from CLI without a release tag

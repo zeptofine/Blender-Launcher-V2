@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from functools import cache
 from typing import TYPE_CHECKING
 
-from modules._platform import _check_output, get_platform, set_locale
+from modules._platform import _check_output, get_platform, reset_locale, set_locale
 from modules.task import Task
 from PyQt5.QtCore import pyqtSignal
 from semver import Version
@@ -166,8 +167,14 @@ class BuildInfo:
             else:
                 b = subv.split("-", 1)[-1].title()
             return b
-        if v.prerelease is not None and v.prerelease.startswith("rc"):
-            return f"Release Candidate {v.prerelease[2:]}"
+        if v.prerelease is not None:
+            if v.prerelease.startswith("rc"):
+                return f"Release Candidate {v.prerelease[2:]}"
+            if sys.platform == "darwin" and branch == "stable":
+                pre = v.prerelease
+                if pre.startswith("macos"):
+                    pre = pre.removeprefix("macos-")
+                return f"{branch.title()} - {pre}"
 
         return branch.title()
 
@@ -184,13 +191,13 @@ class BuildInfo:
         return v.replace(prerelease=prerelease)
 
     @classmethod
-    def from_dict(cls, path: Path, blinfo: dict):
+    def from_dict(cls, link: str, blinfo: dict):
         try:
             dt = datetime.fromisoformat(blinfo["commit_time"])
         except ValueError:  # old file version compatibility
             dt = datetime.strptime(blinfo["commit_time"], "%d-%b-%y-%H:%M").astimezone()
         return cls(
-            path.as_posix(),
+            link,
             blinfo["subversion"],
             blinfo["build_hash"],
             dt,
@@ -224,10 +231,9 @@ class BuildInfo:
         return data
 
 
-def get_blender_ver_info(exe: Path) -> tuple[datetime, str, str, str]:
+def fill_blender_info(exe: Path, info: BuildInfo | None = None) -> tuple[datetime, str, str, str]:
+    set_locale()
     version = _check_output([exe.as_posix(), "-v"]).decode("UTF-8")
-
-    strptime = datetime.now(tz=timezone.utc)
     build_hash = ""
     subversion = ""
     custom_name = ""
@@ -235,11 +241,20 @@ def get_blender_ver_info(exe: Path) -> tuple[datetime, str, str, str]:
     ctime = re.search("build commit time: (.*)", version)
     cdate = re.search("build commit date: (.*)", version)
 
-    if ctime is not None and cdate is not None:
-        strptime = datetime.strptime(
-            f"{cdate[1].rstrip()} {ctime[1].rstrip()}",
-            "%Y-%m-%d %H:%M",
-        ).astimezone()
+    if info is None:
+        if ctime is not None and cdate is not None:
+            try:
+                strptime = datetime.strptime(
+                    f"{cdate[1].rstrip()} {ctime[1].rstrip()}",
+                    "%Y-%m-%d %H:%M",
+                ).astimezone()
+            except Exception:
+                strptime = datetime.now().astimezone()
+        else:
+            strptime = datetime.now().astimezone()
+    else:
+        strptime = info.commit_time
+
     if s := re.search("build hash: (.*)", version):
         build_hash = s[1].rstrip()
 
@@ -248,6 +263,8 @@ def get_blender_ver_info(exe: Path) -> tuple[datetime, str, str, str]:
     else:
         s = version.splitlines()[0].strip()
         custom_name, subversion = s.rsplit(" ", 1)
+
+    reset_locale()
 
     return (
         strptime,
@@ -261,11 +278,8 @@ def read_blender_version(
     path: Path,
     old_build_info: BuildInfo | None = None,
     archive_name=None,
-    custom_exe=None,
 ) -> BuildInfo:
-    if custom_exe is not None:
-        exe_path = path / custom_exe
-    elif old_build_info is not None and old_build_info.custom_executable:
+    if old_build_info is not None and old_build_info.custom_executable:
         exe_path = path / old_build_info.custom_executable
     else:
         blender_exe = {
@@ -275,8 +289,7 @@ def read_blender_version(
         }.get(get_platform(), "blender")
 
         exe_path = path / blender_exe
-
-    commit_time, build_hash, subversion, custom_name = get_blender_ver_info(exe_path)
+    commit_time, build_hash, subversion, custom_name = fill_blender_info(exe_path, info=old_build_info)
 
     subfolder = path.parent.name
 
@@ -302,9 +315,11 @@ def read_blender_version(
     # Recover user defined favorites builds information
     is_favorite = False
 
+    custom_exe = None
     if old_build_info is not None:
         custom_name = old_build_info.custom_name
         is_favorite = old_build_info.is_favorite
+        custom_exe = old_build_info.custom_executable
 
     return BuildInfo(
         path.as_posix(),
@@ -335,10 +350,10 @@ class WriteBuildTask(Task):
             raise
 
 
-def read_build_info(
+def fill_build_info(
     path: Path,
     archive_name: str | None = None,
-    custom_exe: str | None = None,
+    info: BuildInfo | None = None,
     auto_write=True,
 ):
     blinfo = path / ".blinfo"
@@ -348,7 +363,7 @@ def read_build_info(
         with blinfo.open(encoding="utf-8") as file:
             data = json.load(file)
 
-        build_info = BuildInfo.from_dict(path, data["blinfo"][0])
+        build_info = BuildInfo.from_dict(path.as_posix(), data["blinfo"][0])
 
         # Check if file version changed
         if ("file_version" not in data) or (data["file_version"] != BuildInfo.file_version):
@@ -356,7 +371,6 @@ def read_build_info(
                 path,
                 build_info,
                 archive_name,
-                custom_exe,
             )
             new_build_info.write_to(path)
             return new_build_info
@@ -365,8 +379,8 @@ def read_build_info(
     # Generating new build information
     build_info = read_blender_version(
         path,
+        old_build_info=info,
         archive_name=archive_name,
-        custom_exe=custom_exe,
     )
     if auto_write:
         build_info.write_to(path)
@@ -376,8 +390,8 @@ def read_build_info(
 @dataclass(frozen=True)
 class ReadBuildTask(Task):
     path: Path
+    info: BuildInfo | None = None
     archive_name: str | None = None
-    version: Version | None = None
     custom_exe: str | None = None
     auto_write: bool = True
 
@@ -386,12 +400,7 @@ class ReadBuildTask(Task):
 
     def run(self):
         try:
-            auto_write = self.auto_write and self.version is None
-            build_info = read_build_info(self.path, self.archive_name, self.custom_exe, auto_write)
-            if self.version is not None:
-                build_info.subversion = str(self.version)
-                if self.auto_write:
-                    build_info.write_to(self.path)
+            build_info = fill_build_info(self.path, self.archive_name, self.info, self.auto_write)
             self.finished.emit(build_info)
 
         except Exception as e:
