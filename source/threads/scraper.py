@@ -298,8 +298,11 @@ class Scraper(QThread):
         # Convert string to Verison
         minimum_version_index = get_minimum_blender_stable_version()
         version_at_index = list(blender_minimum_versions.keys())[minimum_version_index]
-        major, minor = version_at_index.split(".")
-        minimum_smver_version = Version(major, minor, 0)
+        if version_at_index == "None":
+            minimum_smver_version = Version(0, 0, 0)
+        else:
+            major, minor = version_at_index.split(".")
+            minimum_smver_version = Version(major, minor, 0)
 
         cache_modified = False
         for release in releases:

@@ -72,6 +72,7 @@ blender_minimum_versions = {
     "2.90": 8,
     "2.80": 9,
     "2.79": 10,
+    "None": 11,
 }
 
 
