@@ -36,7 +36,7 @@
     # ^ Execute the command this returns with!
     ```
 
-2. Install dependencies
+3. Install dependencies
 
     === "Minimum set of packages for building executable"
 
@@ -84,7 +84,7 @@ python source/main.py
         sh build_linux.sh
         ```
 
-    2. Look for bundled app under `Blender-Launcher-V2\dist\release` folder
+    2. Look for bundled app under `Blender-Launcher-V2/dist/release` folder
 
 
 ## Documentation

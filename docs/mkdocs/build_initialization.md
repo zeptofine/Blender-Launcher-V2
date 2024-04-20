@@ -8,7 +8,7 @@
       <figcaption>Custom Build Library</figcaption>
     </figure>
 
-Build initialization is used to set all the Blender Build information on the first installation of a [Custom Build](http://127.0.0.1:8000/library_folder/#custom).
+Build initialization is used to set all the Blender Build information on the first installation of a [Custom Build](library_folder.md#custom).
 
 ## Initialization Options 
 

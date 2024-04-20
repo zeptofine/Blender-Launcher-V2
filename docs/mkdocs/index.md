@@ -39,7 +39,7 @@ The goal of Blender Launcher is to make it easier to stay up to date with the la
 
 ## What features does it have?
 
-Compared to its [predecessor](https://github.com/Victor-IX/Blender-Version-Manager) Blender Launcher introduces a number of major improvements:
+Compared to its [predecessor](https://github.com/DotBow/Blender-Version-Manager) Blender Launcher introduces a number of major improvements:
 
 * Rewritten from the ground up for better stability and extensibility
 * All official builds are available:

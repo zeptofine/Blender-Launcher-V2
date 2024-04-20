@@ -8,7 +8,7 @@ To open the **Settings Window**, use the button with a gear icon on the top left
 
 ## General
 
-![alt text](imgs/settings_window_general.png)
+![General page of Settings](imgs/settings_window_general.png)
 
 ### Library Folder
 
@@ -35,7 +35,7 @@ To open the **Settings Window**, use the button with a gear icon on the top left
 
 ## Appearance
 
-![alt text](imgs/settings_window_appearance.png)
+![Appearance page of Settings](imgs/settings_window_appearance.png)
 
 ### Window
 
@@ -79,7 +79,7 @@ To open the **Settings Window**, use the button with a gear icon on the top left
 
 ## Connection
 
-![alt text](imgs/settings_window_connection.png)
+![Connection page of Settings](imgs/settings_window_connection.png)
 
 ### Proxy
 
@@ -105,7 +105,7 @@ To open the **Settings Window**, use the button with a gear icon on the top left
 
 ## Blender Builds
 
-![alt text](imgs/settings_window_blenderbuilds.png)
+![Blender Builds page of Settings](imgs/settings_window_blenderbuilds.png)
 
 ### Checking For Builds
 

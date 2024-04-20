@@ -150,15 +150,15 @@ Build context menu can be accessed via right click on build item.
 Downloads tab is a place where all available official builds are shown based on category. Each category contains a list of items which represents a build information. Downloadable build item shows following information from left to right:
 
 1. Download button
-1. Version number including subversion or phase (Alpha, Beta)
-1. Branch name
-1. Upload date and time of build to server
+2. Version number including subversion or phase (Alpha, Beta)
+3. Branch name
+4. Upload date and time of build to server
 
     !!! tip
 
         ++"Left Button"++ click on date and time label will show hash number and vice versa.
 
-1. New build indicator
+5. New build indicator
 
 !!! tip
 
