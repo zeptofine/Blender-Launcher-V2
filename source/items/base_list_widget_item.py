@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from typing import TYPE_CHECKING, Callable
-
+from datetime import timezone
 from modules._platform import set_locale
 from PyQt5.QtWidgets import QListWidgetItem
 
@@ -29,6 +29,10 @@ class BaseListWidgetItem(QListWidgetItem):
     def compare_datetime(self, other):
         if (self.date is None) or (other.date is None):
             return False
+
+        if self.date.tzinfo is None or other.date.tzinfo is None:
+            self.date = self.date.replace(tzinfo=timezone.utc)
+            other.date = other.date.replace(tzinfo=timezone.utc)
 
         return self.date > other.date
 
