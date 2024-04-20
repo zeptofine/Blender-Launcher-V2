@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 from urllib.parse import urljoin
 
 import semver
+from semver import Version
 from bs4 import BeautifulSoup, SoupStrainer
 from modules._platform import get_platform, reset_locale, set_locale, stable_cache_path
 from modules.build_info import BuildInfo, parse_blender_ver
@@ -21,6 +22,7 @@ from modules.settings import (
     get_scrape_automated_builds,
     get_scrape_stable_builds,
     get_use_pre_release_builds,
+    blender_minimum_versions,
 )
 from PyQt5.QtCore import QThread, pyqtSignal
 
@@ -293,7 +295,12 @@ class Scraper(QThread):
                 yield from build.assets
             return
 
-        minimum_version = get_minimum_blender_stable_version()
+        # Convert string to Verison
+        minimum_version_index = get_minimum_blender_stable_version()
+        version_at_index = list(blender_minimum_versions.keys())[minimum_version_index]
+        major, minor = version_at_index.split(".")
+        minimum_smver_version = Version(major, minor, 0)
+
         cache_modified = False
         for release in releases:
             href = release["href"]
@@ -302,7 +309,7 @@ class Scraper(QThread):
                 continue
 
             ver = parse_blender_ver(match.group(0))
-            if ver >= minimum_version:
+            if ver >= minimum_smver_version:
                 # Check modified dates of folders, if available
                 date_sibling = release.find_next_sibling(string=True)
                 if date_sibling:
