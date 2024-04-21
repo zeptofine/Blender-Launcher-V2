@@ -1,5 +1,7 @@
 #!/usr/bin/bash
 
+cd..
+
 # get the distro and get the Title version
 distro_id=$(python3 -c "import distro; print(distro.id().title())")
 version=$1

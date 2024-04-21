@@ -1,3 +1,4 @@
+cd..
 PYTHONOPTIMIZE=2 pyinstaller \
     --windowed \
     --icon "source/resources/icons/bl/bl.icns" \

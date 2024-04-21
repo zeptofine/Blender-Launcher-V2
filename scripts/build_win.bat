@@ -1,3 +1,5 @@
+cd..
+
 if exist __pycache__ rd /S /Q __pycache__
 if exist build rd /S /Q build
 if exist "dist/release" rd /S /Q "dist/release"
