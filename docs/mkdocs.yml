@@ -6,7 +6,10 @@ nav:
     - User Interface: user_interface.md
     - Library Folder: library_folder.md
     - Settings: settings.md
+    - Manual Blender Installation: manual_build_installation.md
+    - Build Initialization: build_initialization.md
     - Troubleshooting: troubleshooting.md
+    - Known Issues: known_issues.md
     - Feature Request: feature_request.md
     - Development: development.md
 docs_dir: mkdocs
