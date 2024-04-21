@@ -60,7 +60,7 @@
 python source/main.py
 ```
 
-## Building Blender Launcher executable
+## Building Blender Launcher .exe
 
 !!! warning
 
@@ -101,7 +101,7 @@ python source/main.py
 === "Linux"
     1. Run the shell script file
         ```
-        #TODO Linux Command
+        sh .\script\mkdocs_serve.sh
         ```
     2. [Open the Documentation](http://127.0.0.1:8000/) in a web browser.
 
@@ -123,5 +123,5 @@ Make the desired modifications in the .md files.
 === "Linux"
     1. Run the shell script file
         ```
-        #TODO Linux Command
+        sh .\script\mkdocs_publish.sh
         ```

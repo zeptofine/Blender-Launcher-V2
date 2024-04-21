@@ -24,7 +24,7 @@ Before creating an issue, please check the following:
 
 * Blender Launcher logs warnings and errors into `BL.log` by default. To retrieve additional useful debug information use `-debug` flag (compatible with debugging releases):
 
-    === "Windows"
+    === "Windows CMD"
 
         ```
         .\"Blender Launcher.exe" -debug

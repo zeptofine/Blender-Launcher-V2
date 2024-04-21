@@ -20,7 +20,7 @@ There is known issue related to Qt and some Linux distributions like Mint where 
     ./Blender\ Launcher -set-library-folder "%PATH%"
     ```
 
-=== "Windows"
+=== "Windows CMD"
 
     ```
     "Blender Launcher.exe" -set-library-folder "%PATH%"

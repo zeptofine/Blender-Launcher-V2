@@ -9,6 +9,11 @@
 [:fontawesome-solid-download: All Releases](https://github.com/Victor-IX/Blender-Launcher-V2/releases){: .md-button .md-button--primary style="display: inline-block; float: right; width: 33%; text-align: center;"}
 
 <br/>
+<br/>
+
+## Original [Project](https://github.com/DotBow/Blender-Launcher) By [DotBow](https://github.com/DotBow)
+
+> The **Blender Laucnher V2** project exists because DotBow/Blender-Launcher has been inactive since October of 2022. It was archived on the 28th of Nov, 2023 and will no longer be receiving updates.
 
 ## What is it?
 
