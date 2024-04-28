@@ -16,9 +16,9 @@ from windows.dialog_window import DialogWindow
 
 version = Version(
     2,
-    1,
-    24,
-    # prerelease="rc.1",
+    2,
+    0,
+    prerelease="rc.1",
 )
 
 _ = gettext.gettext
