@@ -1,4 +1,5 @@
 cd..
+ls
 
 if exist __pycache__ rd /S /Q __pycache__
 if exist build rd /S /Q build
