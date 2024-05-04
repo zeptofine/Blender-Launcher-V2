@@ -634,10 +634,11 @@ class BlenderLauncher(BaseWindow):
             self._show()
         elif reason == QSystemTrayIcon.ActivationReason.MiddleClick:
             self.quick_launch()
-
+            # INFO: Middle click dose not work anymore on new Windows versions with PyQt5
+            # Middle click currently return the Trigger reason
         elif reason == QSystemTrayIcon.ActivationReason.Context:
             self.tray_menu.trigger()
-
+            
     def _aboutToQuit(self):
         self.quit_()
 
