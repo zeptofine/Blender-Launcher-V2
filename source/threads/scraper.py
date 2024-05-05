@@ -177,13 +177,25 @@ class Scraper(QThread):
                 continue
 
             data = json.loads(r.data)
+            build_found = False
+            
             for build in data:
                 if (
                     build["platform"] == self.json_platform
                     and build["architecture"].lower() == self.architecture.lower()
                     and self.b3d_link.match(build["file_name"])
                 ):
+                    build_found = True
                     yield self.new_build_from_dict(build, branch_type)
+
+            if not build_found:
+                logger.warning(
+                    f"No builds found for {branch_type} build on {self.platform} architecture {self.architecture}"
+                )
+                
+                for build in data:
+                    if build["platform"] == self.json_platform and self.b3d_link.match(build["file_name"]):
+                        yield self.new_build_from_dict(build, branch_type)
 
     def new_build_from_dict(self, build, branch_type):
         dt = datetime.fromtimestamp(build["file_mtime"], tz=timezone.utc)
