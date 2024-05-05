@@ -280,6 +280,14 @@ def set_show_tray_icon(is_checked):
     get_settings().setValue("show_tray_icon", is_checked)
 
 
+def get_tray_icon_notified():
+    return get_settings().value("Internal/tray_icon_notified", defaultValue=False, type=bool)
+
+
+def set_tray_icon_notified(b=True):
+    get_settings().setValue("Internal/tray_icon_notified", b)
+
+
 def get_launch_blender_no_console():
     return get_settings().value("launch_blender_no_console", type=bool)
 
