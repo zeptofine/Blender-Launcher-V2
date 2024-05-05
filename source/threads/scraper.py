@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import distro
 import contextlib
 import json
 import logging
@@ -11,6 +10,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from urllib.parse import urljoin
 
+import distro
 import semver
 from bs4 import BeautifulSoup, SoupStrainer
 from modules._platform import get_platform, reset_locale, set_locale, stable_cache_path
@@ -190,6 +190,9 @@ class Scraper(QThread):
             build_var = build["release_cycle"]
         if build["branch"] and branch_type == "experimental":
             build_var = build["branch"]
+
+        if "architecture" in build:
+            build_var += " | " + build["architecture"]
 
         if build_var:
             subversion = subversion.replace(prerelease=build_var)
