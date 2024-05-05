@@ -38,12 +38,14 @@ from modules.settings import (
     get_scrape_stable_builds,
     get_show_tray_icon,
     get_sync_library_and_downloads_pages,
+    get_tray_icon_notified,
     get_use_pre_release_builds,
     get_use_system_titlebar,
     get_worker_thread_count,
     is_library_folder_valid,
     set_last_time_checked_utc,
     set_library_folder,
+    set_tray_icon_notified,
 )
 from modules.tasks import Task, TaskQueue, TaskWorker
 from PyQt5.QtCore import QSize, Qt, pyqtSignal, pyqtSlot
@@ -638,7 +640,7 @@ class BlenderLauncher(BaseWindow):
             # Middle click currently return the Trigger reason
         elif reason == QSystemTrayIcon.ActivationReason.Context:
             self.tray_menu.trigger()
-            
+
     def _aboutToQuit(self):
         self.quit_()
 
@@ -988,6 +990,12 @@ class BlenderLauncher(BaseWindow):
 
     def closeEvent(self, event):
         if get_show_tray_icon():
+            if not get_tray_icon_notified():
+                self.show_message(
+                    "Blender Launcher V2 is minimized to the system tray. "
+                    '\nDisable "Show Tray Icon" in the settings to disable this.'
+                )
+                set_tray_icon_notified()
             event.ignore()
             self.hide()
             self.close_signal.emit()
