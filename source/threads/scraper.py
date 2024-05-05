@@ -192,6 +192,8 @@ class Scraper(QThread):
             build_var = build["branch"]
 
         if "architecture" in build:
+            if build["architecture"] == "amd64":
+                build["architecture"] = "x86_64"
             build_var += " | " + build["architecture"]
 
         if build_var:
