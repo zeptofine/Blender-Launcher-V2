@@ -4,7 +4,7 @@ import contextlib
 import json
 import logging
 import re
-import platform
+
 from datetime import datetime, timezone
 from itertools import chain
 from pathlib import Path
