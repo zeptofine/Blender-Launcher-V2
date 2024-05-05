@@ -177,27 +177,27 @@ class Scraper(QThread):
                 continue
 
             data = json.loads(r.data)
-            build_found = False
-            
+            architecture_specific_build = False
+
             for build in data:
                 if (
                     build["platform"] == self.json_platform
                     and build["architecture"].lower() == self.architecture.lower()
                     and self.b3d_link.match(build["file_name"])
                 ):
-                    build_found = True
-                    yield self.new_build_from_dict(build, branch_type)
+                    architecture_specific_build = True
+                    yield self.new_build_from_dict(build, branch_type, architecture_specific_build)
 
-            if not build_found:
+            if not architecture_specific_build:
                 logger.warning(
                     f"No builds found for {branch_type} build on {self.platform} architecture {self.architecture}"
                 )
-                
+
                 for build in data:
                     if build["platform"] == self.json_platform and self.b3d_link.match(build["file_name"]):
-                        yield self.new_build_from_dict(build, branch_type)
+                        yield self.new_build_from_dict(build, branch_type, architecture_specific_build)
 
-    def new_build_from_dict(self, build, branch_type):
+    def new_build_from_dict(self, build, branch_type, architecture_specific_build):
         dt = datetime.fromtimestamp(build["file_mtime"], tz=timezone.utc)
 
         subversion = parse_blender_ver(build["version"])
@@ -209,7 +209,7 @@ class Scraper(QThread):
         if build["branch"] and branch_type == "experimental":
             build_var = build["branch"]
 
-        if "architecture" in build:
+        if "architecture" in build and not architecture_specific_build:
             if build["architecture"] == "amd64":
                 build["architecture"] = "x86_64"
             build_var += " | " + build["architecture"]
