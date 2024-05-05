@@ -26,6 +26,10 @@ def get_platform():
 
 
 @cache
+def get_architecture():
+    return platform.machine()
+
+@cache
 def get_launcher_name():
     if sys.platform == "win32":
         return ("Blender Launcher.exe", "Blender Launcher Updater.exe")

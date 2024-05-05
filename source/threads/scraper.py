@@ -4,6 +4,7 @@ import contextlib
 import json
 import logging
 import re
+import platform
 from datetime import datetime, timezone
 from itertools import chain
 from pathlib import Path
@@ -13,7 +14,7 @@ from urllib.parse import urljoin
 import distro
 import semver
 from bs4 import BeautifulSoup, SoupStrainer
-from modules._platform import get_platform, reset_locale, set_locale, stable_cache_path
+from modules._platform import get_platform, reset_locale, set_locale, stable_cache_path, get_architecture
 from modules.build_info import BuildInfo, parse_blender_ver
 from modules.scraper_cache import StableCache
 from modules.settings import (
@@ -107,6 +108,7 @@ class Scraper(QThread):
         self.parent = parent
         self.manager: ConnectionManager = man
         self.platform = get_platform()
+        self.architecture = get_architecture()
 
         self.cache_path = stable_cache_path()
 
@@ -176,7 +178,11 @@ class Scraper(QThread):
 
             data = json.loads(r.data)
             for build in data:
-                if build["platform"] == self.json_platform and self.b3d_link.match(build["file_name"]):
+                if (
+                    build["platform"] == self.json_platform
+                    and build["architecture"].lower() == self.architecture.lower()
+                    and self.b3d_link.match(build["file_name"])
+                ):
                     yield self.new_build_from_dict(build, branch_type)
 
     def new_build_from_dict(self, build, branch_type):
