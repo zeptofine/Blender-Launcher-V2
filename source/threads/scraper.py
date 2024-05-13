@@ -1,19 +1,20 @@
 from __future__ import annotations
 
-import distro
 import contextlib
 import json
 import logging
 import re
+
 from datetime import datetime, timezone
 from itertools import chain
 from pathlib import Path
 from typing import TYPE_CHECKING
 from urllib.parse import urljoin
 
+import distro
 import semver
 from bs4 import BeautifulSoup, SoupStrainer
-from modules._platform import get_platform, reset_locale, set_locale, stable_cache_path
+from modules._platform import get_platform, reset_locale, set_locale, stable_cache_path, get_architecture
 from modules.build_info import BuildInfo, parse_blender_ver
 from modules.scraper_cache import StableCache
 from modules.settings import (
@@ -107,6 +108,7 @@ class Scraper(QThread):
         self.parent = parent
         self.manager: ConnectionManager = man
         self.platform = get_platform()
+        self.architecture = get_architecture()
 
         self.cache_path = stable_cache_path()
 
@@ -175,11 +177,27 @@ class Scraper(QThread):
                 continue
 
             data = json.loads(r.data)
-            for build in data:
-                if build["platform"] == self.json_platform and self.b3d_link.match(build["file_name"]):
-                    yield self.new_build_from_dict(build, branch_type)
+            architecture_specific_build = False
 
-    def new_build_from_dict(self, build, branch_type):
+            for build in data:
+                if (
+                    build["platform"] == self.json_platform
+                    and build["architecture"].lower() == self.architecture.lower()
+                    and self.b3d_link.match(build["file_name"])
+                ):
+                    architecture_specific_build = True
+                    yield self.new_build_from_dict(build, branch_type, architecture_specific_build)
+
+            if not architecture_specific_build:
+                logger.warning(
+                    f"No builds found for {branch_type} build on {self.platform} architecture {self.architecture}"
+                )
+
+                for build in data:
+                    if build["platform"] == self.json_platform and self.b3d_link.match(build["file_name"]):
+                        yield self.new_build_from_dict(build, branch_type, architecture_specific_build)
+
+    def new_build_from_dict(self, build, branch_type, architecture_specific_build):
         dt = datetime.fromtimestamp(build["file_mtime"], tz=timezone.utc)
 
         subversion = parse_blender_ver(build["version"])
@@ -190,6 +208,11 @@ class Scraper(QThread):
             build_var = build["release_cycle"]
         if build["branch"] and branch_type == "experimental":
             build_var = build["branch"]
+
+        if "architecture" in build and not architecture_specific_build:
+            if build["architecture"] == "amd64":
+                build["architecture"] = "x86_64"
+            build_var += " | " + build["architecture"]
 
         if build_var:
             subversion = subversion.replace(prerelease=build_var)
