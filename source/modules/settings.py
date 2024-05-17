@@ -429,8 +429,7 @@ def get_minimum_blender_stable_version():
     value = get_settings().value("minimum_blender_stable_version")
 
     if value is not None and "." in value:
-        value = blender_minimum_versions[value]
-        return value
+        return blender_minimum_versions.get(value, 7)
     else:
         return get_settings().value("minimum_blender_stable_version", defaultValue=7, type=int)
 
