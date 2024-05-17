@@ -428,7 +428,7 @@ def set_check_for_new_builds_on_startup(b: bool):
 def get_minimum_blender_stable_version():
     value = get_settings().value("minimum_blender_stable_version")
 
-    if "." in value:
+    if value is not None and "." in value:
         value = blender_minimum_versions[value]
         return value
     else:
