@@ -129,6 +129,8 @@ class DownloadWidget(BaseBuildWidget):
                 self.showReleaseNotesAction.setText("Show Patch Details")
                 self.menu.addAction(self.showReleaseNotesAction)
 
+        self.list_widget.sortItems()
+
     def context_menu(self):
         if self.installed:
             self.installed.context_menu()
