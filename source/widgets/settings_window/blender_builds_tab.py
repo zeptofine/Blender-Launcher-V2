@@ -103,11 +103,11 @@ class BlenderBuildsTabWidget(SettingsFormWidget):
         self.show_daily_archive_builds.setChecked(get_show_daily_archive_builds())
         self.show_daily_archive_builds.clicked.connect(self.toggle_show_daily_archive_builds)
         self.show_experimental_archive_builds = QCheckBox(self)
-        self.show_experimental_archive_builds.setText("Show Experimental Builds")
+        self.show_experimental_archive_builds.setText("Show Experimental Archive Builds")
         self.show_experimental_archive_builds.setChecked(get_show_experimental_archive_builds())
         self.show_experimental_archive_builds.clicked.connect(self.toggle_show_experimental_archive_builds)
         self.show_patch_archive_builds = QCheckBox(self)
-        self.show_patch_archive_builds.setText("Show Patch Builds")
+        self.show_patch_archive_builds.setText("Show Patch Archive Builds")
         self.show_patch_archive_builds.setChecked(get_show_patch_archive_builds())
         self.show_patch_archive_builds.clicked.connect(self.toggle_show_patch_archive_builds)
 
