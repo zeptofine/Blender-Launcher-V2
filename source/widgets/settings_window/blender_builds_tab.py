@@ -1,3 +1,4 @@
+from requests import get
 from modules.settings import (
     favorite_pages,
     blender_minimum_versions,
@@ -15,6 +16,9 @@ from modules.settings import (
     get_quick_launch_key_seq,
     get_scrape_automated_builds,
     get_scrape_stable_builds,
+    get_show_daily_archive_builds,
+    get_show_experimental_archive_builds,
+    get_show_patch_archive_builds,
     set_bash_arguments,
     set_blender_startup_arguments,
     set_check_for_new_builds_automatically,
@@ -28,6 +32,9 @@ from modules.settings import (
     set_quick_launch_key_seq,
     set_scrape_automated_builds,
     set_scrape_stable_builds,
+    set_show_daily_archive_builds,
+    set_show_experimental_archive_builds,
+    set_show_patch_archive_builds,
 )
 from PyQt5 import QtGui
 from PyQt5.QtCore import Qt
@@ -90,6 +97,21 @@ class BlenderBuildsTabWidget(SettingsFormWidget):
         self.ScrapeAutomatedBuilds.clicked.connect(self.toggle_scrape_automated_builds)
         self.ScrapeAutomatedBuilds.setText("Scrape automated builds (daily/experimental/patch)")
 
+        # Show Archive Builds
+        self.show_daily_archive_builds = QCheckBox(self)
+        self.show_daily_archive_builds.setText("Show Daily Archive Builds")
+        self.show_daily_archive_builds.setChecked(get_show_daily_archive_builds())
+        self.show_daily_archive_builds.clicked.connect(self.toggle_show_daily_archive_builds)
+        self.show_experimental_archive_builds = QCheckBox(self)
+        self.show_experimental_archive_builds.setText("Show Experimental Builds")
+        self.show_experimental_archive_builds.setChecked(get_show_experimental_archive_builds())
+        self.show_experimental_archive_builds.clicked.connect(self.toggle_show_experimental_archive_builds)
+        self.show_patch_archive_builds = QCheckBox(self)
+        self.show_patch_archive_builds.setText("Show Patch Builds")
+        self.show_patch_archive_builds.setChecked(get_show_patch_archive_builds())
+        self.show_patch_archive_builds.clicked.connect(self.toggle_show_patch_archive_builds)
+
+        # Layout
         self.scraping_builds_layout = QGridLayout()
         self.scraping_builds_layout.addWidget(self.CheckForNewBuildsAutomatically, 0, 0, 1, 1)
         self.scraping_builds_layout.addWidget(self.NewBuildsCheckFrequency, 0, 1, 1, 1)
@@ -98,6 +120,9 @@ class BlenderBuildsTabWidget(SettingsFormWidget):
         self.scraping_builds_layout.addWidget(self.MinStableBlenderVer, 2, 1, 1, 1)
         self.scraping_builds_layout.addWidget(self.ScrapeStableBuilds, 3, 0, 1, 2)
         self.scraping_builds_layout.addWidget(self.ScrapeAutomatedBuilds, 4, 0, 1, 2)
+        self.scraping_builds_layout.addWidget(self.show_daily_archive_builds, 5, 0, 1, 2)
+        self.scraping_builds_layout.addWidget(self.show_experimental_archive_builds, 6, 0, 1, 2)
+        self.scraping_builds_layout.addWidget(self.show_patch_archive_builds, 7, 0, 1, 2)
         self.buildcheck_settings.setLayout(self.scraping_builds_layout)
 
         # Downloading builds settings
@@ -113,6 +138,7 @@ class BlenderBuildsTabWidget(SettingsFormWidget):
         self.MarkAsFavorite.setCurrentIndex(max(get_mark_as_favorite() - 1, 0))
         self.MarkAsFavorite.activated[str].connect(self.change_mark_as_favorite)
         self.MarkAsFavorite.setEnabled(self.EnableMarkAsFavorite.isChecked())
+
         # Install Template
         self.InstallTemplate = QCheckBox()
         self.InstallTemplate.setText("Install Template")
@@ -259,3 +285,15 @@ class BlenderBuildsTabWidget(SettingsFormWidget):
     def toggle_scrape_automated_builds(self, is_checked):
         set_scrape_automated_builds(is_checked)
         self.ScrapeAutomatedBuilds.setChecked(is_checked)
+
+    def toggle_show_daily_archive_builds(self, is_checked):
+        set_show_daily_archive_builds(is_checked)
+        self.show_daily_archive_builds.setChecked(is_checked)
+
+    def toggle_show_experimental_archive_builds(self, is_checked):
+        set_show_experimental_archive_builds(is_checked)
+        self.show_experimental_archive_builds.setChecked(is_checked)
+
+    def toggle_show_patch_archive_builds(self, is_checked):
+        set_show_patch_archive_builds(is_checked)
+        self.show_patch_archive_builds.setChecked(is_checked)
