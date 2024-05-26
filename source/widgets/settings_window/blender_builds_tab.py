@@ -1,4 +1,3 @@
-from requests import get
 from modules.settings import (
     favorite_pages,
     blender_minimum_versions,
