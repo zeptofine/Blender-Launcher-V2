@@ -23,6 +23,9 @@ from modules.settings import (
     get_scrape_automated_builds,
     get_scrape_stable_builds,
     get_use_pre_release_builds,
+    get_show_daily_archive_builds,
+    get_show_experimental_archive_builds,
+    get_show_patch_archive_builds,
     blender_minimum_versions,
 )
 from PyQt5.QtCore import QThread, pyqtSignal
@@ -171,7 +174,18 @@ class Scraper(QThread):
 
     def scrape_automated_releases(self):
         base_fmt = "https://builder.blender.org/download/{}/?format=json&v=1"
-        for branch_type in ("daily", "experimental", "patch"):
+
+        branch_mapping = {
+            "daily": get_show_daily_archive_builds,
+            "experimental": get_show_experimental_archive_builds,
+            "patch": get_show_patch_archive_builds,
+        }
+
+        branches = tuple(
+            f"{branch}/archive" if check_archive() else branch for branch, check_archive in branch_mapping.items()
+        )
+
+        for branch_type in branches:
             url = base_fmt.format(branch_type)
             r = self.manager.request("GET", url)
 
@@ -180,6 +194,10 @@ class Scraper(QThread):
 
             data = json.loads(r.data)
             architecture_specific_build = False
+
+            # Remove /archive from branch name
+            if "/archive" in branch_type:
+                branch_type = branch_type.replace("/archive", "")
 
             for build in data:
                 if (

@@ -454,6 +454,30 @@ def set_scrape_automated_builds(b: bool):
     get_settings().setValue("scrape_automated_builds", b)
 
 
+def get_show_daily_archive_builds() -> bool:
+    return get_settings().value("show_daily_archive_builds", defaultValue=False, type=bool)
+
+
+def set_show_daily_archive_builds(b: bool):
+    get_settings().setValue("show_daily_archive_builds", b)
+
+
+def get_show_experimental_archive_builds() -> bool:
+    return get_settings().value("show_experimental_archive_builds", defaultValue=False, type=bool)
+
+
+def set_show_experimental_archive_builds(b: bool):
+    get_settings().setValue("show_experimental_archive_builds", b)
+
+
+def get_show_patch_archive_builds() -> bool:
+    return get_settings().value("show_patch_archive_builds", defaultValue=False, type=bool)
+
+
+def set_show_patch_archive_builds(b: bool):
+    get_settings().setValue("show_patch_archive_builds", b)
+
+
 def get_make_error_popup():
     return get_settings().value("error_popup", defaultValue=True, type=bool)
 
