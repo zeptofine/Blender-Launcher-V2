@@ -175,17 +175,15 @@ class Scraper(QThread):
     def scrape_automated_releases(self):
         base_fmt = "https://builder.blender.org/download/{}/?format=json&v=1"
 
-        branches = ("daily", "experimental", "patch")
-        branches = [
-            "daily/archive" if get_show_daily_archive_builds() and branch == "daily" else branch for branch in branches
-        ]
-        branches = [
-            "experimental/archive" if get_show_experimental_archive_builds() and branch == "experimental" else branch
-            for branch in branches
-        ]
-        branches = [
-            "patch/archive" if get_show_patch_archive_builds() and branch == "patch" else branch for branch in branches
-        ]
+        branch_mapping = {
+            "daily": get_show_daily_archive_builds,
+            "experimental": get_show_experimental_archive_builds,
+            "patch": get_show_patch_archive_builds,
+        }
+
+        branches = tuple(
+            f"{branch}/archive" if check_archive() else branch for branch, check_archive in branch_mapping.items()
+        )
 
         for branch_type in branches:
             url = base_fmt.format(branch_type)
