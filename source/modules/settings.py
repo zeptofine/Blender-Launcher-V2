@@ -1,13 +1,16 @@
 import contextlib
 import os
+import shutil
 import sys
 from datetime import datetime, timezone
+from functools import cache
 from pathlib import Path
 
-from modules._platform import get_cwd, get_platform
+from modules._platform import get_config_file, get_config_path, get_cwd, get_platform, local_config, user_config
 from PyQt5.QtCore import QSettings
 
-ISO_EPOCH = datetime.fromtimestamp(0, tz=timezone.utc).isoformat()
+EPOCH = datetime.fromtimestamp(0, tz=timezone.utc)
+ISO_EPOCH = EPOCH.isoformat()
 
 # TODO: Simplify this
 
@@ -58,8 +61,28 @@ proxy_types = {
 }
 
 
+blender_minimum_versions = {
+    "4.0": 0,
+    "3.6": 1,
+    "3.5": 2,
+    "3.4": 3,
+    "3.3": 4,
+    "3.2": 5,
+    "3.1": 6,
+    "3.0": 7,
+    "2.90": 8,
+    "2.80": 9,
+    "2.79": 10,
+    "None": 11,
+}
+
+
 def get_settings():
-    return QSettings((get_cwd() / "Blender Launcher.ini").as_posix(), QSettings.Format.IniFormat)
+    file = get_config_file()
+    if not file.parent.is_dir():
+        file.parent.mkdir(parents=True)
+
+    return QSettings(get_config_file().as_posix(), QSettings.Format.IniFormat)
 
 
 def get_library_folder():
@@ -281,6 +304,14 @@ def set_show_tray_icon(is_checked):
     get_settings().setValue("show_tray_icon", is_checked)
 
 
+def get_tray_icon_notified():
+    return get_settings().value("Internal/tray_icon_notified", defaultValue=False, type=bool)
+
+
+def set_tray_icon_notified(b=True):
+    get_settings().setValue("Internal/tray_icon_notified", b)
+
+
 def get_launch_blender_no_console():
     return get_settings().value("launch_blender_no_console", type=bool)
 
@@ -403,19 +434,64 @@ def set_check_for_new_builds_on_startup(b: bool):
     get_settings().setValue("buildcheck_on_startup", b)
 
 
-def get_minimum_blender_stable_version() -> float:
-    return get_settings().value("minimum_blender_stable_version", defaultValue=3.0, type=float)
+def get_minimum_blender_stable_version():
+    value = get_settings().value("minimum_blender_stable_version")
+
+    if value is not None and "." in value:
+        return blender_minimum_versions.get(value, 7)
+    else:
+        return get_settings().value("minimum_blender_stable_version", defaultValue=7, type=int)
 
 
-def set_minimum_blender_stable_version(v: float):
-    get_settings().setValue("minimum_blender_stable_version", v)
+def set_minimum_blender_stable_version(blender_minimum_version):
+    get_settings().setValue("minimum_blender_stable_version", blender_minimum_versions[blender_minimum_version])
+
+
+def get_scrape_stable_builds() -> bool:
+    return get_settings().value("scrape_stable_builds", defaultValue=True, type=bool)
+
+
+def set_scrape_stable_builds(b: bool):
+    get_settings().setValue("scrape_stable_builds", b)
+
+
+def get_scrape_automated_builds() -> bool:
+    return get_settings().value("scrape_automated_builds", defaultValue=True, type=bool)
+
+
+def set_scrape_automated_builds(b: bool):
+    get_settings().setValue("scrape_automated_builds", b)
+
+
+def get_show_daily_archive_builds() -> bool:
+    return get_settings().value("show_daily_archive_builds", defaultValue=False, type=bool)
+
+
+def set_show_daily_archive_builds(b: bool):
+    get_settings().setValue("show_daily_archive_builds", b)
+
+
+def get_show_experimental_archive_builds() -> bool:
+    return get_settings().value("show_experimental_archive_builds", defaultValue=False, type=bool)
+
+
+def set_show_experimental_archive_builds(b: bool):
+    get_settings().setValue("show_experimental_archive_builds", b)
+
+
+def get_show_patch_archive_builds() -> bool:
+    return get_settings().value("show_patch_archive_builds", defaultValue=False, type=bool)
+
+
+def set_show_patch_archive_builds(b: bool):
+    get_settings().setValue("show_patch_archive_builds", b)
 
 
 def get_make_error_popup():
     return get_settings().value("error_popup", defaultValue=True, type=bool)
 
 
-def set_make_error_popup(v: bool):
+def set_make_error_notifications(v: bool):
     get_settings().setValue("error_popup", v)
 
 
@@ -439,9 +515,27 @@ def set_worker_thread_count(v: int):
     get_settings().setValue("worker_thread_count", v)
 
 
+def get_use_pre_release_builds():
+    return get_settings().value("use_pre_release_builds", defaultValue=False, type=bool)
+
+
+def set_use_pre_release_builds(b: bool):
+    get_settings().setValue("use_pre_release_builds", b)
+
+
 def get_use_system_titlebar():
     return get_settings().value("use_system_title_bar", defaultValue=False, type=bool)
 
 
 def set_use_system_titlebar(b: bool):
     get_settings().setValue("use_system_title_bar", b)
+
+
+def migrate_config(force=False):
+    config_path = Path(get_config_path())
+    old_config = local_config()
+    new_config = user_config()
+    if (old_config.is_file() and not new_config.is_file()) or force:
+        if not config_path.is_dir():
+            config_path.mkdir()
+        shutil.move(old_config.resolve(), new_config.resolve())

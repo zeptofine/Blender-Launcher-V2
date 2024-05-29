@@ -3,6 +3,8 @@ from __future__ import annotations
 import logging
 import os
 import re
+import shlex
+import shutil
 import sys
 import webbrowser
 from datetime import datetime, timezone
@@ -10,12 +12,11 @@ from enum import Enum
 from functools import partial
 from pathlib import Path
 from platform import version
-from shutil import copyfileobj
 from time import localtime, mktime, strftime
 from typing import TYPE_CHECKING
 
 from items.base_list_widget_item import BaseListWidgetItem
-from modules._platform import _popen, get_cwd, get_platform, is_frozen, set_locale
+from modules._platform import _popen, get_cwd, get_launcher_name, get_platform, is_frozen
 from modules.connection_manager import ConnectionManager
 from modules.enums import MessageType
 from modules.settings import (
@@ -34,13 +35,18 @@ from modules.settings import (
     get_make_error_popup,
     get_proxy_type,
     get_quick_launch_key_seq,
+    get_scrape_automated_builds,
+    get_scrape_stable_builds,
     get_show_tray_icon,
     get_sync_library_and_downloads_pages,
+    get_tray_icon_notified,
+    get_use_pre_release_builds,
     get_use_system_titlebar,
     get_worker_thread_count,
     is_library_folder_valid,
     set_last_time_checked_utc,
     set_library_folder,
+    set_tray_icon_notified,
 )
 from modules.tasks import Task, TaskQueue, TaskWorker
 from PyQt5.QtCore import QSize, Qt, pyqtSignal, pyqtSlot
@@ -57,6 +63,7 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from semver import Version
 from threads.library_drawer import DrawLibraryTask
 from threads.remover import RemovalTask
 from threads.scraper import Scraper
@@ -73,20 +80,6 @@ from windows.base_window import BaseWindow
 from windows.dialog_window import DialogIcon, DialogWindow
 from windows.file_dialog_window import FileDialogWindow
 from windows.settings_window import SettingsWindow
-
-try:
-    import resources_rc
-except ImportError:
-    if is_frozen():
-        print("Failed to import cached resources! Blender-Launcher-V2 was built without resources.")
-    elif (Path.cwd() / "build_style.py").exists():
-        # TODO: Attempt to build the style and check if it fails
-        print("Resources were not built! Run python build_style.py to build the style.")
-    else:
-        raise
-
-    sys.exit()
-
 
 try:
     from pynput import keyboard
@@ -120,7 +113,7 @@ class BlenderLauncher(BaseWindow):
     quit_signal = pyqtSignal()
     quick_launch_fail_signal = pyqtSignal()
 
-    def __init__(self, app: QApplication, version, argv):
+    def __init__(self, app: QApplication, version: Version, offline: bool = False):
         super().__init__(app=app, version=version)
         self.resize(640, 480)
         self.setMinimumSize(QSize(640, 480))
@@ -148,8 +141,8 @@ class BlenderLauncher(BaseWindow):
 
         # Global scope
         self.app = app
-        self.version = version
-        self.argv = argv
+        self.version: Version = version
+        self.offline = offline
         self.favorite: BaseBuildWidget | None = None
         self.status = "Unknown"
         self.is_force_check_on = False
@@ -177,27 +170,12 @@ class BlenderLauncher(BaseWindow):
         self.scraper = Scraper(self, self.cm)
         self.scraper.links.connect(self.draw_to_downloads)
         self.scraper.error.connect(self.connection_error)
+        self.scraper.stable_error.connect(self.scraper_error)
+        self.scraper.new_bl_version.connect(self.set_version)
         self.scraper.finished.connect(self.scraper_finished)
 
-        # Set library folder from command line arguments
-        if "-set-library-folder" in self.argv:
-            library_folder = self.argv[-1]
-
-            if set_library_folder(library_folder) is True:
-                create_library_folders(get_library_folder())
-                self.draw(True)
-            else:
-                self.dlg = DialogWindow(
-                    parent=self,
-                    title="Warning",
-                    text="Passed path is not a valid folder or<br>\
-                    it doesn't have write permissions!",
-                    accept_text="Quit",
-                    cancel_text=None,
-                )
-                self.dlg.accepted.connect(self.app.quit)
-
-            return
+        # Vesrion Update
+        self.pre_release_build = get_use_pre_release_builds
 
         # Check library folder
         if is_library_folder_valid() is False:
@@ -405,10 +383,6 @@ class BlenderLauncher(BaseWindow):
         self.DownloadsToolBox.setCurrentIndex(get_default_downloads_page())
         self.PreferencesToolBox.setCurrentIndex(get_default_preferences_tab())
 
-        version_status = self.version
-        if not is_frozen():  # Add an asterisk to the statusbar version if running from source
-            version_status = f"*{version_status}"
-
         # Status bar
         self.status_bar = QStatusBar(self)
         self.setStatusBar(self.status_bar)
@@ -417,11 +391,15 @@ class BlenderLauncher(BaseWindow):
         self.statusbarLabel = QLabel()
         self.ForceCheckNewBuilds = QPushButton("Check")
         self.ForceCheckNewBuilds.setEnabled(False)
-        self.ForceCheckNewBuilds.clicked.connect(self.start_scraper)
+        self.ForceCheckNewBuilds.setToolTip(
+            "Check for new builds online<br>\
+            (Hold SHIFT to force check stable and automated builds)"
+        )
+        self.ForceCheckNewBuilds.clicked.connect(self.force_check)
         self.NewVersionButton = QPushButton()
         self.NewVersionButton.hide()
         self.NewVersionButton.clicked.connect(self.show_update_window)
-        self.statusbarVersion = QPushButton(version_status)
+        self.statusbarVersion = QPushButton(str(self.version))
         self.statusbarVersion.clicked.connect(self.show_changelog)
         self.statusbarVersion.setToolTip(
             "The version of Blender Launcher that is currently run. Press to check changelog."
@@ -529,7 +507,7 @@ class BlenderLauncher(BaseWindow):
             self.quick_launch()
 
     def show_changelog(self):
-        url = f"https://github.com/Victor-IX/Blender-Launcher-V2/releases/tag/v{self.version}"
+        url = f"https://github.com/Victor-IX/Blender-Launcher-V2/releases/tag/v{self.version!s}"
         webbrowser.open(url)
 
     def toggle_sync_library_and_downloads_pages(self, is_sync):
@@ -576,28 +554,21 @@ class BlenderLauncher(BaseWindow):
 
             return
 
-        # Create copy if 'Blender Launcher.exe' file
+        # Create copy of 'Blender Launcher.exe' file
         # to act as an updater program
-        if self.platform == "Windows":
-            bl_exe = "Blender Launcher.exe"
-            blu_exe = "Blender Launcher Updater.exe"
-        elif self.platform == "Linux":
-            bl_exe = "Blender Launcher"
-            blu_exe = "Blender Launcher Updater"
+        bl_exe, blu_exe = get_launcher_name()
 
         cwd = get_cwd()
         source = cwd / bl_exe
         dist = cwd / blu_exe
-
-        with open(source.as_posix(), "rb") as f1, open(dist.as_posix(), "wb") as f2:
-            copyfileobj(f1, f2)
+        shutil.copy(source, dist)
 
         # Run 'Blender Launcher Updater.exe' with '-update' flag
         if self.platform == "Windows":
-            _popen([dist.as_posix(), "-update", self.latest_tag])
+            _popen([dist.as_posix(), "--instanced", "update", self.latest_tag])
         elif self.platform == "Linux":
             os.chmod(dist.as_posix(), 0o744)
-            _popen(f'nohup "{dist.as_posix()}" -update {self.latest_tag}')
+            _popen(f'nohup "{dist.as_posix()}" --instanced update {self.latest_tag}')
 
         # Destroy currently running Blender Launcher instance
         self.server.close()
@@ -689,7 +660,8 @@ class BlenderLauncher(BaseWindow):
             self._show()
         elif reason == QSystemTrayIcon.ActivationReason.MiddleClick:
             self.quick_launch()
-
+            # INFO: Middle click dose not work anymore on new Windows versions with PyQt5
+            # Middle click currently return the Trigger reason
         elif reason == QSystemTrayIcon.ActivationReason.Context:
             self.tray_menu.trigger()
 
@@ -770,7 +742,7 @@ class BlenderLauncher(BaseWindow):
         self.library_drawer = DrawLibraryTask()
         self.library_drawer.found.connect(self.draw_to_library)
         self.library_drawer.unrecognized.connect(self.draw_unrecognized)
-        if "-offline" not in self.argv:
+        if not self.offline:
             self.library_drawer.finished.connect(self.draw_downloads)
 
         self.task_queue.append(self.library_drawer)
@@ -801,11 +773,39 @@ class BlenderLauncher(BaseWindow):
         #         get_new_builds_check_frequency(), self.draw_downloads)
         #     self.timer.start()
 
-    def start_scraper(self):
+    @pyqtSlot(str)
+    def scraper_error(self, s: str):
+        self.DownloadsStablePageWidget.set_info_label_text(s)
+
+    def force_check(self):
+        if QApplication.queryKeyboardModifiers() & Qt.Modifier.SHIFT:  # Shift held while pressing check
+            # Ignore scrape_stable and scrape_automated settings
+            self.start_scraper(True, True)
+        else:
+            # Use settings
+            self.start_scraper()
+
+    def start_scraper(self, scrape_stable=None, scrape_automated=None):
         self.set_status("Checking for new builds", False)
 
+        if scrape_stable is None:
+            scrape_stable = get_scrape_stable_builds()
+        if scrape_automated is None:
+            scrape_automated = get_scrape_automated_builds()
+
+        if scrape_stable:
+            self.DownloadsStablePageWidget.set_info_label_text("Checking for new builds")
+        else:
+            self.DownloadsStablePageWidget.set_info_label_text("Checking for stable builds is disabled")
+
+        if scrape_automated:
+            msg = "Checking for new builds"
+        else:
+            msg = "Checking for automated builds is disabled"
+
         for page in self.DownloadsToolBox.pages:
-            page.set_info_label_text("Checking for new builds")
+            if page is not self.DownloadsStablePageWidget:
+                page.set_info_label_text(msg)
 
         # Sometimes these builds end up being invalid, particularly when new builds are available, which, there usually
         # are at least once every two days. They are so easily gathered there's little loss here
@@ -816,6 +816,8 @@ class BlenderLauncher(BaseWindow):
         self.new_downloads = False
         self.app_state = AppState.CHECKINGBUILDS
 
+        self.scraper.scrape_stable = scrape_stable
+        self.scraper.scrape_automated = scrape_automated
         self.scraper.manager = self.cm
         self.scraper.start()
 
@@ -829,13 +831,10 @@ class BlenderLauncher(BaseWindow):
                     widget.destroy()
 
         utcnow = localtime()
-        dt = datetime.fromtimestamp(mktime(utcnow), tz=timezone.utc)
+        dt = datetime.fromtimestamp(mktime(utcnow)).astimezone()
         set_last_time_checked_utc(dt)
         self.last_time_checked = dt
         self.app_state = AppState.IDLE
-
-        for page in self.DownloadsToolBox.pages:
-            page.set_info_label_text("No new builds available")
 
         # if get_check_for_new_builds_automatically() is True:
         #     self.timer = threading.Timer(
@@ -978,19 +977,25 @@ class BlenderLauncher(BaseWindow):
         self.statusbarLabel.setText(self.status)
 
     def set_version(self, latest_tag):
-        if "dev" in self.version:
+        if self.version.build is not None and "dev" in self.version.build:
             return
+        latest = Version.parse(latest_tag[1:])
 
-        latest_ver = re.sub(r"\D", "", latest_tag)
-        current_ver = re.sub(r"\D", "", self.version)
+        # Set the verison to 0.0.0 to force update to the latest stable version
+        if not get_use_pre_release_builds() and self.version.prerelease is not None and "rc" in self.version.prerelease:
+            current = Version(0, 0, 0)
+        else:
+            current = self.version
 
-        if int(latest_ver) > int(current_ver):
-            if latest_tag not in self.notification_pool:
-                self.NewVersionButton.setText(f"Update to version {latest_tag.replace('v', '')}")
-                self.NewVersionButton.show()
-                self.show_message("New version of Blender Launcher is available!", value=latest_tag)
+        logging.debug(f"Latest version on GitHub is {latest}")
 
+        if latest > current:
+            self.NewVersionButton.setText(f"Update to version {latest_tag.replace('v', '')}")
+            self.NewVersionButton.show()
+            self.show_message("New version of Blender Launcher is available!", value=latest_tag)
             self.latest_tag = latest_tag
+        else:
+            self.NewVersionButton.hide()
 
     def show_settings_window(self):
         self.settings_window = SettingsWindow(parent=self)
@@ -1010,6 +1015,12 @@ class BlenderLauncher(BaseWindow):
 
     def closeEvent(self, event):
         if get_show_tray_icon():
+            if not get_tray_icon_notified():
+                self.show_message(
+                    "Blender Launcher V2 is minimized to the system tray. "
+                    '\nDisable "Show Tray Icon" in the settings to disable this.'
+                )
+                set_tray_icon_notified()
             event.ignore()
             self.hide()
             self.close_signal.emit()
@@ -1026,7 +1037,7 @@ class BlenderLauncher(BaseWindow):
         assert self.socket is not None
         data = self.socket.readAll()
 
-        if str(data, encoding="ascii") != self.version:
+        if str(data, encoding="ascii") != str(self.version):
             self.dlg = DialogWindow(
                 parent=self,
                 title="Warning",
@@ -1062,5 +1073,9 @@ class BlenderLauncher(BaseWindow):
             exe = (cwd / "Blender Launcher").as_posix()
             os.chmod(exe, 0o744)
             _popen('nohup "' + exe + '" -instanced')
+        elif self.platform == "macOS":
+            # sys.executable should be something like /.../Blender Launcher.app/Contents/MacOS/Blender Launcher
+            app = Path(sys.executable).parent.parent.parent
+            _popen(f"open -n {shlex.quote(str(app))}")
 
         self.destroy()

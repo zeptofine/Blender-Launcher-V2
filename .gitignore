@@ -115,7 +115,11 @@ Blender-Launcher.code-workspace
 source/resources_rc.py
 source/resources/styles/global.qss
 
+# Mac
+.DS_Store
+
 # Application related settings
 Blender Launcher.ini
 log_file.txt
 nohup.out
+stable_builds.json
