@@ -29,7 +29,7 @@ from PyQt5.QtGui import (
     QDropEvent,
     QHoverEvent,
 )
-from PyQt5.QtWidgets import QAction, QApplication, QHBoxLayout, QLabel, QWidget
+from PyQt5.QtWidgets import QAction, QApplication, QHBoxLayout, QLabel, QWidget, QComboBox
 from threads.observer import Observer
 from threads.register import Register
 from threads.remover import RemovalTask
@@ -148,6 +148,10 @@ class LibraryWidget(BaseBuildWidget):
         self.commitTimeLabel = DateTimeWidget(self.build_info.commit_time, self.build_info.build_hash)
 
         self.build_state_widget = BuildStateWidget(self.parent)
+
+        self.dropdownMenu = QComboBox(self)
+        self.dropdownMenu.addItems(["Main", "New"])
+        self.layout.addWidget(self.dropdownMenu)
 
         self.layout.addWidget(self.launchButton)
         self.layout.addWidget(self.subversionLabel)
@@ -460,6 +464,9 @@ class LibraryWidget(BaseBuildWidget):
                     args = b3d_exe.as_posix()
                 else:
                     args = [b3d_exe.as_posix(), *blender_args.split(" ")]
+
+            if self.dropdownMenu.currentText() == "Main":
+                args = 'set "BLENDER_USER_RESOURCES=C:\\BlenderLauncher\\config\\4.2\\Main" & ' + args
 
         elif platform == "Linux":
             bash_args = get_bash_arguments()
