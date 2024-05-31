@@ -32,7 +32,7 @@ class DrawLibraryTask(Task):
         }.get(platform, "blender")
 
         for folder in self.folders:
-            path = (library_folder / folder).resolve()
+            path = library_folder / folder
 
             if path.is_dir():
                 for build in path.iterdir():

@@ -92,7 +92,7 @@ def get_library_folder():
         library_folder = get_cwd()
         settings.setValue("library_folder", library_folder)
 
-    return library_folder
+    return Path(library_folder).resolve()
 
 
 def is_library_folder_valid(library_folder=None):
