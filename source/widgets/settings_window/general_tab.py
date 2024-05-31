@@ -1,7 +1,12 @@
+from __future__ import annotations
+
 import os
+from pathlib import Path
 
 from modules.settings import (
+    get_actual_library_folder,
     get_config_file,
+    get_cwd,
     get_launch_minimized_to_tray,
     get_launch_when_system_starts,
     get_library_folder,
@@ -32,12 +37,12 @@ class GeneralTabWidget(SettingsFormWidget):
 
         # Library Folder
         self.LibraryFolderLineEdit = QLineEdit()
-        self.LibraryFolderLineEdit.setText(str(get_library_folder()))
+        self.LibraryFolderLineEdit.setText(str(get_actual_library_folder()))
         self.LibraryFolderLineEdit.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
         self.LibraryFolderLineEdit.setReadOnly(True)
         self.LibraryFolderLineEdit.setCursorPosition(0)
         self.SetLibraryFolderButton = QPushButton(self.parent.icons.folder, "")
-        self.SetLibraryFolderButton.clicked.connect(self.set_library_folder)
+        self.SetLibraryFolderButton.clicked.connect(self.prompt_library_folder)
 
         self.LibraryFolderWidget = QWidget()
         self.LibraryFolderLayout = QHBoxLayout(self.LibraryFolderWidget)
@@ -110,23 +115,43 @@ class GeneralTabWidget(SettingsFormWidget):
 
             self.addRow(self.migrate_button)
 
-    def set_library_folder(self):
+    def prompt_library_folder(self):
         library_folder = str(get_library_folder())
         new_library_folder = FileDialogWindow().get_directory(self, "Select Library Folder", library_folder)
-
         if new_library_folder and (library_folder != new_library_folder):
-            if set_library_folder(new_library_folder) is True:
-                self.LibraryFolderLineEdit.setText(new_library_folder)
-                self.parent.draw_library(clear=True)
-            else:
+            self.set_library_folder(Path(new_library_folder))
+
+    def set_library_folder(self, folder: Path, relative: bool | None = None):
+        if folder.is_relative_to(get_cwd()):
+            if relative is None:
                 self.dlg = DialogWindow(
                     parent=self.parent,
-                    title="Warning",
-                    text="Selected folder doesn't have write permissions!",
-                    accept_text="Retry",
-                    cancel_text=None,
+                    title="Setup",
+                    text="The selected path is relative to the executable's path.<br>\
+                        Would you like to save it as relative?<br>\
+                        This is useful if the folder may move.",
+                    accept_text="Yes",
+                    cancel_text="No",
                 )
-                self.dlg.accepted.connect(self.set_library_folder)
+                self.dlg.accepted.connect(lambda: self.set_library_folder(folder, True))
+                self.dlg.cancelled.connect(lambda: self.set_library_folder(folder, False))
+                return
+
+            if relative:
+                folder = folder.relative_to(get_cwd())
+
+        if set_library_folder(str(folder)) is True:
+            self.LibraryFolderLineEdit.setText(str(get_actual_library_folder()))
+            self.parent.draw_library(clear=True)
+        else:
+            self.dlg = DialogWindow(
+                parent=self.parent,
+                title="Warning",
+                text="Selected folder doesn't have write permissions!",
+                accept_text="Retry",
+                cancel_text=None,
+            )
+            self.dlg.accepted.connect(self.prompt_library_folder)
 
     def toggle_launch_when_system_starts(self, is_checked):
         set_launch_when_system_starts(is_checked)
