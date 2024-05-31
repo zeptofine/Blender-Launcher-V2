@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -31,7 +32,7 @@ class DrawLibraryTask(Task):
         }.get(platform, "blender")
 
         for folder in self.folders:
-            path = library_folder / folder
+            path = (library_folder / folder).resolve()
 
             if path.is_dir():
                 for build in path.iterdir():
