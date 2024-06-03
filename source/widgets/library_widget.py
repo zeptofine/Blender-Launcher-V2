@@ -141,7 +141,7 @@ class LibraryWidget(BaseBuildWidget):
         self._launch_icon = None
 
         self.subversionLabel = QLabel(self.build_info.display_version)
-        self.subversionLabel.setFixedWidth(85)
+        self.subversionLabel.setFixedWidth(100)
         self.subversionLabel.setIndent(20)
         self.subversionLabel.setToolTip(str(self.build_info.semversion))
         self.branchLabel = ElidedTextLabel(self.build_info.custom_name or self.build_info.display_label)
@@ -150,12 +150,13 @@ class LibraryWidget(BaseBuildWidget):
         self.build_state_widget = BuildStateWidget(self.parent)
 
         self.dropdownMenu = QComboBox(self)
+        self.dropdownMenu.setFixedWidth(100)
         self.dropdownMenu.addItems(["Main", "New"])
-        self.layout.addWidget(self.dropdownMenu)
 
         self.layout.addWidget(self.launchButton)
         self.layout.addWidget(self.subversionLabel)
         self.layout.addWidget(self.branchLabel, stretch=1)
+        self.layout.addWidget(self.dropdownMenu)
 
         if self.parent_widget is not None:
             self.lineEdit = BaseLineEdit(self)

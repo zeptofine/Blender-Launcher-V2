@@ -95,8 +95,12 @@ class BasePageWidget(QWidget):
         self.subversionLabel.setProperty("ListHeader", True)
         self.subversionLabel.setCheckable(True)
         self.subversionLabel.clicked.connect(lambda: self.set_sorting_type(SortingType.VERSION))
+
         self.branchLabel = QLabel("Branch")
-        self.branchLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        self.configLabel = QLabel("Config")
+        self.configLabel.setAlignment(Qt.AlignmentFlag.AlignRight)
+
         self.commitTimeLabel = QPushButton(time_label)
         self.commitTimeLabel.setFixedWidth(118)
         self.commitTimeLabel.setProperty("ListHeader", True)
@@ -105,7 +109,10 @@ class BasePageWidget(QWidget):
 
         self.HeaderLayout.addWidget(self.fakeLabel)
         self.HeaderLayout.addWidget(self.subversionLabel)
+        self.HeaderLayout.addSpacing(20)
         self.HeaderLayout.addWidget(self.branchLabel, stretch=1)
+        self.HeaderLayout.addWidget(self.configLabel)
+        self.HeaderLayout.addSpacing(40)
         self.HeaderLayout.addWidget(self.commitTimeLabel)
         self.HeaderLayout.addSpacing(34)
 
