@@ -1,6 +1,6 @@
 from enum import Enum
 
-from modules.settings import get_list_sorting_type, set_list_sorting_type
+from modules.settings import get_list_sorting_type, set_list_sorting_type, get_blender_preferences_management
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import (
@@ -98,8 +98,9 @@ class BasePageWidget(QWidget):
 
         self.branchLabel = QLabel("Branch")
         
-        self.configLabel = QLabel("Config")
-        self.configLabel.setAlignment(Qt.AlignmentFlag.AlignRight)
+        if get_blender_preferences_management():
+            self.configLabel = QLabel("Config")
+            self.configLabel.setAlignment(Qt.AlignmentFlag.AlignRight)
 
         self.commitTimeLabel = QPushButton(time_label)
         self.commitTimeLabel.setFixedWidth(118)
@@ -111,8 +112,9 @@ class BasePageWidget(QWidget):
         self.HeaderLayout.addWidget(self.subversionLabel)
         self.HeaderLayout.addSpacing(20)
         self.HeaderLayout.addWidget(self.branchLabel, stretch=1)
-        self.HeaderLayout.addWidget(self.configLabel)
-        self.HeaderLayout.addSpacing(40)
+        if get_blender_preferences_management():
+            self.HeaderLayout.addWidget(self.configLabel)
+            self.HeaderLayout.addSpacing(40)
         self.HeaderLayout.addWidget(self.commitTimeLabel)
         self.HeaderLayout.addSpacing(34)
 

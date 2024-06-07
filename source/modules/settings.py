@@ -521,6 +521,14 @@ def get_use_pre_release_builds():
 
 def set_use_pre_release_builds(b: bool):
     get_settings().setValue("use_pre_release_builds", b)
+    
+
+def get_blender_preferences_management():
+    return get_settings().value("blender_preferences_management", defaultValue=False, type=bool)
+
+
+def set_blender_preferences_management(b: bool):
+    get_settings().setValue("blender_preferences_management", b)
 
 
 def get_use_system_titlebar():

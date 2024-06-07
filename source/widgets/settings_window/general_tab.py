@@ -8,6 +8,7 @@ from modules.settings import (
     get_platform,
     get_show_tray_icon,
     get_use_pre_release_builds,
+    get_blender_preferences_management,
     get_worker_thread_count,
     migrate_config,
     set_launch_minimized_to_tray,
@@ -15,6 +16,7 @@ from modules.settings import (
     set_library_folder,
     set_show_tray_icon,
     set_use_pre_release_builds,
+    set_blender_preferences_management,
     set_worker_thread_count,
     user_config,
 )
@@ -88,6 +90,13 @@ class GeneralTabWidget(SettingsFormWidget):
         self.PreReleaseBuildsCheckBox = QCheckBox()
         self.PreReleaseBuildsCheckBox.setChecked(get_use_pre_release_builds())
         self.PreReleaseBuildsCheckBox.clicked.connect(self.toggle_use_pre_release_builds)
+        
+        # Blender Preferences Management
+        self.BlenderPreferencesManagementCheckBox = QCheckBox()
+        self.BlenderPreferencesManagementCheckBox.setChecked(get_blender_preferences_management())
+        self.BlenderPreferencesManagementCheckBox.clicked.connect(self.toggle_blender_preferences_management)
+        
+        
 
         # Layout
         self._addRow("Library Folder", self.LibraryFolderWidget, new_line=True)
@@ -102,6 +111,8 @@ class GeneralTabWidget(SettingsFormWidget):
         self._addRow("Worker Thread Count", self.WorkerThreadCount)
 
         self._addRow("Use Pre-release Builds", self.PreReleaseBuildsCheckBox)
+        
+        self._addRow("Blender Preferences Management", self.BlenderPreferencesManagementCheckBox)
 
         if get_config_file() != user_config():
             self.migrate_button = QPushButton("Migrate local settings to user settings", self)
@@ -144,6 +155,9 @@ class GeneralTabWidget(SettingsFormWidget):
 
     def toggle_use_pre_release_builds(self, is_checked):
         set_use_pre_release_builds(is_checked)
+        
+    def toggle_blender_preferences_management(self, is_checked):
+        set_blender_preferences_management(is_checked)
 
     def migrate_confirmation(self):
         text = f"Are you sure you want to move<br>{get_config_file()}<br>to<br>{user_config()}?"
