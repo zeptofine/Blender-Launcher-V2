@@ -38,8 +38,10 @@ class GeneralTabWidget(SettingsFormWidget):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         self.parent = parent
-        self.application_settings = SettingsGroup("Application", parent=self)
 
+        # Application Settings
+        self.application_settings = SettingsGroup("Application", parent=self)
+        
         # Library Folder
         self.LibraryFolderLayoutLabel = QLabel()
         self.LibraryFolderLayoutLabel.setText("Library Folder:")
@@ -105,12 +107,6 @@ class GeneralTabWidget(SettingsFormWidget):
         self.PreReleaseBuildsCheckBox.setChecked(get_use_pre_release_builds())
         self.PreReleaseBuildsCheckBox.clicked.connect(self.toggle_use_pre_release_builds)
 
-        # Blender Preferences Management
-        self.BlenderPreferencesManagementCheckBox = QCheckBox()
-        self.BlenderPreferencesManagementCheckBox.setText("Manage Blender Preferences")
-        self.BlenderPreferencesManagementCheckBox.setChecked(get_blender_preferences_management())
-        self.BlenderPreferencesManagementCheckBox.clicked.connect(self.toggle_blender_preferences_management)
-
         # Layout
         self.application_layout = QGridLayout()
         self.application_layout.addWidget(self.LibraryFolderLayoutLabel, 0, 0, 1, 1)
@@ -122,11 +118,24 @@ class GeneralTabWidget(SettingsFormWidget):
         self.application_layout.addWidget(self.WorkerThreadCountBox, 5, 0, 1, 1)
         self.application_layout.addWidget(self.WorkerThreadCount, 5, 1, 1, 2)
         self.application_layout.addWidget(self.PreReleaseBuildsCheckBox, 6, 0, 1, 1)
-        self.application_layout.addWidget(self.BlenderPreferencesManagementCheckBox, 7, 0, 1, 1)
         self.application_settings.setLayout(self.application_layout)
 
+        # Advence Options Settings
+        self.advanced_settings = SettingsGroup("Advanced", parent=self)
+        
+        # Show Preference Menu
+        self.BlenderPreferencesMenuCheckBox = QCheckBox()
+        self.BlenderPreferencesMenuCheckBox.setText("Show Blender Preference Menu")
+        self.BlenderPreferencesMenuCheckBox.setChecked(get_blender_preferences_management())
+        self.BlenderPreferencesMenuCheckBox.clicked.connect(self.toggle_blender_preferences_management)
+
         # Layout
+        self.advanced_layout = QGridLayout()
+        self.advanced_layout.addWidget(self.BlenderPreferencesMenuCheckBox, 0, 0, 1, 1)
+        self.advanced_settings.setLayout(self.advanced_layout)
+
         self.addRow(self.application_settings)
+        self.addRow(self.advanced_settings)
 
         if get_config_file() != user_config():
             self.migrate_button = QPushButton("Migrate local settings to user settings", self)
