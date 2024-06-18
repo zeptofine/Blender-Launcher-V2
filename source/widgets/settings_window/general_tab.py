@@ -21,7 +21,7 @@ from modules.settings import (
     user_config,
 )
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QCheckBox, QLineEdit, QPushButton, QSpinBox, QGridLayout, QLabel
+from PyQt5.QtWidgets import QCheckBox, QLineEdit, QPushButton, QSpinBox, QGridLayout, QLabel, QHBoxLayout
 from widgets.settings_form_widget import SettingsFormWidget
 from windows.dialog_window import DialogWindow
 from windows.file_dialog_window import FileDialogWindow
@@ -44,7 +44,13 @@ class GeneralTabWidget(SettingsFormWidget):
         self.LibraryFolderLineEdit.setReadOnly(True)
         self.LibraryFolderLineEdit.setCursorPosition(0)
         self.SetLibraryFolderButton = QPushButton(self.parent.icons.folder, "")
+        self.SetLibraryFolderButton.setFixedWidth(25)
         self.SetLibraryFolderButton.clicked.connect(self.set_library_folder)
+
+        self.LibraryFolderLayout = QHBoxLayout()
+        self.LibraryFolderLayout.setSpacing(0)
+        self.LibraryFolderLayout.addWidget(self.LibraryFolderLineEdit)
+        self.LibraryFolderLayout.addWidget(self.SetLibraryFolderButton)
 
         # Launch When System Starts
         self.LaunchWhenSystemStartsCheckBox = QCheckBox()
@@ -102,14 +108,13 @@ class GeneralTabWidget(SettingsFormWidget):
         # Layout
         self.application_layout = QGridLayout()
         self.application_layout.addWidget(self.LibraryFolderLayoutLabel, 0, 0, 1, 1)
-        self.application_layout.addWidget(self.LibraryFolderLineEdit, 1, 0, 1, 1)
-        self.application_layout.addWidget(self.SetLibraryFolderButton, 1, 1, 1, 1)
+        self.application_layout.addLayout(self.LibraryFolderLayout, 1, 0, 1, 3)
         if get_platform() == "Windows":
             self.application_layout.addWidget(self.LaunchWhenSystemStartsCheckBox, 2, 0, 1, 1)
         self.application_layout.addWidget(self.ShowTrayIconCheckBox, 3, 0, 1, 1)
         self.application_layout.addWidget(self.LaunchMinimizedToTrayCheckBox, 4, 0, 1, 1)
         self.application_layout.addWidget(self.WorkerThreadCountBox, 5, 0, 1, 1)
-        self.application_layout.addWidget(self.WorkerThreadCount, 5, 1, 1, 1)
+        self.application_layout.addWidget(self.WorkerThreadCount, 5, 1, 1, 2)
         self.application_layout.addWidget(self.PreReleaseBuildsCheckBox, 6, 0, 1, 1)
         self.application_layout.addWidget(self.BlenderPreferencesManagementCheckBox, 7, 0, 1, 1)
         self.application_settings.setLayout(self.application_layout)
