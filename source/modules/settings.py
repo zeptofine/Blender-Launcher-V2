@@ -84,7 +84,7 @@ def get_settings():
     return QSettings(get_config_file().as_posix(), QSettings.Format.IniFormat)
 
 
-def get_library_folder():
+def get_actual_library_folder():
     settings = get_settings()
     library_folder = settings.value("library_folder")
 
@@ -92,7 +92,10 @@ def get_library_folder():
         library_folder = get_cwd()
         settings.setValue("library_folder", library_folder)
 
-    return library_folder
+    return Path(library_folder)
+
+def get_library_folder():
+    return get_actual_library_folder().resolve()
 
 
 def is_library_folder_valid(library_folder=None):
@@ -110,7 +113,7 @@ def is_library_folder_valid(library_folder=None):
     return False
 
 
-def set_library_folder(new_library_folder):
+def set_library_folder(new_library_folder: str):
     settings = get_settings()
 
     if is_library_folder_valid(new_library_folder) is True:
