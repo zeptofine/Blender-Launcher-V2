@@ -187,30 +187,57 @@ class BlenderLauncher(BaseWindow):
                 cancel_text=None,
                 icon=DialogIcon.INFO,
             )
-            self.dlg.accepted.connect(self.set_library_folder)
+            self.dlg.accepted.connect(self.prompt_library_folder)
         else:
             create_library_folders(get_library_folder())
             self.draw()
 
-    def set_library_folder(self):
+    def prompt_library_folder(self):
         library_folder = get_cwd().as_posix()
         new_library_folder = FileDialogWindow().get_directory(self, "Select Library Folder", library_folder)
 
         if new_library_folder:
-            if set_library_folder(new_library_folder) is True:
-                self.draw(True)
-            else:
-                self.dlg = DialogWindow(
-                    parent=self,
-                    title="Warning",
-                    text="Selected folder is not valid or<br>\
-                    doesn't have write permissions!",
-                    accept_text="Retry",
-                    cancel_text=None,
-                )
-                self.dlg.accepted.connect(self.set_library_folder)
+            self.set_library_folder(Path(new_library_folder))
         else:
             self.app.quit()
+
+    def set_library_folder(self, folder: Path, relative: bool | None = None):
+        """
+        Sets the library folder.
+        if relative is None and the folder *can* be relative, it will ask the user if it should use a relative path.
+        if relative is bool, it will / will not set the library folder as relative.
+        """
+
+        if folder.is_relative_to(get_cwd()):
+            if relative is None:
+                self.dlg = DialogWindow(
+                    parent=self,
+                    title="Setup",
+                    text="The selected path is relative to the executable's path.<br>\
+                        Would you like to save it as relative?<br>\
+                        This is useful if the folder may move.",
+                    accept_text="Yes",
+                    cancel_text="No",
+                )
+                self.dlg.accepted.connect(lambda: self.set_library_folder(folder, True))
+                self.dlg.cancelled.connect(lambda: self.set_library_folder(folder, False))
+                return
+
+            if relative:
+                folder = folder.relative_to(get_cwd())
+
+        if set_library_folder(str(folder)) is True:
+            self.draw(True)
+        else:
+            self.dlg = DialogWindow(
+                parent=self,
+                title="Warning",
+                text="Selected folder is not valid or<br>\
+                doesn't have write permissions!",
+                accept_text="Retry",
+                cancel_text=None,
+            )
+            self.dlg.accepted.connect(self.prompt_library_folder)
 
     def update_system_titlebar(self, b: bool):
         for window in self.windows:
