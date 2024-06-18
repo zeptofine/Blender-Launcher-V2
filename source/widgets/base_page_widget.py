@@ -23,6 +23,8 @@ class BasePageWidget(QWidget):
         super().__init__(parent)
         self.name = page_name
 
+        self.sort_order_asc = True
+
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
@@ -115,21 +117,22 @@ class BasePageWidget(QWidget):
         self.layout.addWidget(self.list_widget)
 
         self.sorting_type = SortingType(get_list_sorting_type(self.name))
+        self.sorting_order = Qt.DescendingOrder
         self.set_sorting_type(self.sorting_type)
 
     def set_info_label_text(self, text):
         self.InfoLabel.setText(text)
 
     def set_sorting_type(self, sorting_type):
+        if sorting_type == self.sorting_type:
+            self.sorting_order = Qt.DescendingOrder if self.sorting_order == Qt.AscendingOrder else Qt.AscendingOrder
+        else:
+            self.sorting_order = Qt.AscendingOrder
+
         self.sorting_type = sorting_type
-        self.list_widget.sortItems()
+        self.list_widget.sortItems(self.sorting_order)
 
-        self.commitTimeLabel.setChecked(False)
-        self.subversionLabel.setChecked(False)
-
-        if sorting_type == SortingType.DATETIME:
-            self.commitTimeLabel.setChecked(True)
-        elif sorting_type == SortingType.VERSION:
-            self.subversionLabel.setChecked(True)
+        self.commitTimeLabel.setChecked(sorting_type == SortingType.DATETIME)
+        self.subversionLabel.setChecked(sorting_type == SortingType.VERSION)
 
         set_list_sorting_type(self.name, sorting_type)
