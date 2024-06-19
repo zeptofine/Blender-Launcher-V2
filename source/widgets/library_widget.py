@@ -18,6 +18,7 @@ from modules.settings import (
     get_launch_blender_no_console,
     get_library_folder,
     get_mark_as_favorite,
+    get_blender_preferences_management,
     set_favorite_path,
 )
 from modules.shortcut import create_shortcut
@@ -149,14 +150,17 @@ class LibraryWidget(BaseBuildWidget):
 
         self.build_state_widget = BuildStateWidget(self.parent)
 
-        self.dropdownMenu = QComboBox(self)
-        self.dropdownMenu.setFixedWidth(100)
-        self.dropdownMenu.addItems(["Main", "New"])
+        if get_blender_preferences_management():
+            self.dropdownMenu = QComboBox(self)
+            self.dropdownMenu.setFixedWidth(100)
+            self.dropdownMenu.addItems(["Main", "New"])
 
         self.layout.addWidget(self.launchButton)
         self.layout.addWidget(self.subversionLabel)
         self.layout.addWidget(self.branchLabel, stretch=1)
-        self.layout.addWidget(self.dropdownMenu)
+        
+        if get_blender_preferences_management():
+            self.layout.addWidget(self.dropdownMenu)
 
         if self.parent_widget is not None:
             self.lineEdit = BaseLineEdit(self)
