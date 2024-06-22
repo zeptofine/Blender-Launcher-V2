@@ -24,6 +24,7 @@ To open the **Settings Window**, use the button with a gear icon on the top left
 ### Show Tray Icon
 
 :   Toggles the visibility of the tray icon. If the option is disabled, **Blender Launcher** will shut down after closing its **Main Window**.
+If this option is enabled, to completely close the **Blender Launcher** you need to close it through its **tray icon** on the bottom right. The icon may be hidden under the arrow icon located to the left of the tray icon.
 
 ### Launch Minimized To Tray
 

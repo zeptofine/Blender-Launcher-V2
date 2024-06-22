@@ -1,15 +1,11 @@
 # Known Issues
 
-## Windows Time Zone
+## Linux Distribution Compatibility
 
-**Error Message:**
-:   `[ERROR]: unknown locale: en_001`
+This program may not work properly on all Linux distributions due to limitations with PyInstaller. We provide two different Linux versions, one for Ubuntu and the other for Archlinux. If you use another Linux distribution, it's possible that the Blender Launcher may not work.
 
-**Behavior:** 
-:   After the extraction of a build, the progress bar will be stuck at 100%.
+## Workaround
 
-**Cause:** 
-:   This error will appear on Windows if your Time Zone is set to English World.
+If you want to use the Blender Launcher on a different Linux distribution that does not work with the provided version, you can build the program on your machine directly. This will create a custom build compatible with your OS.
 
-**Workaround:**
-:   Set the time zone to something else.
+For more information on how to install the GitHub project and build it, check the [development documentation](development.mb). Also, don't hesitate to ask for help on our [Discord](https://discord.com/invite/3jrTZFJkTd)!

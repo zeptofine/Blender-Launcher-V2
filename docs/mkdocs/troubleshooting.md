@@ -16,25 +16,24 @@ Before creating an issue, please check the following:
 
 ## Catching Application Traceback
 
-* Starting from version 1.14.0 Blender Launcher ships with separate debugging releases that used to provide deeper and more user friendly way of tracing an issue:
 
-:   1. Download `Blender_Launcher_v%.%.%_%_x64_DEBUG.zip` for your system and reproduce the issue faced in a regular version
-    1. If something goes wrong the popup window with detailed information will be shown
-    1. Copy the text from the window using ++ctrl+c++
+Blender Launcher logs warnings and errors into `Blender Launcher.log` by default. To retrieve additional useful debug information use `-debug` flag:
 
-* Blender Launcher logs warnings and errors into `BL.log` by default. To retrieve additional useful debug information use `-debug` flag (compatible with debugging releases):
+!!! warning "Close Blender Launcher"
 
-    === "Windows CMD"
+    Before executing the command, you need to completely close Blender Launcher. On **Windows**, by default the program is running as a **tray icon** and can be closed through the **bottom right icon**. For more info, check [Tray Icon Documentation](settings.md#show-tray-icon).
 
-        ```
-        .\"Blender Launcher.exe" -debug
-        ```
+=== "Windows CMD"
 
-    === "Linux"
+```
+.\"Blender Launcher.exe" -debug
+```
 
-        ```
-        ./Blender\ Launcher -debug
-        ```
+=== "Linux"
+
+```
+./Blender\ Launcher -debug
+```
 
 * On Linux it is possible to retrieve useful debug information using following command:
 
