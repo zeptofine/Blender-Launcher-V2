@@ -8,4 +8,4 @@ This program may not work properly on all Linux distributions due to limitations
 
 If you want to use the Blender Launcher on a different Linux distribution that does not work with the provided version, you can build the program on your machine directly. This will create a custom build compatible with your OS.
 
-For more information on how to install the GitHub project and build it, check the [development documentation](development.mb). Also, don't hesitate to ask for help on our [Discord](https://discord.com/invite/3jrTZFJkTd)!
+For more information on how to install the GitHub project and build it, check the [development documentation](development.md). Also, don't hesitate to ask for help on our [Discord](https://discord.com/invite/3jrTZFJkTd)!
