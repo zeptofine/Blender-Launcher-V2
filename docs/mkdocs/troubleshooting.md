@@ -23,6 +23,11 @@ Blender Launcher logs warnings and errors into `Blender Launcher.log` by default
 
     Before executing the command, you need to completely close Blender Launcher. On **Windows**, by default the program is running as a **tray icon** and can be closed through the **bottom right icon**. For more info, check [Tray Icon Documentation](settings.md#show-tray-icon).
 
+!!! info "Log file"
+
+    The **log file** can be found in the **LocalAppdata** folder on **Windows**
+    `%localappdata%/Blender Launcher/`
+
 === "Windows CMD"
 
 ```
