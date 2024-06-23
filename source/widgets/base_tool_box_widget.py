@@ -1,4 +1,3 @@
-from PyQt5 import QtGui
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QTabWidget
 from widgets.base_list_widget import BaseListWidget
@@ -19,12 +18,9 @@ class BaseToolBoxWidget(QTabWidget):
         self.setProperty("West", True)
         self.currentChanged.connect(self.current_changed)
 
-    def add_page_widget(self, page_widget: BasePageWidget, page_name: str, icon: QtGui.QIcon = None) -> BaseListWidget:
+    def add_page_widget(self, page_widget: BasePageWidget, page_name) -> BaseListWidget:
         self.pages.append(page_widget)
-        if icon is None:
-            self.addTab(page_widget, page_name)
-        else:
-            self.addTab(page_widget, icon, page_name)
+        self.addTab(page_widget, page_name)
         self.list_widgets.add(page_widget.list_widget)
         return page_widget.list_widget
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import shlex
 import shutil
 import sys
@@ -302,7 +303,7 @@ class BlenderLauncher(BaseWindow):
         self.UserTabLayout = QVBoxLayout()
         self.UserTabLayout.setContentsMargins(0, 0, 0, 0)
         self.UserTab.setLayout(self.UserTabLayout)
-        # self.TabWidget.addTab(self.UserTab, "User")
+        self.TabWidget.addTab(self.UserTab, "User")
 
         self.LibraryToolBox = BaseToolBoxWidget(self)
         self.DownloadsToolBox = BaseToolBoxWidget(self)
@@ -314,11 +315,6 @@ class BlenderLauncher(BaseWindow):
         self.DownloadsTabLayout.addWidget(self.DownloadsToolBox)
         self.UserTabLayout.addWidget(self.UserToolBox)
 
-        self.UserFavoritesListWidget = BasePageWidget(
-            parent=self, page_name="UserFavoritesListWidget", time_label="Commit Time", info_text="Nothing to show yet"
-        )
-        self.UserFavoritesListWidget = self.LibraryToolBox.add_page_widget(self.UserFavoritesListWidget, "", self.icons.star)
-        
         self.LibraryStablePageWidget = BasePageWidget(
             parent=self,
             page_name="LibraryStableListWidget",
@@ -374,7 +370,10 @@ class BlenderLauncher(BaseWindow):
             self.DownloadsExperimentalPageWidget, "Experimental"
         )
 
-        
+        self.UserFavoritesListWidget = BasePageWidget(
+            parent=self, page_name="UserFavoritesListWidget", time_label="Commit Time", info_text="Nothing to show yet"
+        )
+        self.UserFavoritesListWidget = self.UserToolBox.add_page_widget(self.UserFavoritesListWidget, "Favorites")
 
         self.UserCustomPageWidget = BasePageWidget(
             parent=self,
@@ -384,7 +383,7 @@ class BlenderLauncher(BaseWindow):
             show_reload=True,
             extended_selection=True,
         )
-        self.UserCustomListWidget = self.LibraryToolBox.add_page_widget(self.UserCustomPageWidget, "Custom")
+        self.UserCustomListWidget = self.UserToolBox.add_page_widget(self.UserCustomPageWidget, "Custom")
 
         self.TabWidget.setCurrentIndex(get_default_tab())
         self.LibraryToolBox.setCurrentIndex(get_default_library_page())
