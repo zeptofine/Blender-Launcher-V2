@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="11.718842mm"
+   height="11.718471mm"
+   viewBox="0 0 11.718842 11.718471"
+   version="1.1"
+   id="svg1"
+   xml:space="preserve"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"><sodipodi:namedview
+     id="namedview1"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#505050"
+     inkscape:document-units="mm" /><defs
+     id="defs1" /><g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-100.19749,-140.80307)"><g
+       id="layer1-6"
+       inkscape:label="star"
+       transform="translate(102.30429,145.85417)"><path
+         fill="#ffffff"
+         d="m 141.66391,-50.094552 c -0.45438,-1.352507 -1.62514,-2.338608 -3.03469,-2.554197 l -16.40506,-2.506826 -7.36869,-15.697387 c -0.6284,-1.338005 -1.97124,-2.189726 -3.44652,-2.189726 -1.47625,0 -2.81813,0.851721 -3.44652,2.189726 l -7.36967,15.698354 -16.405057,2.506825 c -1.409546,0.215589 -2.5803,1.200724 -3.033713,2.554197 -0.453414,1.353473 -0.111179,2.844227 0.885558,3.867066 l 11.98017,12.284703 -2.83746,17.379559 c -0.233957,1.438549 0.376072,2.884831 1.566162,3.725918 1.189122,0.841087 2.759151,0.926162 4.038183,0.220423 l 14.623317,-8.087002 14.6233,8.087002 c 0.57716,0.319033 1.21233,0.475649 1.84459,0.475649 0.76955,0 1.5391,-0.233958 2.1936,-0.696072 1.19009,-0.84012 1.79915,-2.286403 1.56519,-3.725918 l -2.83746,-17.379559 11.98114,-12.284703 c 0.99481,-1.022839 1.33704,-2.513593 0.88363,-3.868032 z"
+         id="path1"
+         style="fill:#ffffff;stroke-width:0.966766"
+         inkscape:label="star"
+         transform="matrix(0.19241386,0,0,0.19241386,-17.684007,9.0033144)"
+         inkscape:export-filename="star.svg"
+         inkscape:export-xdpi="96"
+         inkscape:export-ydpi="96" /></g></g></svg>
