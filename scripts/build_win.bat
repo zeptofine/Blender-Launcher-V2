@@ -1,5 +1,9 @@
-cd..
+:: check if we need to move back to the root of the project folder
+for %%I in (.) do set CurrentDir=%%~nxI
+if %CurrentDir%==scripts cd ..
+
 ls
+
 
 if exist __pycache__ rd /S /Q __pycache__
 if exist build rd /S /Q build
