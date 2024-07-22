@@ -94,6 +94,7 @@ def get_actual_library_folder():
 
     return Path(library_folder)
 
+
 def get_library_folder():
     return get_actual_library_folder().resolve()
 
@@ -433,8 +434,8 @@ def get_minimum_blender_stable_version():
 
     if value is not None and "." in value:
         return blender_minimum_versions.get(value, 7)
-    else:
-        return get_settings().value("minimum_blender_stable_version", defaultValue=7, type=int)
+
+    return get_settings().value("minimum_blender_stable_version", defaultValue=7, type=int)
 
 
 def set_minimum_blender_stable_version(blender_minimum_version):

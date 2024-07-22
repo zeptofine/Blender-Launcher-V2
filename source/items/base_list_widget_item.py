@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import re
-from typing import TYPE_CHECKING, Callable
 from datetime import timezone
-from modules._platform import set_locale
+from typing import TYPE_CHECKING, Callable
+
 from PyQt5.QtWidgets import QListWidgetItem
 
 if TYPE_CHECKING:

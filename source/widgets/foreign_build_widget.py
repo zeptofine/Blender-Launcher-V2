@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 class UnrecoBuildWidget(BaseBuildWidget):
     def __init__(self, parent: "BlenderLauncher", path: Path, list_widget: BaseListWidget, item):
         super().__init__(parent=parent)
-        self.parent: "BlenderLauncher" = parent
+        self.parent: BlenderLauncher = parent
         self.path = path
         self.list_widget = list_widget
         self.item = item

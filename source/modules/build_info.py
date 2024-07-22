@@ -4,7 +4,7 @@ import json
 import re
 import sys
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime
 from functools import cache
 from typing import TYPE_CHECKING
 

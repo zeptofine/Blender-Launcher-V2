@@ -4,7 +4,6 @@ import contextlib
 import json
 import logging
 import re
-
 from datetime import datetime, timezone
 from itertools import chain
 from pathlib import Path
@@ -12,23 +11,22 @@ from typing import TYPE_CHECKING
 from urllib.parse import urljoin
 
 import distro
-import semver
-from semver import Version
 from bs4 import BeautifulSoup, SoupStrainer
-from modules._platform import get_platform, reset_locale, set_locale, stable_cache_path, get_architecture
+from modules._platform import get_architecture, get_platform, reset_locale, set_locale, stable_cache_path
 from modules.build_info import BuildInfo, parse_blender_ver
 from modules.scraper_cache import StableCache
 from modules.settings import (
+    blender_minimum_versions,
     get_minimum_blender_stable_version,
     get_scrape_automated_builds,
     get_scrape_stable_builds,
-    get_use_pre_release_builds,
     get_show_daily_archive_builds,
     get_show_experimental_archive_builds,
     get_show_patch_archive_builds,
-    blender_minimum_versions,
+    get_use_pre_release_builds,
 )
 from PyQt5.QtCore import QThread, pyqtSignal
+from semver import Version
 
 if TYPE_CHECKING:
     from modules.connection_manager import ConnectionManager
@@ -81,19 +79,18 @@ def get_latest_pre_release_tag(
                 platform = "Ubuntu"
                 break
 
-    parsed_data = json.loads(r.data)
-    platform_valid_tags = []
+    platform_valid_tags = (
+        release["tag_name"]
+        for release in parsed_data
+        for asset in release["assets"]
+        if asset["name"].endswith(".zip") and platform.lower() in asset["name"].lower()
+    )
+    pre_release_tags = (release.lstrip("v") for release in platform_valid_tags)
 
-    for release in parsed_data:
-        for asset in release["assets"]:
-            if asset["name"].endswith(".zip") and platform.lower() in asset["name"].lower():
-                platform_valid_tags.append(release["tag_name"])
-
-    pre_release_tags = [release.lstrip("v") for release in platform_valid_tags]
-    valid_pre_release_tags = [tag for tag in pre_release_tags if semver.VersionInfo.is_valid(tag)]
+    valid_pre_release_tags = [tag for tag in pre_release_tags if Version.is_valid(tag)]
 
     if valid_pre_release_tags:
-        tag = max(valid_pre_release_tags, key=semver.VersionInfo.parse)
+        tag = max(valid_pre_release_tags, key=Version.parse)
         return f"v{tag}"
 
     r.release_conn()
@@ -343,7 +340,7 @@ class Scraper(QThread):
             minimum_smver_version = Version(0, 0, 0)
         else:
             major, minor = version_at_index.split(".")
-            minimum_smver_version = Version(major, minor, 0)
+            minimum_smver_version = Version(int(major), int(minor), 0)
 
         cache_modified = False
         for release in releases:
