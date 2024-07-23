@@ -319,7 +319,7 @@ class LibraryWidget(BaseBuildWidget):
 
         self.menu.trigger()
 
-    def mouseDoubleClickEvent(self, event):
+    def mouseDoubleClickEvent(self, _event):
         if self.build_info is not None:
             self.launch(open_last=self.hovering_and_shifting)
 
@@ -353,7 +353,7 @@ class LibraryWidget(BaseBuildWidget):
         else:
             e.ignore()
 
-    def dragLeaveEvent(self, e: QDragLeaveEvent):
+    def dragLeaveEvent(self, _e: QDragLeaveEvent):
         self.setStyleSheet("background-color:")
 
     def dropEvent(self, e: QDropEvent):
@@ -383,10 +383,10 @@ class LibraryWidget(BaseBuildWidget):
         self.launchButton.setIcon(self._launch_icon or self.parent.icons.none)
         self.launchButton.setFont(self.parent.font_10)
 
-    def enterEvent(self, e):
+    def enterEvent(self, _e):
         self._hovered = True
 
-    def leaveEvent(self, e):
+    def leaveEvent(self, _e):
         self._hovered = False
 
     @property

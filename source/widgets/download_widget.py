@@ -138,7 +138,7 @@ class DownloadWidget(BaseBuildWidget):
 
         self.menu.trigger()
 
-    def mouseDoubleClickEvent(self, event):
+    def mouseDoubleClickEvent(self, _event):
         if self.state != DownloadState.DOWNLOADING and not self.installed:
             self.init_downloader()
         elif self.installed:
@@ -148,7 +148,7 @@ class DownloadWidget(BaseBuildWidget):
     def focus_installed(self):
         self.focus_installed_widget.emit(self.installed)
 
-    def mouseReleaseEvent(self, event):
+    def mouseReleaseEvent(self, _event):
         if self.show_new is True:
             self.build_state_widget.setNewBuild(False)
             self.show_new = False

@@ -17,5 +17,5 @@ class ElidedTextLabel(QLabel):
         elided_text = self.metrics.elidedText(self.text, Qt.TextElideMode.ElideRight, width)
         self.setText(elided_text)
 
-    def resizeEvent(self, event):
+    def resizeEvent(self, _event):
         self.setElidedText()
