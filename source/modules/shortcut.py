@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 from shutil import copyfile
 
-from modules._platform import get_platform
+from modules._platform import get_cwd, get_launcher_name, get_platform
 from modules.settings import get_library_folder
 
 
@@ -67,3 +67,36 @@ def create_shortcut(folder, name):
             file.write(desktop_entry)
 
         os.chmod(dist, 0o744)
+
+
+def generate_program_shortcut(destination: Path):
+    platform = get_platform()
+
+    if platform == "Windows":
+        ...
+
+    elif platform == "Linux":
+        import shlex
+        bl_exe, _ = get_launcher_name()
+        cwd = get_cwd()
+        source = cwd / bl_exe
+
+        _exec = source
+
+        text = "\n".join( [
+            "[Desktop Entry]",
+            "Name=Blender Launcher V2",
+            "GenericName=Launcher",
+            f"Exec={shlex.quote(str(_exec))} __launch_target",
+            "MimeType=application/x-blender;",
+            "Icon=blender-icon",
+            "Terminal=false",
+            "Type=Application",
+        ])
+
+        with destination.open("w", encoding="utf-8") as file:
+            file.write(text)
+
+        os.chmod(destination, 0o744)
+
+# generate_program_shortcut(Path("~/.local/share/applications/BLV2.desktop").expanduser())

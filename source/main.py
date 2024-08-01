@@ -103,7 +103,16 @@ def main():
 
     launch_parser.add_argument("-v", "--version", help="Version to launch.")
 
+    # This could be used better
+    launch_target_parser = subparsers.add_parser(
+        "__launch_target",
+        help="This is a target for launching the program from a shortcut.",
+        add_help=False,
+    )
+    launch_target_parser.add_argument("file", nargs="?", type=Path, help="Path to a specific Blender file to launch.")
+
     args, argv = parser.parse_known_args()
+    print("PARSED")
     if argv:
         msg = _("unrecognized arguments: ") + " ".join(argv)
         ap.error(parser, msg)
@@ -132,6 +141,8 @@ def main():
 
     if args.command == "launch":
         start_launch(app, args.file, args.version, args.open_last)
+    if args.command == "__launch_target" and args.file:
+        start_launch(app, args.file, None, False)
 
     if not args.instanced:
         check_for_instance()
@@ -188,7 +199,10 @@ def start_update(app: QApplication, is_instanced: bool, tag: str | None):
 
 
 def start_launch(
-    app: QApplication, file: Path | None = None, version_query: str | None = None, open_last: bool = False
+    app: QApplication,
+    file: Path | None = None,
+    version_query: str | None = None,
+    open_last: bool = False,
 ) -> NoReturn:
     from modules.version_matcher import VALID_QUERIES, VersionSearchQuery
     from windows.launching_window import LaunchingWindow

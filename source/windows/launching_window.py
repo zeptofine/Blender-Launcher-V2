@@ -261,7 +261,8 @@ class LaunchingWindow(BaseWindow):
         if self.version_query is not None:  # then it was given via the CLI
             self.update_query_boxes(self.version_query)
 
-        if self.blendfile is not None:  # check the blendfile's target version
+        if self.blendfile is not None and self.blendfile.exists():  # check the blendfile's target version
+
             header = read_blendfile_header(self.blendfile)
             print(header)
             if header is None:

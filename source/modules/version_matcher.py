@@ -84,7 +84,7 @@ VERSION_SEARCH_REGEX = re.compile(
 # ([\^\-\*]|\d+)                     x3 -- major, minor, and patch (required)
 # (?:\-([^\@\s\+]+))?                   -- branch (optional)
 # (?:\+([\d\w]+))?                      -- build hash (optional)
-# (?:\@([\d\-T\+\^\:Z\ ]+))?              -- commit time (saved as ^|*|- or an isoformat) (optional)
+# (?:\@([\d\-T\+\^\:Z\ ]+))?            -- commit time (saved as ^|*|- or an isoformat) (optional)
 # $                                     -- end of string
 
 
