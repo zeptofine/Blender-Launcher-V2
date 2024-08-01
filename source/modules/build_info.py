@@ -237,6 +237,10 @@ class BuildInfo:
             json.dump(data, file)
         return data
 
+    def __lt__(self, other: BuildInfo):
+        return self.full_semversion < other.full_semversion
+
+
 
 def fill_blender_info(exe: Path, info: BuildInfo | None = None) -> tuple[datetime, str, str, str]:
     set_locale()

@@ -31,7 +31,7 @@ class BlendfileHeader:
 
 
 def parse_header_version(header: bytes):
-    version = [x - 48 for x in header[9::]]
+    version = [x - ord("0") for x in header[9::]]
 
     return Version(
         major=version[0],
