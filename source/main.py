@@ -6,6 +6,7 @@ import os
 import sys
 from argparse import ArgumentParser
 from pathlib import Path
+from typing import NoReturn
 
 import modules._resources_rc
 from modules import argument_parsing as ap
@@ -65,11 +66,15 @@ def main():
 
     subparsers = parser.add_subparsers(dest="command")
 
-    update_parser = subparsers.add_parser("update", help="Update the application to a new version.", add_help=False)
+    update_parser = subparsers.add_parser(
+        "update",
+        help="Update the application to a new version.",
+        add_help=False,
+    )
     add_help(update_parser)
     update_parser.add_argument("version", help="Version to update to.", nargs="?")
 
-    parser.add_argument("-debug", help="Enable debug logging.", action="store_true")
+    parser.add_argument("-d", "-debug", "--debug", help="Enable debug logging.", action="store_true")
     parser.add_argument("-set-library-folder", help="Set library folder", type=Path)
     parser.add_argument(
         "--offline",
@@ -84,12 +89,19 @@ def main():
         action="store_true",
     )
 
-    # possible launch_parser
-    # args:
-    #   "launch":               Launch a specific version of Blender. If no file or version is specified,
-    #                            the favorite build is chosen. If there is no favorite build, TODO: BUILD_CHOOSER
-    #   "-f" | "--file":        Path to a specific Blender file to launch.
-    #   "-v" | "--version":     Version to launch. If not specified, the latest stable release is used.
+    launch_parser = subparsers.add_parser(
+        "launch",
+        help="Launch a specific version of Blender. If not file or version is specified, Quick launch is chosen.",
+        add_help=False,
+    )
+    add_help(launch_parser)
+    grp = launch_parser.add_mutually_exclusive_group()
+    grp.add_argument("-f", "--file", type=Path, help="Path to a specific Blender file to launch.")
+    grp.add_argument(
+        "-ol", "--open-last", action="store_true", help="Open the last file in the specified blender build"
+    )
+
+    launch_parser.add_argument("-v", "--version", help="Version to launch.")
 
     args, argv = parser.parse_known_args()
     if argv:
@@ -98,7 +110,7 @@ def main():
 
     # Custom help is necessary for frozen Windows builds
     if args.help:
-        ap.show_help(parser, update_parser, args)
+        ap.show_help(parser, update_parser, launch_parser, args)
         sys.exit(0)
 
     if args.debug:
@@ -118,8 +130,8 @@ def main():
     if args.command == "update":
         start_update(app, args.instanced, args.version)
 
-    # if args.command == "launch":
-    #     ...
+    if args.command == "launch":
+        start_launch(app, args.file, args.version, args.open_last)
 
     if not args.instanced:
         check_for_instance()
@@ -173,6 +185,28 @@ def start_update(app: QApplication, is_instanced: bool, tag: str | None):
             os.chmod(blu_exe, 0o744)
             _popen(f'nohup "{blu_exe}" --instanced update')
         sys.exit(0)
+
+
+def start_launch(
+    app: QApplication, file: Path | None = None, version_query: str | None = None, open_last: bool = False
+) -> NoReturn:
+    from modules.version_matcher import VALID_QUERIES, VersionSearchQuery
+    from windows.launching_window import LaunchingWindow
+
+    # convert version_query to VersionSearchQuery
+    if version_query is not None:
+        try:
+            query = VersionSearchQuery.parse(version_query)
+        except Exception:
+            print("Failed to parse query")
+            print("Valid version queries include: ")
+            print(VALID_QUERIES)
+            sys.exit(1)
+    else:
+        query = None
+
+    LaunchingWindow(app, version_query=query, blendfile=file, open_last=open_last).show()
+    sys.exit(app.exec())
 
 
 def check_for_instance():

@@ -7,6 +7,7 @@ from functools import cache
 from pathlib import Path
 
 from modules._platform import get_config_file, get_config_path, get_cwd, get_platform, local_config, user_config
+from modules.version_matcher import VersionSearchQuery
 from PyQt5.QtCore import QSettings
 
 EPOCH = datetime.fromtimestamp(0, tz=timezone.utc)
@@ -524,6 +525,23 @@ def get_use_system_titlebar():
 
 def set_use_system_titlebar(b: bool):
     get_settings().setValue("use_system_title_bar", b)
+
+
+def get_version_specific_matchers():
+    import json
+
+    dct = get_settings().value("version_specific_matchers", type=str)
+    if dct is None:
+        return {}
+    return {k: VersionSearchQuery.parse(v) for k, v in json.loads(dct)}
+
+
+def set_version_specific_matchers(dct: dict[str, VersionSearchQuery]):
+    import json
+
+    v = {k: str(v) for k, v in dct.items()}
+    j = json.dumps(v)
+    get_settings().setValue("version_specific_matchers", j)
 
 
 def migrate_config(force=False):
