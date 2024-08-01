@@ -75,6 +75,7 @@ class LaunchingWindow(BaseWindow):
 
         self.launch_button = QPushButton("Launch", parent=self)
         self.launch_button.setProperty("LaunchButton", True)
+        self.launch_button.clicked.connect(self.launch_from_button)
 
         ### LAYOUT ###
         widget = QWidget(self)
@@ -114,7 +115,7 @@ class LaunchingWindow(BaseWindow):
         self.date_range_combo.currentIndexChanged.connect(self.update_query_from_edits)
         self.error_preview = QLabel(self)
 
-        if self.blendfile is not None or self.version_query is not None:
+        if self.blendfile is not None:
             self.save_current_query_button = QPushButton("Save current query for ???", self)
             self.save_current_query_button.clicked.connect(self.save_current_query)
             self.save_current_query_button.setProperty("CreateButton", True)
@@ -125,6 +126,7 @@ class LaunchingWindow(BaseWindow):
             self.update_query_boxes(self.version_query)
 
         self.builds_list = QListWidget(self)
+        self.builds_list.itemSelectionChanged.connect(self.cancel_timer)
         self.builds_list.itemDoubleClicked.connect(self.set_query_from_selected_build)
 
         self.central_layout.addWidget(self.status_label, 0, 1, 1, 2)
@@ -267,9 +269,7 @@ class LaunchingWindow(BaseWindow):
             self.saved_header = header
             self.status_label.setText(f"Detected header version: {header.version}")
             if self.save_current_query_button is not None:
-                self.save_current_query_button.setText(
-                    f"Save current query for {self.saved_header.version} blend-files"
-                )
+                self.save_current_query_button.setText(f"Save current query for {self.saved_header.version} blendfiles")
 
             v = header.version
 
@@ -292,7 +292,6 @@ class LaunchingWindow(BaseWindow):
             self.list_items[self.__version_url(build)].setSelected(True)
             print(matches)
             self.prepare_launch(build)
-
 
     def make_matcher(self):
         return BInfoMatcher(tuple(map(BasicBuildInfo.from_buildinfo, self.builds.values())))
@@ -331,6 +330,13 @@ class LaunchingWindow(BaseWindow):
             all_matchers[self.saved_header.version] = self.version_query
             set_version_specific_matchers(all_matchers)
 
+    def launch_from_button(self):
+        """Launches the currently selected build from the list of enabled builds."""
+        _, binfos = self.update_search()
+        assert len(binfos) == 1
+        build = binfos[0]
+        self.actually_launch(build)
+
     def prepare_launch(self, build: BuildInfo):
         """Prepares the given build for launching, starts the timer."""
         self.timer_label.setText(f"Launching in {self.remaining_time}s")
@@ -358,8 +364,8 @@ class LaunchingWindow(BaseWindow):
             self.version_query_edit.textChanged.disconnect(self.cancel_timer)
             self.branch_edit.textChanged.disconnect(self.cancel_timer)
             self.build_hash_edit.textChanged.disconnect(self.cancel_timer)
+            self.builds_list.itemSelectionChanged.disconnect(self.cancel_timer)
             self.cancelled = True
-
 
     def actually_launch(self, build: BuildInfo):
         # find an appropriate launch mode
