@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import datetime
 import re
 from dataclasses import dataclass
@@ -50,12 +51,42 @@ class BasicBuildInfo:
         )
 
 
-# ^   | match the largest number in that column
-# *   | match any number in that column
-# -   | match the smallest number in that column
-# <n> | match a number in that column
+# VersionSearchQuerySyntax (NOT SEMVER COMPATIBLE!):
 
-VERSION_SEARCH_REGEX = re.compile(r"^([\^\-\*]|\d+)(.([\^\-\*]|\d+))?(.([\^\-\*]|\d+))?$")
+# ^   | match the largest/newest item in that column
+# *   | match any number in that column
+# -   | match the smallest/oldest item in that column
+# <n> | match an item in that column
+
+# <major_num>.<minor>.<patch>[-<branch>][+<build_hash>][@<commit time>]
+
+# Valid examples of version search queries are:
+# *.*.*
+# 1.2.3-master
+# 4.^.^-stable@^
+# 4.3.^+cb886aba06d5@^
+# 4.3.^@2024-07-31T23:53:51+00:00
+# And of course, a full example:
+# 4.3.^-stable+cb886aba06d5@2024-07-31T23:53:51+00:00
+
+VERSION_SEARCH_REGEX = re.compile(
+    r"""^
+    ([\^\-\*]|\d+)\.([\^\-\*]|\d+)\.([\^\-\*]|\d+)
+    (?:\-([^\@\s\+]+))?
+    (?:\+([\d\w]+))?
+    (?:\@([\d\-T\+\^\:Z\ ]+))?
+    $""",
+    flags=re.X,
+)
+
+# Regex breakdown:
+# ^                                     -- start of string
+# ([\^\-\*]|\d+)                     x3 -- major, minor, and patch (required)
+# (?:\-([^\@\s\+]+))?                   -- branch (optional)
+# (?:\+([\d\w]+))?                      -- build hash (optional)
+# (?:\@([\d\-T\+\^\:Z\ ]+))?              -- commit time (saved as ^|*|- or an isoformat) (optional)
+# $                                     -- end of string
+
 
 VALID_QUERIES = """^.^.*
 *.*.14
@@ -67,28 +98,32 @@ VALID_QUERIES = """^.^.*
 
 
 @cache
-def _parse(s: str) -> tuple[int | str, int | str, int | str]:
+def _parse(s: str) -> tuple[int | str, int | str, int | str, str | None, str | None, datetime.datetime | str | None]:
     """Parse a query from a string. does not support branch and commit_time"""
     match = VERSION_SEARCH_REGEX.match(s)
     if not match:
         raise ValueError(f"Invalid version search query: {s}")
 
     major = match.group(1)
-    minor = match.group(3)
-    patch = match.group(5)
+    minor = match.group(2)
+    patch = match.group(3)
+    branch = match.group(4)
+    build_hash = match.group(5)
+    commit_time = match.group(6)
 
     if major.isnumeric():
         major = int(major)
-    if minor is not None and minor.isnumeric():
+    if minor.isnumeric():
         minor = int(minor)
-    if minor is None:
-        minor = "*"
-    if patch is not None and patch.isnumeric():
+    if patch.isnumeric():
         patch = int(patch)
-    if patch is None:
-        patch = "*"
 
-    return major, minor, patch
+    if commit_time is not None and commit_time not in ("^", "*", "-"):
+        # Try to convert it to a datetime, and just passing it upon failure
+        with contextlib.suppress(ValueError):
+            commit_time = datetime.datetime.fromisoformat(commit_time)
+
+    return major, minor, patch, branch, build_hash, commit_time
 
 
 @dataclass(frozen=True)
@@ -121,28 +156,16 @@ class VersionSearchQuery:
     def default(cls):
         return cls("^", "^", "^", commit_time="^", branch=None)
 
-    def to_dict(self):
-        return {
-            "major": self.major,
-            "minor": self.minor,
-            "patch": self.patch,
-            "branch": self.branch,
-            "build_hash": self.build_hash,
-            "commit_time": self.commit_time.isoformat()
-            if isinstance(self.commit_time, datetime.datetime)
-            else self.commit_time,
-        }
-
-    @classmethod
-    def from_dict(cls, d: dict):
-        try:
-            dt = datetime.datetime.fromisoformat(d["commit_time"])
-        except (TypeError, ValueError):
-            dt = d["commit_time"]
-
-        d["commit_time"] = dt
-
-        return cls(**d)
+    def __str__(self) -> str:
+        """Returns a string that can be parsed by parse()"""
+        s = f"{self.major}.{self.minor}.{self.patch}"
+        if self.branch:
+            s += f"-{self.branch}"
+        if self.build_hash:
+            s += f"+{self.build_hash}"
+        if self.commit_time:
+            s += f"@{self.commit_time}"
+        return s
 
     def with_branch(self, branch: str | None = None):
         return self.__class__(
@@ -159,8 +182,8 @@ class VersionSearchQuery:
             minor=self.minor,
             patch=self.patch,
             branch=self.branch,
-            commit_time=self.commit_time,
             build_hash=build_hash,
+            commit_time=self.commit_time,
         )
 
     def with_commit_time(self, commit_time: datetime.datetime | str | None = None):
@@ -169,11 +192,9 @@ class VersionSearchQuery:
             minor=self.minor,
             patch=self.patch,
             branch=self.branch,
+            build_hash=self.build_hash,
             commit_time=commit_time,
         )
-
-    def __str__(self):
-        return f"{self.major}.{self.minor}.{self.patch}"
 
 
 # Examples:
@@ -189,9 +210,8 @@ class BInfoMatcher:
     def match(self, s: VersionSearchQuery) -> tuple[BasicBuildInfo, ...]:
         versions = self.versions
 
-        for place in ("major", "minor", "patch", "branch", "build_hash", "commit_time"):
-            from pprint import pprint
-
+        for place in ("build_hash", "major", "minor", "patch", "branch", "commit_time"):
+            # from pprint import pprint
             # print("VERSIONS:")
             # pprint(versions)
             # print(f"PLACE: {place}")
@@ -288,8 +308,10 @@ if __name__ == "__main__":  # Test BInfoMatcher
         ):
             result_before_serialization = matcher.match(query)
 
-            serialized_query = json.dumps(query.to_dict())
-            deserialized_query = VersionSearchQuery.from_dict(json.loads(serialized_query))
+            serialized_query = str(query)
+            print(serialized_query)
+            deserialized_query = VersionSearchQuery.parse(serialized_query)
+            print(deserialized_query)
 
             result_after_serialization = matcher.match(deserialized_query)
 
@@ -300,12 +322,17 @@ if __name__ == "__main__":  # Test BInfoMatcher
     def test_search_query_parser():
         # Test parsing of search query strings
         assert VersionSearchQuery.parse("1.2.3") == VersionSearchQuery(1, 2, 3)
-        assert VersionSearchQuery.parse("^.^.*") == VersionSearchQuery("^", "^", "*")
-        assert VersionSearchQuery.parse("*.*.*") == VersionSearchQuery("*", "*", "*")
-        assert VersionSearchQuery.parse("^.*.*") == VersionSearchQuery("^", "*", "*")
-        assert VersionSearchQuery.parse("-.*.^") == VersionSearchQuery("-", "*", "^")
-        assert VersionSearchQuery.parse("*.*.14") == VersionSearchQuery("*", "*", 14)
-        assert VersionSearchQuery.parse("4.2") == VersionSearchQuery(4, 2, "*")
+        assert VersionSearchQuery.parse("^.*.-") == VersionSearchQuery("^", "*", "-")
+        assert VersionSearchQuery.parse("*.*.*-daily") == VersionSearchQuery("*", "*", "*", branch="daily")
+        assert VersionSearchQuery.parse("*.*.*+cb886aba06d5") == VersionSearchQuery(
+            "*", "*", "*", build_hash="cb886aba06d5"
+        )
+        assert VersionSearchQuery.parse("*.*.*@2024-07-31T23:53:51+00:00") == VersionSearchQuery(
+            "*", "*", "*", commit_time=datetime.datetime(2024, 7, 31, 23, 53, 51, tzinfo=utc)
+        )
+        assert VersionSearchQuery.parse("*.*.*@2024-07-31 23:53:51+00:00") == VersionSearchQuery(
+            "*", "*", "*", commit_time=datetime.datetime(2024, 7, 31, 23, 53, 51, tzinfo=utc)
+        )
         # Test parsing of search query strings that are not valid
         try:
             VersionSearchQuery.parse("abc")

@@ -241,7 +241,6 @@ class BuildInfo:
         return self.full_semversion < other.full_semversion
 
 
-
 def fill_blender_info(exe: Path, info: BuildInfo | None = None) -> tuple[datetime, str, str, str]:
     set_locale()
     version = _check_output([exe.as_posix(), "-v"]).decode("UTF-8")

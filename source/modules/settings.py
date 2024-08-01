@@ -9,6 +9,7 @@ from pathlib import Path
 from modules._platform import get_config_file, get_config_path, get_cwd, get_platform, local_config, user_config
 from modules.version_matcher import VersionSearchQuery
 from PyQt5.QtCore import QSettings
+from semver import Version
 
 EPOCH = datetime.fromtimestamp(0, tz=timezone.utc)
 ISO_EPOCH = EPOCH.isoformat()
@@ -527,21 +528,30 @@ def set_use_system_titlebar(b: bool):
     get_settings().setValue("use_system_title_bar", b)
 
 
-def get_version_specific_matchers():
+def get_version_specific_matchers() -> dict[Version, VersionSearchQuery]:
     import json
 
-    dct = get_settings().value("version_specific_matchers", type=str)
+    dct = get_settings().value("version_specific_matchers", defaultValue="{}", type=str)
     if dct is None:
         return {}
-    return {k: VersionSearchQuery.parse(v) for k, v in json.loads(dct)}
+    return {Version.parse(k): VersionSearchQuery.parse(v) for k, v in json.loads(dct).items()}
 
 
-def set_version_specific_matchers(dct: dict[str, VersionSearchQuery]):
+def set_version_specific_matchers(dct: dict[Version, VersionSearchQuery]):
     import json
 
-    v = {k: str(v) for k, v in dct.items()}
+    v = {str(k): str(v) for k, v in dct.items()}
     j = json.dumps(v)
     get_settings().setValue("version_specific_matchers", j)
+
+
+def get_launch_timer_duration() -> int:
+    return get_settings().value("launch_timer", defaultValue=5, type=int)
+
+
+def set_launch_timer_duration(duration: int):
+    """Sets the launch timer duration, in seconds"""
+    get_settings().setValue("launch_timer", duration)
 
 
 def migrate_config(force=False):

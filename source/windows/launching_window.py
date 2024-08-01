@@ -2,16 +2,16 @@ from __future__ import annotations
 
 import contextlib
 import json
-from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
 from items.enablable_list_widget_item import EnablableListWidgetItem
 from modules.blendfile_reader import BlendfileHeader, read_blendfile_header
 from modules.build_info import BuildInfo, LaunchOpenLast, LaunchWithBlendFile, launch_build
+from modules.settings import get_launch_timer_duration, get_version_specific_matchers, set_version_specific_matchers
 from modules.tasks import TaskQueue
-from modules.version_matcher import BasicBuildInfo, BInfoMatcher, VersionSearchQuery
-from PyQt5.QtCore import Qt, pyqtSlot
+from modules.version_matcher import VALID_QUERIES, BasicBuildInfo, BInfoMatcher, VersionSearchQuery
+from PyQt5.QtCore import Qt, QTimer, pyqtSlot
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (
     QApplication,
@@ -41,7 +41,7 @@ class LaunchingWindow(BaseWindow):
         open_last: bool = False,
     ):
         super().__init__(app=app)
-        self.resize(480, 480)
+        self.resize(360, 480)
 
         # task queue
         self.task_queue = TaskQueue(
@@ -55,9 +55,6 @@ class LaunchingWindow(BaseWindow):
         self.saved_header: BlendfileHeader | None = None
         self.open_last = open_last
 
-        # if the window is ready to launch a specific version of Blender
-        self.ready = False
-
         # Get all available versions of Blender
         self.builds: dict[str, BuildInfo] = {}
         self.list_items: dict[str, EnablableListWidgetItem] = {}
@@ -66,6 +63,19 @@ class LaunchingWindow(BaseWindow):
         self.drawing_task.finished.connect(self.search_finished)
         self.task_queue.append(self.drawing_task)
 
+        self.launch_timer = QTimer(self)
+        self.launch_timer.setSingleShot(True)
+        self.launch_timer.setInterval(1000)  # 1 second
+        self.launch_timer.timeout.connect(self.timer_tick)
+        self.launch_timer_duration = get_launch_timer_duration()
+        self.remaining_time = self.launch_timer_duration
+        self.timer_label = QLabel("", parent=self)
+        self.timer_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.cancelled = False
+
+        self.launch_button = QPushButton("Launch", parent=self)
+        self.launch_button.setProperty("LaunchButton", True)
+
         ### LAYOUT ###
         widget = QWidget(self)
         self.central_layout = QGridLayout(widget)
@@ -73,17 +83,30 @@ class LaunchingWindow(BaseWindow):
         self.setCentralWidget(widget)
 
         self.status_label = QLabel("Reading builds...", parent=self)
-        self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.central_layout.addWidget(self.status_label, 0, 0, 1, 3)
 
+        self.help_label = QLabel("?", parent=self)
+        self.help_label.setToolTip(
+            "<br>".join(
+                [
+                    "The version query",
+                    "can be modified to use ^ and - to search for specific builds depending on age.",
+                    "Examples of valid version queries:",
+                    *VALID_QUERIES.splitlines(),
+                ]
+            )
+        )
         ## Version settings
         self.version_query_edit = LintableLineEdit(self)
         self.version_query_edit.editingFinished.connect(self.update_query_from_edits)
+        self.version_query_edit.textChanged.connect(self.cancel_timer)
+        self.version_query_edit.setPlaceholderText("Any (*)")
         self.branch_edit = LintableLineEdit(self)
         self.branch_edit.editingFinished.connect(self.update_query_from_edits)
+        self.branch_edit.textChanged.connect(self.cancel_timer)
         self.branch_edit.setPlaceholderText("Any (*)")
         self.build_hash_edit = LintableLineEdit(self)
         self.build_hash_edit.editingFinished.connect(self.update_query_from_edits)
+        self.build_hash_edit.textChanged.connect(self.cancel_timer)
         self.build_hash_edit.setPlaceholderText("Any (*)")
         self.date_range_combo = QComboBox(self)
         self.date_range_combo.addItems(["Latest (^)", "Any (*)", "Oldest (-)"])
@@ -91,8 +114,21 @@ class LaunchingWindow(BaseWindow):
         self.date_range_combo.currentIndexChanged.connect(self.update_query_from_edits)
         self.error_preview = QLabel(self)
 
-        self.date_range_combo.currentIndexChanged.emit(0)
+        if self.blendfile is not None or self.version_query is not None:
+            self.save_current_query_button = QPushButton("Save current query for ???", self)
+            self.save_current_query_button.clicked.connect(self.save_current_query)
+            self.save_current_query_button.setProperty("CreateButton", True)
+        else:
+            self.save_current_query_button = None
 
+        if self.version_query is not None:
+            self.update_query_boxes(self.version_query)
+
+        self.builds_list = QListWidget(self)
+        self.builds_list.itemDoubleClicked.connect(self.set_query_from_selected_build)
+
+        self.central_layout.addWidget(self.status_label, 0, 1, 1, 2)
+        self.central_layout.addWidget(self.help_label, 0, 0, 1, 1)
         self.central_layout.addWidget(QLabel("Version selection: ", parent=self), 1, 0, 1, 1)
         self.central_layout.addWidget(self.version_query_edit, 1, 1, 1, 2)
         self.central_layout.addWidget(QLabel("Branch: ", parent=self), 2, 0, 1, 1)
@@ -102,12 +138,11 @@ class LaunchingWindow(BaseWindow):
         self.central_layout.addWidget(QLabel("Date selection: ", parent=self), 4, 0, 1, 1)
         self.central_layout.addWidget(self.date_range_combo, 4, 1, 1, 2)
         self.central_layout.addWidget(self.error_preview, 5, 0, 1, 3)
-        if self.version_query is not None:
-            self.update_query(self.version_query)
-
-        self.builds_list = QListWidget(self)
-        self.builds_list.itemDoubleClicked.connect(self.set_query_from_selected_build)
         self.central_layout.addWidget(self.builds_list, 6, 0, 1, 3)
+        self.central_layout.addWidget(self.timer_label, 7, 0, 1, 3)
+        if self.save_current_query_button is not None:
+            self.central_layout.addWidget(self.save_current_query_button, 8, 0, 1, 3)
+        self.central_layout.addWidget(self.launch_button, 9, 0, 1, 3)
 
         self.__enabled_font = QFont(self.font_10)
         self.__enabled_font.setBold(True)
@@ -128,6 +163,7 @@ class LaunchingWindow(BaseWindow):
         if build_hash == "":
             build_hash = None
 
+        print(f"HASH: {build_hash}")
         date_range_choice = self.date_range_combo.currentIndex()
         date: str | datetime | None = None
         if date_range_choice == 0:  # Latest (^)
@@ -154,11 +190,10 @@ class LaunchingWindow(BaseWindow):
                 self.build_hash_edit.set_valid(False)
                 self.error_preview.setText(str(e))
 
-    def update_query(self, query: VersionSearchQuery):
-        print(f"Updating query: {query!r}")
-        self.version_query = query
+    def update_query_boxes(self, query: VersionSearchQuery):
+        print(f"Updating query boxes...")
 
-        self.version_query_edit.setText(str(query))
+        self.version_query_edit.setText(f"{query.major}.{query.minor}.{query.patch}")
         self.branch_edit.setText(query.branch or "")
         self.build_hash_edit.setText(query.build_hash or "")
 
@@ -177,7 +212,8 @@ class LaunchingWindow(BaseWindow):
                 build_hash=build.build_hash,
                 commit_time=build.commit_time,
             )
-            self.update_query(vsq)
+            self.update_query_boxes(vsq)
+            self.update_query_from_edits()
             self.update_search()
 
     @pyqtSlot(Path)
@@ -218,35 +254,45 @@ class LaunchingWindow(BaseWindow):
 
         self.matcher = self.make_matcher()
 
+        all_matchers = get_version_specific_matchers()
+
+        if self.version_query is not None:  # then it was given via the CLI
+            self.update_query_boxes(self.version_query)
+
         if self.blendfile is not None:  # check the blendfile's target version
             header = read_blendfile_header(self.blendfile)
             print(header)
             if header is None:
                 raise
             self.saved_header = header
-            # create an initial search query
+            self.status_label.setText(f"Detected header version: {header.version}")
+            if self.save_current_query_button is not None:
+                self.save_current_query_button.setText(
+                    f"Save current query for {self.saved_header.version} blend-files"
+                )
+
             v = header.version
 
-            vsq = VersionSearchQuery(v.major, v.minor, "^")
-            if self.version_query is None:
-                self.version_query_edit.setText(str(vsq))
+            if v in all_matchers:
+                self.version_query = all_matchers[v]
+                self.update_query_boxes(self.version_query)
+            else:
+                vsq = VersionSearchQuery(v.major, v.minor, "^")
+                if self.version_query is None:
+                    self.update_query_boxes(vsq)
 
-            # Update query with the default settings
-            self.update_query_from_edits()
+        # Update query with the default settings
+        self.update_query_from_edits()
 
-            matches, builds = self.update_search()
-            # check if there's only one match
-            if len(matches) == 1:
-                self.ready = True
-                build = builds[0]
-                self.list_items[self.__version_url(build)].setSelected(True)
-                print(matches)
+        matches, builds = self.update_search()
+        # If there's only one match, start a launch timer
+        if len(matches) == 1:
+            self.ready = True
+            build = builds[0]
+            self.list_items[self.__version_url(build)].setSelected(True)
+            print(matches)
+            self.prepare_launch(build)
 
-        # Depending on the launch mode, figure out what version to launch
-        ...
-
-        if self.ready:  # Start timer to launching the selected build
-            ...
 
     def make_matcher(self):
         return BInfoMatcher(tuple(map(BasicBuildInfo.from_buildinfo, self.builds.values())))
@@ -268,9 +314,64 @@ class LaunchingWindow(BaseWindow):
             if item.enabled:
                 enabled_builds.append(build)
 
+        if len(versions) != 1:
+            self.launch_button.setEnabled(False)
+        else:
+            self.launch_button.setEnabled(True)
+
         self.builds_list.sortItems(Qt.SortOrder.DescendingOrder)
 
         return matches, enabled_builds
+
+    @pyqtSlot()
+    def save_current_query(self):
+        """Saves the current query for the given header version to the settings."""
+        if self.saved_header is not None and self.version_query is not None:
+            all_matchers = get_version_specific_matchers()
+            all_matchers[self.saved_header.version] = self.version_query
+            set_version_specific_matchers(all_matchers)
+
+    def prepare_launch(self, build: BuildInfo):
+        """Prepares the given build for launching, starts the timer."""
+        self.timer_label.setText(f"Launching in {self.remaining_time}s")
+        self.launch_timer.start()
+        self.target_build = build
+
+    @pyqtSlot()
+    def timer_tick(self):
+        """Called by the launch timer waiting to start the build."""
+        self.remaining_time = self.remaining_time - 1
+        if self.remaining_time > 0:
+            self.timer_label.setText(f"Launching in {self.remaining_time}s")
+            self.launch_timer.start()
+        else:
+            self.actually_launch(self.target_build)
+
+    @pyqtSlot()
+    def cancel_timer(self):
+        """Stops the launch timer."""
+        self.timer_label.setText("")
+        self.launch_timer.stop()
+
+        # disconnect signals to avoid constant updates. this function should only be called ~once
+        if self.cancelled:
+            self.version_query_edit.textChanged.disconnect(self.cancel_timer)
+            self.branch_edit.textChanged.disconnect(self.cancel_timer)
+            self.build_hash_edit.textChanged.disconnect(self.cancel_timer)
+            self.cancelled = True
+
+
+    def actually_launch(self, build: BuildInfo):
+        # find an appropriate launch mode
+        launch_mode = None
+        if self.blendfile is not None:
+            launch_mode = LaunchWithBlendFile(self.blendfile)
+        if self.open_last is not None:
+            launch_mode = LaunchOpenLast()
+
+        proc = launch_build(info=build, launch_mode=launch_mode)
+
+        self.close()
 
     def closeEvent(self, e):
         self.task_queue.fullstop()
