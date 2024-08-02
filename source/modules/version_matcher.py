@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 
     from modules.build_info import BuildInfo
 
+utc = datetime.timezone.utc
 
 @dataclass(frozen=True)
 class BasicBuildInfo:
@@ -47,7 +48,7 @@ class BasicBuildInfo:
             version=buildinfo.full_semversion,
             branch=buildinfo.branch,
             build_hash=buildinfo.build_hash if buildinfo.build_hash is not None else "",
-            commit_time=buildinfo.commit_time,
+            commit_time=buildinfo.commit_time.astimezone(utc),
         )
 
 
@@ -243,7 +244,6 @@ class BInfoMatcher:
 
 
 if __name__ == "__main__":  # Test BInfoMatcher
-    utc = datetime.timezone.utc
 
     builds = (
         BasicBuildInfo(Version.parse("1.2.3"), "stable", "", datetime.datetime(2020, 5, 4, tzinfo=utc)),
