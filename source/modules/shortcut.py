@@ -1,3 +1,5 @@
+import contextlib
+import logging
 import os
 import sys
 from pathlib import Path
@@ -89,7 +91,7 @@ def get_default_shortcut_destination():
 def register_windows_filetypes():
     import winreg
 
-    assert is_frozen()
+    assert is_frozen(), "This function can only be used when Blender Launcher is run in a bundled executable."
     # Register the program in the classes
     with winreg.CreateKey(
         winreg.HKEY_CURRENT_USER,
@@ -105,19 +107,33 @@ def register_windows_filetypes():
     ) as progids_key:
         winreg.SetValueEx(progids_key, "blenderlauncherv2.blend", 0, winreg.REG_SZ, "")
 
+    logging.info("Registered blenderlauncher for file associations")
+
 
 def unregister_windows_filetypes():
     import winreg
 
-    assert is_frozen()
-    # Unregister the program in the classes
-    winreg.DeleteKey(winreg.HKEY_CURRENT_USER, r"Software\Classes\blenderlauncherv2.blend\shell\open\command")
-    winreg.DeleteKey(winreg.HKEY_CURRENT_USER, r"Software\Classes\blenderlauncherv2.blend\shell\open")
-    winreg.DeleteKey(winreg.HKEY_CURRENT_USER, r"Software\Classes\blenderlauncherv2.blend\shell")
-    winreg.DeleteKey(winreg.HKEY_CURRENT_USER, r"Software\Classes\blenderlauncherv2.blend")
+    # does not need to be frozen to unregister
 
-    # vvv This doesn't seem to work. But I don't know what the correct command is supposed to be vvv
-    winreg.DeleteKey(winreg.HKEY_CURRENT_USER, r"Software\Classes\.blend\OpenWithProgids\blenderlauncherv2.blend")
+    # Unregister the program in the classes
+    with contextlib.suppress(FileNotFoundError):
+        winreg.DeleteKey(winreg.HKEY_CURRENT_USER, r"Software\Classes\blenderlauncherv2.blend\shell\open\command")
+        winreg.DeleteKey(winreg.HKEY_CURRENT_USER, r"Software\Classes\blenderlauncherv2.blend\shell\open")
+        winreg.DeleteKey(winreg.HKEY_CURRENT_USER, r"Software\Classes\blenderlauncherv2.blend\shell")
+        winreg.DeleteKey(winreg.HKEY_CURRENT_USER, r"Software\Classes\blenderlauncherv2.blend")
+
+    # remove it from the OpenWithProgids list
+    with (
+        winreg.OpenKeyEx(
+            winreg.HKEY_CURRENT_USER,
+            r"Software\Classes\.blend\OpenWithProgids",
+            access=winreg.KEY_SET_VALUE,
+        ) as command_key,
+        contextlib.suppress(FileNotFoundError),
+    ):
+        winreg.DeleteValue(command_key, "blenderlauncherv2.blend")
+
+    logging.info("Unregistered blenderlauncher for file associations")
 
 
 def generate_program_shortcut(destination: Path):

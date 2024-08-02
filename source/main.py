@@ -152,10 +152,8 @@ def main():
         start_launch(app, args.file, None, False)
 
     if args.command == "register":
-        assert is_frozen()
         start_register(args.instanced)
     if args.command == "unregister":
-        assert is_frozen()
         start_unregister(args.instanced)
 
     if not args.instanced:
