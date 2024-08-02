@@ -124,8 +124,6 @@ class GeneralTabWidget(SettingsFormWidget):
         self.file_association_group.setLayout(layout)
         self.addRow(self.file_association_group)
 
-
-
     def prompt_library_folder(self):
         library_folder = str(get_library_folder())
         new_library_folder = FileDialogWindow().get_directory(self, "Select Library Folder", library_folder)
@@ -193,5 +191,4 @@ class GeneralTabWidget(SettingsFormWidget):
         self.migrate_button.hide()
         # Most getters should get the settings from the new position, so a restart should not be required
 
-    def create_shortcut(self):
-        ...
+    def create_shortcut(self): ...

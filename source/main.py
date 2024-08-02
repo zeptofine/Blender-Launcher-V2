@@ -11,6 +11,7 @@ from typing import NoReturn
 import modules._resources_rc
 from modules import argument_parsing as ap
 from modules._platform import _popen, get_cache_path, get_cwd, get_launcher_name, get_platform, is_frozen
+from modules.shortcut import register_windows_filetypes, unregister_windows_filetypes
 from PyQt5.QtWidgets import QApplication
 from semver import Version
 from windows.dialog_window import DialogWindow
@@ -111,6 +112,13 @@ def main():
     )
     launch_target_parser.add_argument("file", nargs="?", type=Path, help="Path to a specific Blender file to launch.")
 
+    if sys.platform == "win32":
+        subparsers.add_parser(
+            "register",
+            help="Registers the program to read .blend builds. Adds Blender Launcher to the Open With window. (WIN ONLY)",
+        )
+        subparsers.add_parser("unregister", help="Undoes the changes that `register` makes. (WIN ONLY)")
+
     args, argv = parser.parse_known_args()
     if argv:
         msg = _("unrecognized arguments: ") + " ".join(argv)
@@ -142,6 +150,13 @@ def main():
         start_launch(app, args.file, args.version, args.open_last)
     if args.command == "__launch_target" and args.file:
         start_launch(app, args.file, None, False)
+
+    if args.command == "register":
+        assert is_frozen()
+        start_register(args.instanced)
+    if args.command == "unregister":
+        assert is_frozen()
+        start_unregister(args.instanced)
 
     if not args.instanced:
         check_for_instance()
@@ -218,8 +233,46 @@ def start_launch(
     else:
         query = None
 
+    # remove quotes around file path if they exist
+    if file is not None:
+        file = Path(str(file).strip('"'))
+
     LaunchingWindow(app, version_query=query, blendfile=file, open_last=open_last).show()
     sys.exit(app.exec())
+
+
+def is_admin():
+    import ctypes
+
+    try:
+        return ctypes.windll.shell32.IsUserAnAdmin()
+    except Exception:
+        return False
+
+
+def start_register(instanced: bool):
+    import ctypes
+    import sys
+
+    # We must elevate permissions to add file associations
+    if is_admin():
+        register_windows_filetypes()
+    elif not instanced:
+        ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, "--instanced register", None, 1)
+
+    sys.exit(0)
+
+
+def start_unregister(instanced: bool):
+    import ctypes
+    import subprocess
+    import sys
+
+    # We must elevate permissions to remove file associations
+    if is_admin():
+        unregister_windows_filetypes()
+    elif not instanced:
+        ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, "--instanced unregister", None, 1)
 
 
 def check_for_instance():

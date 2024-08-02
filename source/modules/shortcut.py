@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 from shutil import copyfile
 
-from modules._platform import get_cwd, get_launcher_name, get_platform
+from modules._platform import get_cwd, get_launcher_name, get_platform, is_frozen
 from modules.settings import get_library_folder
 
 
@@ -69,27 +69,71 @@ def create_shortcut(folder, name):
         os.chmod(dist, 0o744)
 
 
-
 def get_shortcut_type() -> str:
-    """ ONLY FOR VISUAL REPRESENTATION """
+    """ONLY FOR VISUAL REPRESENTATION"""
     return {
         "Windows": "Shortcut",
-        "Linux":   "Desktop file",
+        "Linux": "Desktop file",
     }.get(get_platform(), "Shortcut")
 
 
+def get_default_shortcut_destination():
+    return {
+        "Windows": Path(
+            Path.home(), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "BlenderLauncher.lnk"
+        ),
+        "Linux": Path(Path.home(), ".local", "share", "applications", "BLV2.desktop"),
+    }.get(get_platform(), Path(Path.home(), ".local", "share", "applications", "BLV2.desktop"))
 
-# def get_default_shortcut_destination():
-#     return {
-#         "Windows": Path.home() / "Desktop",
-#         "Linux":   Path.home()
-#     }
+
+def register_windows_filetypes():
+    import winreg
+
+    assert is_frozen()
+    # Register the program in the classes
+    with winreg.CreateKey(
+        winreg.HKEY_CLASSES_ROOT,
+        r"blenderlauncherv2.blend\shell\open\command",
+    ) as command_key:
+        pth = f'"{Path(sys.executable)}"'
+        winreg.SetValueEx(command_key, "", 0, winreg.REG_SZ, f'{pth} __launch_target "%1"')
+
+    # add it to the OpenWithProgids list
+    with winreg.CreateKey(
+        winreg.HKEY_CLASSES_ROOT,
+        r".blend\OpenWithProgids",
+    ) as progids_key:
+        winreg.SetValueEx(progids_key, "blenderlauncherv2.blend", 0, winreg.REG_SZ, "")
+
+
+def unregister_windows_filetypes():
+    import winreg
+
+    assert is_frozen()
+    # Unregister the program as a user-level application
+    winreg.DeleteKey(winreg.HKEY_CLASSES_ROOT, r"blenderlauncherv2.blend\shell\open\command")
+    winreg.DeleteKey(winreg.HKEY_CLASSES_ROOT, r"blenderlauncherv2.blend\shell\open")
+    winreg.DeleteKey(winreg.HKEY_CLASSES_ROOT, r"blenderlauncherv2.blend\shell")
+    winreg.DeleteKey(winreg.HKEY_CLASSES_ROOT, r"blenderlauncherv2.blend")
+
+    # vvv This doesn't seem to work. But I don't know what the correct command is supposed to be vvv
+    winreg.DeleteKey(winreg.HKEY_CLASSES_ROOT, r".blend\OpenWithProgids\blenderlauncherv2.blend")
+
 
 def generate_program_shortcut(destination: Path):
+    """Generates a shortcut for this program. Also sets up filetype associations in Linux."""
     platform = get_platform()
 
-    if platform == "Windows":
-        ...
+    if sys.platform == "win32":
+        import win32com.client
+
+        # create the shortcut
+        _WSHELL = win32com.client.Dispatch("Wscript.Shell")
+        wscript = _WSHELL.CreateShortcut(str(destination))
+        wscript.Targetpath = f'{destination.as_posix()} __launch_target "%1"'
+        wscript.WorkingDirectory = get_cwd().as_posix()
+        wscript.WindowStyle = 0
+        wscript.save()
 
     elif platform == "Linux":
         import shlex

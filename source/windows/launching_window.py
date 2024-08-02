@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import contextlib
 import json
-from datetime import datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from items.enablable_list_widget_item import EnablableListWidgetItem
 from modules.blendfile_reader import BlendfileHeader, read_blendfile_header
@@ -30,6 +30,9 @@ from PyQt5.QtWidgets import (
 from threads.library_drawer import DrawLibraryTask
 from widgets.lintable_line_edit import LintableLineEdit
 from windows.base_window import BaseWindow
+
+if TYPE_CHECKING:
+    from datetime import datetime
 
 
 class LaunchingWindow(BaseWindow):
@@ -193,7 +196,7 @@ class LaunchingWindow(BaseWindow):
                 self.error_preview.setText(str(e))
 
     def update_query_boxes(self, query: VersionSearchQuery):
-        print(f"Updating query boxes...")
+        print("Updating query boxes...")
 
         self.version_query_edit.setText(f"{query.major}.{query.minor}.{query.patch}")
         self.branch_edit.setText(query.branch or "")
@@ -375,7 +378,7 @@ class LaunchingWindow(BaseWindow):
         if self.open_last:
             launch_mode = LaunchOpenLast()
 
-        proc = launch_build(info=build, launch_mode=launch_mode)
+        launch_build(info=build, launch_mode=launch_mode)
 
         self.close()
 
