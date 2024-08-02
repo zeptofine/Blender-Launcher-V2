@@ -24,8 +24,9 @@ from modules.settings import (
     user_config,
 )
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QCheckBox, QHBoxLayout, QLineEdit, QPushButton, QSpinBox, QWidget
+from PyQt5.QtWidgets import QCheckBox, QGridLayout, QHBoxLayout, QLineEdit, QPushButton, QSpinBox, QWidget
 from widgets.settings_form_widget import SettingsFormWidget
+from widgets.settings_window.settings_group import SettingsGroup
 from windows.dialog_window import DialogWindow
 from windows.file_dialog_window import FileDialogWindow
 
@@ -115,6 +116,16 @@ class GeneralTabWidget(SettingsFormWidget):
 
             self.addRow(self.migrate_button)
 
+        self.file_association_group = SettingsGroup("File association", parent=self)
+        layout = QGridLayout()
+        self.create_shortcut_button = QPushButton("Create Shortcut", parent=self)
+        layout.addWidget(self.create_shortcut_button, 0, 0, 1, 2)
+
+        self.file_association_group.setLayout(layout)
+        self.addRow(self.file_association_group)
+
+
+
     def prompt_library_folder(self):
         library_folder = str(get_library_folder())
         new_library_folder = FileDialogWindow().get_directory(self, "Select Library Folder", library_folder)
@@ -181,3 +192,6 @@ class GeneralTabWidget(SettingsFormWidget):
         migrate_config(force=True)
         self.migrate_button.hide()
         # Most getters should get the settings from the new position, so a restart should not be required
+
+    def create_shortcut(self):
+        ...

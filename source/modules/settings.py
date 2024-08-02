@@ -546,7 +546,7 @@ def set_version_specific_matchers(dct: dict[Version, VersionSearchQuery]):
 
 
 def get_launch_timer_duration() -> int:
-    return get_settings().value("launch_timer", defaultValue=5, type=int)
+    return get_settings().value("launch_timer", defaultValue=3, type=int)
 
 
 def set_launch_timer_duration(duration: int):

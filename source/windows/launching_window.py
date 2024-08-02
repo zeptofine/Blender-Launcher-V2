@@ -262,7 +262,6 @@ class LaunchingWindow(BaseWindow):
             self.update_query_boxes(self.version_query)
 
         if self.blendfile is not None and self.blendfile.exists():  # check the blendfile's target version
-
             header = read_blendfile_header(self.blendfile)
             print(header)
             if header is None:
@@ -373,7 +372,7 @@ class LaunchingWindow(BaseWindow):
         launch_mode = None
         if self.blendfile is not None:
             launch_mode = LaunchWithBlendFile(self.blendfile)
-        if self.open_last is not None:
+        if self.open_last:
             launch_mode = LaunchOpenLast()
 
         proc = launch_build(info=build, launch_mode=launch_mode)

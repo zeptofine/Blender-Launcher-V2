@@ -69,6 +69,22 @@ def create_shortcut(folder, name):
         os.chmod(dist, 0o744)
 
 
+
+def get_shortcut_type() -> str:
+    """ ONLY FOR VISUAL REPRESENTATION """
+    return {
+        "Windows": "Shortcut",
+        "Linux":   "Desktop file",
+    }.get(get_platform(), "Shortcut")
+
+
+
+# def get_default_shortcut_destination():
+#     return {
+#         "Windows": Path.home() / "Desktop",
+#         "Linux":   Path.home()
+#     }
+
 def generate_program_shortcut(destination: Path):
     platform = get_platform()
 
@@ -77,26 +93,29 @@ def generate_program_shortcut(destination: Path):
 
     elif platform == "Linux":
         import shlex
+
         bl_exe, _ = get_launcher_name()
         cwd = get_cwd()
         source = cwd / bl_exe
 
         _exec = source
-
-        text = "\n".join( [
-            "[Desktop Entry]",
-            "Name=Blender Launcher V2",
-            "GenericName=Launcher",
-            f"Exec={shlex.quote(str(_exec))} __launch_target",
-            "MimeType=application/x-blender;",
-            "Icon=blender-icon",
-            "Terminal=false",
-            "Type=Application",
-        ])
+        text = "\n".join(
+            [
+                "[Desktop Entry]",
+                "Name=Blender Launcher V2",
+                "GenericName=Launcher",
+                f"Exec={shlex.quote(str(_exec))} __launch_target",
+                "MimeType=application/x-blender;",
+                "Icon=blender-icon",
+                "Terminal=false",
+                "Type=Application",
+            ]
+        )
 
         with destination.open("w", encoding="utf-8") as file:
             file.write(text)
 
         os.chmod(destination, 0o744)
+
 
 # generate_program_shortcut(Path("~/.local/share/applications/BLV2.desktop").expanduser())

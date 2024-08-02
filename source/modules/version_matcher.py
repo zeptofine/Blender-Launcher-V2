@@ -173,6 +173,7 @@ class VersionSearchQuery:
             minor=self.minor,
             patch=self.patch,
             branch=branch,
+            build_hash=self.build_hash,
             commit_time=self.commit_time,
         )
 

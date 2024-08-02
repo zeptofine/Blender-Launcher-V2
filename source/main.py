@@ -112,7 +112,6 @@ def main():
     launch_target_parser.add_argument("file", nargs="?", type=Path, help="Path to a specific Blender file to launch.")
 
     args, argv = parser.parse_known_args()
-    print("PARSED")
     if argv:
         msg = _("unrecognized arguments: ") + " ".join(argv)
         ap.error(parser, msg)
