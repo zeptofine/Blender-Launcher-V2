@@ -251,28 +251,18 @@ def is_admin():
 
 
 def start_register(instanced: bool):
-    import ctypes
     import sys
 
-    # We must elevate permissions to add file associations
-    if is_admin():
-        register_windows_filetypes()
-    elif not instanced:
-        ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, "--instanced register", None, 1)
+    register_windows_filetypes()
 
     sys.exit(0)
 
 
 def start_unregister(instanced: bool):
-    import ctypes
-    import subprocess
     import sys
 
-    # We must elevate permissions to remove file associations
-    if is_admin():
-        unregister_windows_filetypes()
-    elif not instanced:
-        ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, "--instanced unregister", None, 1)
+    unregister_windows_filetypes()
+    sys.exit(0)
 
 
 def check_for_instance():

@@ -92,16 +92,16 @@ def register_windows_filetypes():
     assert is_frozen()
     # Register the program in the classes
     with winreg.CreateKey(
-        winreg.HKEY_CLASSES_ROOT,
-        r"blenderlauncherv2.blend\shell\open\command",
+        winreg.HKEY_CURRENT_USER,
+        r"Software\Classes\blenderlauncherv2.blend\shell\open\command",
     ) as command_key:
         pth = f'"{Path(sys.executable)}"'
         winreg.SetValueEx(command_key, "", 0, winreg.REG_SZ, f'{pth} __launch_target "%1"')
 
     # add it to the OpenWithProgids list
     with winreg.CreateKey(
-        winreg.HKEY_CLASSES_ROOT,
-        r".blend\OpenWithProgids",
+        winreg.HKEY_CURRENT_USER,
+        r"Software\Classes\.blend\OpenWithProgids",
     ) as progids_key:
         winreg.SetValueEx(progids_key, "blenderlauncherv2.blend", 0, winreg.REG_SZ, "")
 
@@ -110,14 +110,14 @@ def unregister_windows_filetypes():
     import winreg
 
     assert is_frozen()
-    # Unregister the program as a user-level application
-    winreg.DeleteKey(winreg.HKEY_CLASSES_ROOT, r"blenderlauncherv2.blend\shell\open\command")
-    winreg.DeleteKey(winreg.HKEY_CLASSES_ROOT, r"blenderlauncherv2.blend\shell\open")
-    winreg.DeleteKey(winreg.HKEY_CLASSES_ROOT, r"blenderlauncherv2.blend\shell")
-    winreg.DeleteKey(winreg.HKEY_CLASSES_ROOT, r"blenderlauncherv2.blend")
+    # Unregister the program in the classes
+    winreg.DeleteKey(winreg.HKEY_CURRENT_USER, r"Software\Classes\blenderlauncherv2.blend\shell\open\command")
+    winreg.DeleteKey(winreg.HKEY_CURRENT_USER, r"Software\Classes\blenderlauncherv2.blend\shell\open")
+    winreg.DeleteKey(winreg.HKEY_CURRENT_USER, r"Software\Classes\blenderlauncherv2.blend\shell")
+    winreg.DeleteKey(winreg.HKEY_CURRENT_USER, r"Software\Classes\blenderlauncherv2.blend")
 
     # vvv This doesn't seem to work. But I don't know what the correct command is supposed to be vvv
-    winreg.DeleteKey(winreg.HKEY_CLASSES_ROOT, r".blend\OpenWithProgids\blenderlauncherv2.blend")
+    winreg.DeleteKey(winreg.HKEY_CURRENT_USER, r"Software\Classes\.blend\OpenWithProgids\blenderlauncherv2.blend")
 
 
 def generate_program_shortcut(destination: Path):
