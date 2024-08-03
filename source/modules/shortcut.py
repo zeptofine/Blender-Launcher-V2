@@ -107,6 +107,13 @@ def register_windows_filetypes():
     ) as progids_key:
         winreg.SetValueEx(progids_key, "blenderlauncherv2.blend", 0, winreg.REG_SZ, "")
 
+    # addit to the OpenWithProgids list for .blend1
+    with winreg.CreateKey(
+        winreg.HKEY_CURRENT_USER,
+        r"Software\Classes\.blend1\OpenWithProgids",
+    ) as progids_key:
+        winreg.SetValueEx(progids_key, "blenderlauncherv2.blend", 0, winreg.REG_SZ, "")
+
     logging.info("Registered blenderlauncher for file associations")
 
 
@@ -125,6 +132,17 @@ def unregister_windows_filetypes():
         winreg.OpenKeyEx(
             winreg.HKEY_CURRENT_USER,
             r"Software\Classes\.blend\OpenWithProgids",
+            access=winreg.KEY_SET_VALUE,
+        ) as command_key,
+        contextlib.suppress(FileNotFoundError),
+    ):
+        winreg.DeleteValue(command_key, "blenderlauncherv2.blend")
+
+    # remove it from the OpenWithProgids list for .blend1
+    with (
+        winreg.OpenKeyEx(
+            winreg.HKEY_CURRENT_USER,
+            r"Software\Classes\.blend1\OpenWithProgids",
             access=winreg.KEY_SET_VALUE,
         ) as command_key,
         contextlib.suppress(FileNotFoundError),
