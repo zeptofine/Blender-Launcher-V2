@@ -113,8 +113,6 @@ def register_windows_filetypes():
 def unregister_windows_filetypes():
     import winreg
 
-    # does not need to be frozen to unregister
-
     # Unregister the program in the classes
     with contextlib.suppress(FileNotFoundError):
         winreg.DeleteKey(winreg.HKEY_CURRENT_USER, r"Software\Classes\blenderlauncherv2.blend\shell\open\command")
@@ -210,6 +208,3 @@ def generate_program_shortcut(destination: Path):
             file.write(text)
 
         os.chmod(destination, 0o744)
-
-
-# generate_program_shortcut(Path("~/.local/share/applications/BLV2.desktop").expanduser())

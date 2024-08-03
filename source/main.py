@@ -239,15 +239,6 @@ def start_launch(
     sys.exit(app.exec())
 
 
-def is_admin():
-    import ctypes
-
-    try:
-        return ctypes.windll.shell32.IsUserAnAdmin()
-    except Exception:
-        return False
-
-
 def start_register(instanced: bool):
     import sys
 
