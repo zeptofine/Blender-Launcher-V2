@@ -8,12 +8,11 @@ import sys
 from pathlib import Path
 from typing import NoReturn
 
+from modules.blendfile_reader import read_blendfile_header
+from modules.build_info import BuildInfo, LaunchMode, LaunchOpenLast, LaunchWithBlendFile, get_args
+from modules.settings import get_favorite_path, get_version_specific_queries
 from modules.version_matcher import BasicBuildInfo, BInfoMatcher, VersionSearchQuery
 from threads.library_drawer import get_blender_builds
-
-from .blendfile_reader import read_blendfile_header
-from .build_info import BuildInfo, LaunchMode, LaunchOpenLast, LaunchWithBlendFile, get_args
-from .settings import get_version_specific_queries
 
 logger = logging.getLogger()
 
@@ -34,10 +33,10 @@ def cli_launch(
 
     builds.sort(reverse=True)
 
-    if version_query is None and file is None:
+    if version_query is None and file is None and (path := get_favorite_path()):
         logger.info("Launching quick launch build")
         for build in builds:
-            if build.is_favorite:
+            if build.link == path:
                 launch_mode = None
                 if open_last:
                     launch_mode = LaunchOpenLast()

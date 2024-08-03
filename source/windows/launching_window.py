@@ -8,7 +8,12 @@ from typing import TYPE_CHECKING
 from items.enablable_list_widget_item import EnablableListWidgetItem
 from modules.blendfile_reader import BlendfileHeader, read_blendfile_header
 from modules.build_info import BuildInfo, LaunchOpenLast, LaunchWithBlendFile, launch_build
-from modules.settings import get_launch_timer_duration, get_version_specific_queries, set_version_specific_queries
+from modules.settings import (
+    get_favorite_path,
+    get_launch_timer_duration,
+    get_version_specific_queries,
+    set_version_specific_queries,
+)
 from modules.tasks import TaskQueue
 from modules.version_matcher import VALID_QUERIES, BasicBuildInfo, BInfoMatcher, VersionSearchQuery
 from PyQt5.QtCore import Qt, QTimer, pyqtSlot
@@ -258,9 +263,10 @@ class LaunchingWindow(BaseWindow):
     def search_finished(self):
         self.status_label.setText(f"Found {len(self.builds)} builds")
 
-        if self.version_query is None and self.blendfile is None:  # Launch quick launch if it exists
+        # Use quick launch if it exists
+        if self.version_query is None and self.blendfile is None and (path := get_favorite_path()):
             for version, build in self.builds.items():
-                if build.is_favorite:
+                if build.link == path:
                     self.list_items[version].setSelected(True)
                     self.set_query_from_selected_build()
 
