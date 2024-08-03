@@ -61,9 +61,11 @@ class SettingsWindow(BaseWindow):
 
         # Header layout
         self.header = WindowHeader(self, "Settings", use_minimize=False)
-        self.header.close_signal.connect(self._close)
+        self.header.close_signal.connect(self.attempt_close)
         self.CentralLayout.addWidget(self.header)
         self.update_system_titlebar(self.using_system_bar)
+
+        self.close_warning_ignored = False
 
         # Tab Layout
         self.TabWidget = QTabWidget()
@@ -89,14 +91,13 @@ class SettingsWindow(BaseWindow):
         self.resize(self.sizeHint())
         self.show()
 
-    def _close(self):
+    def get_unfinished_business(self) -> list[str]:
         pending_to_restart = []
         checkdct = {True: "ON", False: "OFF"}
 
         """Update quick launch key"""
         enable_quick_launch_key_seq = get_enable_quick_launch_key_seq()
         quick_launch_key_seq = get_quick_launch_key_seq()
-
         # Quick launch was enabled or disabled
         if self.old_enable_quick_launch_key_seq != enable_quick_launch_key_seq:
             # Restart hotkeys listener
@@ -172,13 +173,9 @@ class SettingsWindow(BaseWindow):
         if self.old_thread_count != worker_thread_count:
             pending_to_restart.append(f"Worker Threads: {self.old_thread_count}🠆{worker_thread_count}")
 
-        """Ask for app restart if needed else destroy self"""
-        if len(pending_to_restart) != 0:
-            self.show_dlg_restart_bl(pending_to_restart)
-        else:
-            self._destroy()
+        return pending_to_restart
 
-    def show_dlg_restart_bl(self, pending: list):
+    def show_dlg_restart_bl(self, pending: list[str]):
         pending_to_restart = ""
 
         for s in pending:
@@ -193,7 +190,8 @@ class SettingsWindow(BaseWindow):
             cancel_text="Ignore",
         )
         self.dlg.accepted.connect(self.restart_app)
-        self.dlg.cancelled.connect(self._destroy)
+        self.dlg.cancelled.connect(self.attempt_close)
+        self.close_warning_ignored = True  # if the user tries to restart then the close event won't trigger
 
     def restart_app(self):
         self.parent.restart_app()
@@ -201,6 +199,14 @@ class SettingsWindow(BaseWindow):
     def update_system_titlebar(self, b: bool):
         self.header.setHidden(b)
 
-    def _destroy(self):
-        self.parent.settings_window = None
+    def attempt_close(self):
         self.close()
+
+    def closeEvent(self, event):
+        unfinished_business = self.get_unfinished_business()
+        if unfinished_business and not self.close_warning_ignored:
+            self.show_dlg_restart_bl(unfinished_business)
+            event.ignore()
+        else:
+            self.parent.settings_window = None
+            event.accept()

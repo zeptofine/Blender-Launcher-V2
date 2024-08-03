@@ -668,29 +668,6 @@ class BlenderLauncher(BaseWindow):
         elif reason == QSystemTrayIcon.ActivationReason.Context:
             self.tray_menu.trigger()
 
-    def _aboutToQuit(self):
-        self.quit_()
-
-    def quit_(self):
-        busy = self.task_queue.get_busy_threads()
-        if any(busy):
-            self.dlg = DialogWindow(
-                parent=self,
-                title="Warning",
-                text=(
-                    "Some tasks are still in progress!<br>"
-                    + "\n".join([f" - {item}<br>" for worker, item in busy.items()])
-                    + "Are you sure you want to quit?"
-                ),
-                accept_text="Yes",
-                cancel_text="No",
-            )
-
-            self.dlg.accepted.connect(self.destroy)
-            return
-
-        self.destroy()
-
     def kill_thread_with_task(self, task: Task):
         """
         Kills a thread listener using the current action.
@@ -1005,12 +982,32 @@ class BlenderLauncher(BaseWindow):
         a = RemovalTask(path)
         self.task_queue.append(a)
 
+    def _aboutToQuit(self):  # MacOS Target
+        self.quit_()
+
+    def quit_(self):
+        busy = self.task_queue.get_busy_threads()
+        if any(busy):
+            self.dlg = DialogWindow(
+                parent=self,
+                title="Warning",
+                text=(
+                    "Some tasks are still in progress!<br>"
+                    + "\n".join([f" - {item}<br>" for worker, item in busy.items()])
+                    + "Are you sure you want to quit?"
+                ),
+                accept_text="Yes",
+                cancel_text="No",
+            )
+
+            self.dlg.accepted.connect(self.destroy)
+            return
+
+        self.destroy()
+
     @pyqtSlot()
     def attempt_close(self):
-        if get_show_tray_icon():
-            self.close()
-        else:
-            self.quit_()
+        self.close()
 
     def closeEvent(self, event):
         if get_show_tray_icon():
@@ -1024,7 +1021,7 @@ class BlenderLauncher(BaseWindow):
             self.hide()
             self.close_signal.emit()
         else:
-            self.destroy()
+            self.quit_()
 
     def new_connection(self):
         self.socket = self.server.nextPendingConnection()
