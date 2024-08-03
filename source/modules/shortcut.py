@@ -71,21 +71,18 @@ def create_shortcut(folder, name):
         os.chmod(dist, 0o744)
 
 
-def get_shortcut_type() -> str:
-    """ONLY FOR VISUAL REPRESENTATION"""
-    return {
-        "Windows": "Shortcut",
-        "Linux": "Desktop file",
-    }.get(get_platform(), "Shortcut")
+def association_is_registered() -> bool:
+    import winreg
 
-
-def get_default_shortcut_destination():
-    return {
-        "Windows": Path(
-            Path.home(), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "BlenderLauncher.lnk"
-        ),
-        "Linux": Path(Path.home(), ".local", "share", "applications", "BLV2.desktop"),
-    }.get(get_platform(), Path(Path.home(), ".local", "share", "applications", "BLV2.desktop"))
+    try:
+        with winreg.OpenKey(
+            winreg.HKEY_CURRENT_USER,
+            r"Software\Classes\blenderlauncherv2.blend",
+        ):
+            return True
+    except FileNotFoundError:
+        ...
+    return False
 
 
 def register_windows_filetypes():
@@ -136,6 +133,23 @@ def unregister_windows_filetypes():
     logging.info("Unregistered blenderlauncher for file associations")
 
 
+def get_shortcut_type() -> str:
+    """ONLY FOR VISUAL REPRESENTATION"""
+    return {
+        "Windows": "Shortcut",
+        "Linux": "Desktop file",
+    }.get(get_platform(), "Shortcut")
+
+
+def get_default_shortcut_destination():
+    return {
+        "Windows": Path(
+            Path.home(), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Blender Launcher"
+        ),
+        "Linux": Path(Path.home(), ".local", "share", "applications", "BLV2.desktop"),
+    }.get(get_platform(), Path(Path.home(), ".local", "share", "applications", "BLV2.desktop"))
+
+
 def generate_program_shortcut(destination: Path):
     """Generates a shortcut for this program. Also sets up filetype associations in Linux."""
     platform = get_platform()
@@ -143,10 +157,27 @@ def generate_program_shortcut(destination: Path):
     if sys.platform == "win32":
         import win32com.client
 
+        dest = destination.with_suffix(".lnk").as_posix()
         # create the shortcut
         _WSHELL = win32com.client.Dispatch("Wscript.Shell")
-        wscript = _WSHELL.CreateShortcut(str(destination))
-        wscript.Targetpath = f'{destination.as_posix()} __launch_target "%1"'
+        wscript = _WSHELL.CreateShortcut(str(dest))
+
+        exe = sys.executable
+
+        wscript.Targetpath = exe
+        args = "__launch_target"
+        if not is_frozen():
+            main_py = Path(sys.argv[0]).resolve()
+
+            args = f"{main_py} {args}"
+
+            # Icon location would be source/resources/icons/bl/bl.ico
+            icon_loc = Path(main_py.parent, "resources", "icons", "bl", "bl.ico")
+
+            wscript.IconLocation = icon_loc.as_posix()
+
+        wscript.Arguments = args
+
         wscript.WorkingDirectory = get_cwd().as_posix()
         wscript.WindowStyle = 0
         wscript.save()

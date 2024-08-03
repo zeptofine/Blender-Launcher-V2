@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 
+from modules._platform import is_frozen
 from modules.settings import (
     get_actual_library_folder,
     get_config_file,
@@ -23,6 +25,7 @@ from modules.settings import (
     set_worker_thread_count,
     user_config,
 )
+from modules.shortcut import generate_program_shortcut, get_default_shortcut_destination, get_shortcut_type
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QCheckBox, QGridLayout, QHBoxLayout, QLineEdit, QPushButton, QSpinBox, QWidget
 from widgets.settings_form_widget import SettingsFormWidget
@@ -118,8 +121,23 @@ class GeneralTabWidget(SettingsFormWidget):
 
         self.file_association_group = SettingsGroup("File association", parent=self)
         layout = QGridLayout()
-        self.create_shortcut_button = QPushButton("Create Shortcut", parent=self)
+        self.create_shortcut_button = QPushButton(f"Create {get_shortcut_type()}", parent=self.file_association_group)
+        self.create_shortcut_button.clicked.connect(self.create_shortcut)
         layout.addWidget(self.create_shortcut_button, 0, 0, 1, 2)
+
+        if sys.platform == "win32" and is_frozen():
+            from modules.shortcut import register_windows_filetypes, unregister_windows_filetypes
+
+            self.register_file_association_button = QPushButton(
+                "Register File Association", parent=self.file_association_group
+            )
+            self.unregister_file_association_button = QPushButton(
+                "Unregister File Association", parent=self.file_association_group
+            )
+            self.register_file_association_button.clicked.connect(register_windows_filetypes)
+            self.unregister_file_association_button.clicked.connect(unregister_windows_filetypes)
+            layout.addWidget(self.register_file_association_button, 1, 0, 1, 1)
+            layout.addWidget(self.unregister_file_association_button, 1, 1, 1, 1)
 
         self.file_association_group.setLayout(layout)
         self.addRow(self.file_association_group)
@@ -191,4 +209,21 @@ class GeneralTabWidget(SettingsFormWidget):
         self.migrate_button.hide()
         # Most getters should get the settings from the new position, so a restart should not be required
 
-    def create_shortcut(self): ...
+    def create_shortcut(self):
+        destination = get_default_shortcut_destination()
+        file_place = FileDialogWindow().get_save_filename(parent=self, title="Choose destination", directory=str(destination))
+        if file_place is not None:
+            # print(file_place)
+            generate_program_shortcut(Path(file_place[0]))
+
+
+
+    def refresh_association_buttons(self):
+        from modules.shortcut import association_is_registered
+
+        if association_is_registered():
+            self.register_file_association_button.setEnabled(False)
+            self.unregister_file_association_button.setEnabled(True)
+        else:
+            self.register_file_association_button.setEnabled(True)
+            self.unregister_file_association_button.setEnabled(False)
