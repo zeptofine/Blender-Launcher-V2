@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 from items.enablable_list_widget_item import EnablableListWidgetItem
 from modules.blendfile_reader import BlendfileHeader, read_blendfile_header
 from modules.build_info import BuildInfo, LaunchOpenLast, LaunchWithBlendFile, launch_build
-from modules.settings import get_launch_timer_duration, get_version_specific_matchers, set_version_specific_matchers
+from modules.settings import get_launch_timer_duration, get_version_specific_queries, set_version_specific_queries
 from modules.tasks import TaskQueue
 from modules.version_matcher import VALID_QUERIES, BasicBuildInfo, BInfoMatcher, VersionSearchQuery
 from PyQt5.QtCore import Qt, QTimer, pyqtSlot
@@ -177,7 +177,7 @@ class LaunchingWindow(BaseWindow):
 
         print(f"HASH: {build_hash}")
         date_range_choice = self.date_range_combo.currentIndex()
-        date: str | datetime | None = None
+
         if date_range_choice == 0:  # Latest (^)
             date = "^"
         elif date_range_choice == 1:  # Any (*)
@@ -266,7 +266,7 @@ class LaunchingWindow(BaseWindow):
 
         self.matcher = self.make_matcher()
 
-        all_matchers = get_version_specific_matchers()
+        all_queries = get_version_specific_queries()
 
         if self.version_query is not None:  # then it was given via the CLI
             self.update_query_boxes(self.version_query)
@@ -283,8 +283,8 @@ class LaunchingWindow(BaseWindow):
 
             v = header.version
 
-            if v in all_matchers:
-                self.version_query = all_matchers[v]
+            if v in all_queries:
+                self.version_query = all_queries[v]
                 self.update_query_boxes(self.version_query)
             else:
                 vsq = VersionSearchQuery(v.major, v.minor, "^")
@@ -336,9 +336,9 @@ class LaunchingWindow(BaseWindow):
     def save_current_query(self):
         """Saves the current query for the given header version to the settings."""
         if self.saved_header is not None and self.version_query is not None:
-            all_matchers = get_version_specific_matchers()
+            all_matchers = get_version_specific_queries()
             all_matchers[self.saved_header.version] = self.version_query
-            set_version_specific_matchers(all_matchers)
+            set_version_specific_queries(all_matchers)
 
     def launch_from_button(self):
         """Launches the currently selected build from the list of enabled builds."""

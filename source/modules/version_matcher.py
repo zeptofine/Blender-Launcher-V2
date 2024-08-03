@@ -60,7 +60,7 @@ class BasicBuildInfo:
 # -   | match the smallest/oldest item in that column
 # <n> | match an item in that column
 
-# <major_num>.<minor>.<patch>[-<branch>][+<build_hash>][@<commit time>]
+VERSION_SEARCH_SYNTAX = "<major_num>.<minor>.<patch>[-<branch>][+<build_hash>][@<commit time>]"
 
 # Valid examples of version search queries are:
 # *.*.*
@@ -76,7 +76,7 @@ VERSION_SEARCH_REGEX = re.compile(
     ([\^\-\*]|\d+)\.([\^\-\*]|\d+)\.([\^\-\*]|\d+)
     (?:\-([^\@\s\+]+))?
     (?:\+([\d\w]+))?
-    (?:\@([\d\-T\+\^\:Z\ ]+))?
+    (?:\@([\^\-\*]|[\dT\+\:Z\ \^\-]+))?
     $""",
     flags=re.X,
 )
@@ -86,7 +86,7 @@ VERSION_SEARCH_REGEX = re.compile(
 # ([\^\-\*]|\d+)                     x3 -- major, minor, and patch (required)
 # (?:\-([^\@\s\+]+))?                   -- branch (optional)
 # (?:\+([\d\w]+))?                      -- build hash (optional)
-# (?:\@([\d\-T\+\^\:Z\ ]+))?            -- commit time (saved as ^|*|- or an isoformat) (optional)
+# (?:\@([\dT\+\:Z\ \^\*\-]+))?            -- commit time (saved as ^|*|- or an isoformat) (optional)
 # $                                     -- end of string
 
 
@@ -97,10 +97,17 @@ VALID_QUERIES = """^.^.*
 -.*.^
 4.2.^
 4.^.^"""
+VALID_FULL_QUERIES = """*.*.*
+1.2.3-master
+4.^,^-stable@^
+4.3.^+cb886aba06d5@^
+4.3.^@2024-07-31T23:53:51+00:00
+4.3.^-stable+cb886aba06d5@2024-07-31T23:53:51+00:00
+"""
 
 
 @cache
-def _parse(s: str) -> tuple[int | str, int | str, int | str, str | None, str | None, datetime.datetime | str | None]:
+def _parse(s: str) -> tuple[int | str, int | str, int | str, str | None, str | None, datetime.datetime | str]:
     """Parse a query from a string. does not support branch and commit_time"""
     match = VERSION_SEARCH_REGEX.match(s)
     if not match:
@@ -112,6 +119,8 @@ def _parse(s: str) -> tuple[int | str, int | str, int | str, str | None, str | N
     branch = match.group(4)
     build_hash = match.group(5)
     commit_time = match.group(6)
+    if commit_time is None:
+        commit_time = "^"
 
     if major.isnumeric():
         major = int(major)
@@ -147,7 +156,7 @@ class VersionSearchQuery:
     build_hash: str | None = None
     "The git hash of the build that this is"
 
-    commit_time: datetime.datetime | str | None = None
+    commit_time: datetime.datetime | str = "^"
     "When the build was made (in UTC)"
 
     def __post_init__(self):
@@ -200,7 +209,7 @@ class VersionSearchQuery:
             commit_time=self.commit_time,
         )
 
-    def with_commit_time(self, commit_time: datetime.datetime | str | None = None):
+    def with_commit_time(self, commit_time: datetime.datetime | str):
         return self.__class__(
             major=self.major,
             minor=self.minor,

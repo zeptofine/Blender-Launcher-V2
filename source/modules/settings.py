@@ -528,21 +528,21 @@ def set_use_system_titlebar(b: bool):
     get_settings().setValue("use_system_title_bar", b)
 
 
-def get_version_specific_matchers() -> dict[Version, VersionSearchQuery]:
+def get_version_specific_queries() -> dict[Version, VersionSearchQuery]:
     import json
 
-    dct = get_settings().value("version_specific_matchers", defaultValue="{}", type=str)
+    dct = get_settings().value("version_specific_queries", defaultValue="{}", type=str)
     if dct is None:
         return {}
     return {Version.parse(k): VersionSearchQuery.parse(v) for k, v in json.loads(dct).items()}
 
 
-def set_version_specific_matchers(dct: dict[Version, VersionSearchQuery]):
+def set_version_specific_queries(dct: dict[Version, VersionSearchQuery]):
     import json
 
     v = {str(k): str(v) for k, v in dct.items()}
     j = json.dumps(v)
-    get_settings().setValue("version_specific_matchers", j)
+    get_settings().setValue("version_specific_queries", j)
 
 
 def get_launch_timer_duration() -> int:

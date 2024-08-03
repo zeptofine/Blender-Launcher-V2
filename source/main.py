@@ -11,7 +11,9 @@ from typing import NoReturn
 import modules._resources_rc
 from modules import argument_parsing as ap
 from modules._platform import _popen, get_cache_path, get_cwd, get_launcher_name, get_platform, is_frozen
+from modules.cli_launching import cli_launch
 from modules.shortcut import register_windows_filetypes, unregister_windows_filetypes
+from modules.version_matcher import VALID_FULL_QUERIES, VALID_QUERIES, VERSION_SEARCH_SYNTAX
 from PyQt5.QtWidgets import QApplication
 from semver import Version
 from windows.dialog_window import DialogWindow
@@ -102,7 +104,15 @@ def main():
         "-ol", "--open-last", action="store_true", help="Open the last file in the specified blender build"
     )
 
-    launch_parser.add_argument("-v", "--version", help="Version to launch.")
+    launch_parser.add_argument(
+        "-v", "--version", help=f'Version to launch.\n Valid queries: {",".join(VALID_QUERIES.splitlines())}'
+    )
+    launch_parser.add_argument(
+        "-c",
+        "--cli",
+        action="store_true",
+        help="Launch Blender from CLI. does not open any QT frontend. WARNING: LIKELY DOES NOT WORK IN WINDOWS BUNDLED EXECUTABLE",
+    )
 
     # This could be used better
     launch_target_parser = subparsers.add_parser(
@@ -147,7 +157,7 @@ def main():
         start_update(app, args.instanced, args.version)
 
     if args.command == "launch":
-        start_launch(app, args.file, args.version, args.open_last)
+        start_launch(app, args.file, args.version, args.open_last, cli=args.cli)
     if args.command == "__launch_target" and args.file:
         start_launch(app, args.file, None, False)
 
@@ -215,6 +225,7 @@ def start_launch(
     file: Path | None = None,
     version_query: str | None = None,
     open_last: bool = False,
+    cli: bool = False,
 ) -> NoReturn:
     from modules.version_matcher import VALID_QUERIES, VersionSearchQuery
     from windows.launching_window import LaunchingWindow
@@ -225,8 +236,9 @@ def start_launch(
             query = VersionSearchQuery.parse(version_query)
         except Exception:
             print("Failed to parse query")
+            print(VERSION_SEARCH_SYNTAX)
             print("Valid version queries include: ")
-            print(VALID_QUERIES)
+            print(VALID_FULL_QUERIES)
             sys.exit(1)
     else:
         query = None
@@ -235,8 +247,12 @@ def start_launch(
     if file is not None:
         file = Path(str(file).strip('"'))
 
-    LaunchingWindow(app, version_query=query, blendfile=file, open_last=open_last).show()
-    sys.exit(app.exec())
+    if cli:
+        cli_launch(file=file, version_query=query, open_last=open_last)
+        sys.exit(1)
+    else:
+        LaunchingWindow(app, version_query=query, blendfile=file, open_last=open_last).show()
+        sys.exit(app.exec())
 
 
 def start_register(instanced: bool):
