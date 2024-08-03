@@ -88,13 +88,16 @@ def association_is_registered() -> bool:
 def register_windows_filetypes():
     import winreg
 
-    assert is_frozen(), "This function can only be used when Blender Launcher is run in a bundled executable."
     # Register the program in the classes
     with winreg.CreateKey(
         winreg.HKEY_CURRENT_USER,
         r"Software\Classes\blenderlauncherv2.blend\shell\open\command",
     ) as command_key:
-        pth = f'"{Path(sys.executable)}"'
+        if is_frozen():
+            pth = f'"{Path(sys.executable).resolve()}"'
+        else:
+            pth = f'"{Path(sys.executable).resolve()}" "{Path(sys.argv[0]).resolve()}"'
+
         winreg.SetValueEx(command_key, "", 0, winreg.REG_SZ, f'{pth} __launch_target "%1"')
 
     # add it to the OpenWithProgids list
