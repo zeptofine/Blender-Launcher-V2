@@ -214,12 +214,12 @@ class GeneralTabWidget(SettingsFormWidget):
 
     def create_shortcut(self):
         destination = get_default_shortcut_destination()
-        file_place = FileDialogWindow().get_save_filename(parent=self, title="Choose destination", directory=str(destination))
+        file_place = FileDialogWindow().get_save_filename(
+            parent=self, title="Choose destination", directory=str(destination)
+        )
         if file_place is not None:
             # print(file_place)
             generate_program_shortcut(Path(file_place[0]))
-
-
 
     def refresh_association_buttons(self):
         from modules.shortcut import association_is_registered

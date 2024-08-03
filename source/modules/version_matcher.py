@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 
 utc = datetime.timezone.utc
 
+
 @dataclass(frozen=True)
 class BasicBuildInfo:
     version: Version
@@ -94,8 +95,8 @@ VALID_QUERIES = """^.^.*
 *.*.*
 ^.*.*
 -.*.^
-4.2
-3"""
+4.2.^
+4.^.^"""
 
 
 @cache
@@ -132,11 +133,22 @@ class VersionSearchQuery:
     """A dataclass for a search query. The attributes are ordered by priority"""
 
     major: int | str
+    "A major release of Blender"
+
     minor: int | str
+    "A minor release of Blender"
+
     patch: int | str
+    "A patch release of Blender"
+
     branch: str | None = None
+    "Which branch of Blender this is (stable, daily, experimental, etc.)"
+
     build_hash: str | None = None
+    "The git hash of the build that this is"
+
     commit_time: datetime.datetime | str | None = None
+    "When the build was made (in UTC)"
 
     def __post_init__(self):
         for pos in (self.major, self.minor, self.patch, self.commit_time):
@@ -213,13 +225,8 @@ class BInfoMatcher:
         versions = self.versions
 
         for place in ("build_hash", "major", "minor", "patch", "branch", "commit_time"):
-            # from pprint import pprint
-            # print("VERSIONS:")
-            # pprint(versions)
-            # print(f"PLACE: {place}")
             getter = attrgetter(place)
             p: str | int | datetime.datetime | None = getter(s)
-            # print(f"MATCHING: {p!r}")
             if p == "^":
                 # get the max number for `place` in version
                 max_p = max(getter(v) for v in versions)
@@ -235,8 +242,6 @@ class BInfoMatcher:
             else:
                 versions = [v for v in versions if getter(v) == p]
 
-            if len(versions) == 1:
-                return tuple(versions)
             if not versions:
                 return ()
 
@@ -244,7 +249,6 @@ class BInfoMatcher:
 
 
 if __name__ == "__main__":  # Test BInfoMatcher
-
     builds = (
         BasicBuildInfo(Version.parse("1.2.3"), "stable", "", datetime.datetime(2020, 5, 4, tzinfo=utc)),
         BasicBuildInfo(Version.parse("1.2.2"), "stable", "", datetime.datetime(2020, 4, 2, tzinfo=utc)),

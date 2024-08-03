@@ -80,6 +80,10 @@ class LaunchingWindow(BaseWindow):
         self.launch_button.setProperty("LaunchButton", True)
         self.launch_button.clicked.connect(self.launch_from_button)
 
+        self.cancel_button = QPushButton("Cancel", parent=self)
+        self.cancel_button.setProperty("CancelButton", True)
+        self.cancel_button.clicked.connect(self.close_)
+
         ### LAYOUT ###
         widget = QWidget(self)
         self.central_layout = QGridLayout(widget)
@@ -103,7 +107,7 @@ class LaunchingWindow(BaseWindow):
         self.version_query_edit = LintableLineEdit(self)
         self.version_query_edit.editingFinished.connect(self.update_query_from_edits)
         self.version_query_edit.textChanged.connect(self.cancel_timer)
-        self.version_query_edit.setPlaceholderText("Any (*)")
+        self.version_query_edit.setPlaceholderText("Any (*.*.*)")
         self.branch_edit = LintableLineEdit(self)
         self.branch_edit.editingFinished.connect(self.update_query_from_edits)
         self.branch_edit.textChanged.connect(self.cancel_timer)
@@ -147,7 +151,8 @@ class LaunchingWindow(BaseWindow):
         self.central_layout.addWidget(self.timer_label, 7, 0, 1, 3)
         if self.save_current_query_button is not None:
             self.central_layout.addWidget(self.save_current_query_button, 8, 0, 1, 3)
-        self.central_layout.addWidget(self.launch_button, 9, 0, 1, 3)
+        self.central_layout.addWidget(self.cancel_button, 9, 0, 1, 1)
+        self.central_layout.addWidget(self.launch_button, 9, 1, 1, 2)
 
         self.__enabled_font = QFont(self.font_10)
         self.__enabled_font.setBold(True)
@@ -159,6 +164,8 @@ class LaunchingWindow(BaseWindow):
     def update_query_from_edits(self, update_actual_query=True):
         self.ready = False
         txt = self.version_query_edit.text()
+        if txt == "":
+            txt = "*.*.*"
 
         branch = self.branch_edit.text()
         if branch == "":
@@ -380,6 +387,11 @@ class LaunchingWindow(BaseWindow):
 
         launch_build(info=build, launch_mode=launch_mode)
 
+        self.close()
+
+    @pyqtSlot()
+    def close_(self):
+        """Close slot for cancel button"""
         self.close()
 
     def closeEvent(self, e):
