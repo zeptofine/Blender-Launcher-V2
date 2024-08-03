@@ -135,7 +135,10 @@ class GeneralTabWidget(SettingsFormWidget):
                 "Unregister File Association", parent=self.file_association_group
             )
             self.register_file_association_button.clicked.connect(register_windows_filetypes)
+            self.register_file_association_button.clicked.connect(self.refresh_association_buttons)
             self.unregister_file_association_button.clicked.connect(unregister_windows_filetypes)
+            self.unregister_file_association_button.clicked.connect(self.refresh_association_buttons)
+            self.refresh_association_buttons()
             layout.addWidget(self.register_file_association_button, 1, 0, 1, 1)
             layout.addWidget(self.unregister_file_association_button, 1, 1, 1, 1)
 
