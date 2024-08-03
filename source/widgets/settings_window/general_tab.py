@@ -10,6 +10,7 @@ from modules.settings import (
     get_config_file,
     get_cwd,
     get_launch_minimized_to_tray,
+    get_launch_timer_duration,
     get_launch_when_system_starts,
     get_library_folder,
     get_platform,
@@ -18,6 +19,7 @@ from modules.settings import (
     get_worker_thread_count,
     migrate_config,
     set_launch_minimized_to_tray,
+    set_launch_timer_duration,
     set_launch_when_system_starts,
     set_library_folder,
     set_show_tray_icon,
@@ -27,7 +29,7 @@ from modules.settings import (
 )
 from modules.shortcut import generate_program_shortcut, get_default_shortcut_destination, get_shortcut_type
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QCheckBox, QGridLayout, QHBoxLayout, QLineEdit, QPushButton, QSpinBox, QWidget
+from PyQt5.QtWidgets import QCheckBox, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QSpinBox, QWidget
 from widgets.settings_form_widget import SettingsFormWidget
 from widgets.settings_window.settings_group import SettingsGroup
 from windows.dialog_window import DialogWindow
@@ -125,7 +127,7 @@ class GeneralTabWidget(SettingsFormWidget):
         self.create_shortcut_button.clicked.connect(self.create_shortcut)
         layout.addWidget(self.create_shortcut_button, 0, 0, 1, 2)
 
-        if sys.platform == "win32" and is_frozen():
+        if sys.platform == "win32":
             from modules.shortcut import register_windows_filetypes, unregister_windows_filetypes
 
             self.register_file_association_button = QPushButton(
@@ -141,6 +143,16 @@ class GeneralTabWidget(SettingsFormWidget):
             self.refresh_association_buttons()
             layout.addWidget(self.register_file_association_button, 1, 0, 1, 1)
             layout.addWidget(self.unregister_file_association_button, 1, 1, 1, 1)
+
+        self.launch_timer_duration = QSpinBox()
+        self.launch_timer_duration.setToolTip(
+            "Determines how much time you have while opening blendfiles to change the build you're launching"
+        )
+        self.launch_timer_duration.setRange(0, 120)
+        self.launch_timer_duration.setValue(get_launch_timer_duration())
+        self.launch_timer_duration.editingFinished.connect(self.set_launch_timer_duration)
+        layout.addWidget(QLabel("Launch Timer Duration (secs)"), 2, 0, 1, 1)
+        layout.addWidget(self.launch_timer_duration, 2, 1, 1, 1)
 
         self.file_association_group.setLayout(layout)
         self.addRow(self.file_association_group)
@@ -196,6 +208,9 @@ class GeneralTabWidget(SettingsFormWidget):
 
     def set_worker_thread_count(self):
         set_worker_thread_count(self.WorkerThreadCount.value())
+
+    def set_launch_timer_duration(self):
+        set_launch_timer_duration(self.launch_timer_duration.value())
 
     def toggle_use_pre_release_builds(self, is_checked):
         set_use_pre_release_builds(is_checked)
