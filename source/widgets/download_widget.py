@@ -10,6 +10,7 @@ from modules.enums import MessageType
 from modules.settings import get_install_template, get_library_folder
 from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout
+from semver import Version
 from threads.downloader import DownloadTask
 from threads.extractor import ExtractTask
 from threads.renamer import RenameTask
@@ -248,7 +249,13 @@ class DownloadWidget(BaseBuildWidget):
         assert self.build_dir is not None
 
         # If the returned version from the executable is invalid it might break loading.
-        ver = parse_blender_ver(self.build_dir.name, search=True)
+        ver_ = parse_blender_ver(self.build_dir.name, search=True)
+        ver = Version(
+            ver_.major,
+            ver_.minor,
+            ver_.patch,
+            prerelease=ver_.prerelease,
+        )
 
         a = ReadBuildTask(
             self.build_dir,

@@ -298,17 +298,15 @@ def read_blender_version(
         }.get(get_platform(), "blender")
 
         exe_path = path / blender_exe
+
     commit_time, build_hash, subversion, custom_name = fill_blender_info(exe_path, info=old_build_info)
 
     subfolder = path.parent.name
 
     name = archive_name or path.name
     branch = subfolder
-    if subfolder == "daily":
-        # If branch from console is empty, it is probably stable release
-        if len(subversion.split(" ")) == 1:
-            subversion += " Stable"
-    elif subfolder == "custom":
+
+    if subfolder == "custom":
         branch = name
     elif subfolder == "experimental":
         # Sensitive data! Requires proper folder naming!
