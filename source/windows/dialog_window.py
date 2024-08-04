@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import Enum
 
 from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QKeyEvent, QPixmap
 from PyQt5.QtWidgets import QHBoxLayout, QLabel, QPushButton, QSizePolicy, QVBoxLayout, QWidget
 from windows.base_window import BaseWindow
 
@@ -102,3 +102,9 @@ class DialogWindow(BaseWindow):
     def cancel(self):
         self.cancelled.emit()
         self.close()
+
+    def keyPressEvent(self, event: QKeyEvent):
+        if event.key() == Qt.Key.Key_Escape and not self.CancelButton.isHidden():
+            self.cancel()
+        if event.key() in {Qt.Key.Key_Return, Qt.Key.Key_Enter}:
+            self.accept()
