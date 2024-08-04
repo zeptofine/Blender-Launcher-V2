@@ -232,7 +232,7 @@ class GeneralTabWidget(SettingsFormWidget):
         file_place = FileDialogWindow().get_save_filename(
             parent=self, title="Choose destination", directory=str(destination)
         )
-        if file_place is not None:
+        if file_place:
             # print(file_place)
             generate_program_shortcut(Path(file_place[0]))
 
