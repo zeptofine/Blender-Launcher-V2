@@ -13,7 +13,7 @@ def create_shortcut(folder, name):
     platform = get_platform()
     library_folder = Path(get_library_folder())
 
-    if platform == "Windows":
+    if sys.platform == "win32":
         import win32com.client
         from win32comext.shell import shell, shellcon
 
@@ -72,6 +72,7 @@ def create_shortcut(folder, name):
 
 
 def association_is_registered() -> bool:
+    assert sys.platform == "win32"
     import winreg
 
     try:
@@ -86,6 +87,8 @@ def association_is_registered() -> bool:
 
 
 def register_windows_filetypes():
+    assert sys.platform == "win32"
+
     import winreg
 
     # Register the program in the classes
@@ -118,6 +121,8 @@ def register_windows_filetypes():
 
 
 def unregister_windows_filetypes():
+    assert sys.platform == "win32"
+
     import winreg
 
     # Unregister the program in the classes
@@ -163,7 +168,7 @@ def get_shortcut_type() -> str:
 def get_default_shortcut_destination():
     return {
         "Windows": Path(
-            Path.home(), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Blender Launcher"
+            Path.home(), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Blender Launcher V2"
         ),
         "Linux": Path(Path.home(), ".local", "share", "applications", "BLV2.desktop"),
     }.get(get_platform(), Path(Path.home(), ".local", "share", "applications", "BLV2.desktop"))
