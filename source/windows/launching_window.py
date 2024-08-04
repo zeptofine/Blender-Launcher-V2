@@ -335,7 +335,11 @@ class LaunchingWindow(BaseWindow):
             build = builds[0]
             self.list_items[self.__version_url(build)].setSelected(True)
             print(matches)
-            self.prepare_launch(build)
+
+            if self.launch_timer_duration == 0: # launch immediately
+                self.actually_launch(build)
+            else:
+                self.prepare_launch(build)
 
     def make_matcher(self):
         return BInfoMatcher(tuple(map(BasicBuildInfo.from_buildinfo, self.builds.values())))

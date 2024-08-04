@@ -150,7 +150,8 @@ class GeneralTabWidget(SettingsFormWidget):
         )
         self.launch_timer_duration.setRange(-1, 120)
         self.launch_timer_duration.setValue(get_launch_timer_duration())
-        self.launch_timer_duration.editingFinished.connect(self.set_launch_timer_duration)
+        self.launch_timer_duration.valueChanged.connect(self.set_launch_timer_duration)
+        self.set_launch_timer_duration()
         layout.addWidget(QLabel("Launch Timer Duration (secs)"), 2, 0, 1, 1)
         layout.addWidget(self.launch_timer_duration, 2, 1, 1, 1)
 
@@ -210,6 +211,12 @@ class GeneralTabWidget(SettingsFormWidget):
         set_worker_thread_count(self.WorkerThreadCount.value())
 
     def set_launch_timer_duration(self):
+        if self.launch_timer_duration.value() == -1:
+            self.launch_timer_duration.setSuffix(" (Disabled)")
+        elif self.launch_timer_duration.value() == 0:
+            self.launch_timer_duration.setSuffix("s (Immediate)")
+        else:
+            self.launch_timer_duration.setSuffix("s")
         set_launch_timer_duration(self.launch_timer_duration.value())
 
     def toggle_use_pre_release_builds(self, is_checked):
