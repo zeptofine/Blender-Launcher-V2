@@ -257,7 +257,35 @@ class LaunchingWindow(BaseWindow):
 
     @staticmethod
     def __version_url(info: BuildInfo) -> str:
-        return f"{Path(info.link).parent.stem}/{info.full_semversion}"
+        branch = str(Path(info.link).parent.stem)
+        version = str(info.full_semversion)
+
+        replacements = [  # (remove_character, branch_rename, not_condition)
+            ("-", "", "-(sub)"),
+            ("+", "", ""),
+            ("lts", "LTS", ""),
+            ("alpha", "Alpha", ""),
+            ("beta", "Beta", ""),
+        ]
+
+        # String parsing
+        if branch == "stable":
+            version = version.rsplit(".", 1)[0]
+
+        if branch in version:
+            version = version.replace(branch, "")
+
+        for remove_character, branch_rename, not_condition in replacements:
+            if remove_character in version and (not_condition == "" or not not_condition in version):
+                version = version.replace(remove_character, "")
+                if branch_rename:
+                    branch = branch_rename
+
+        # Capitalize the branch name
+        if branch and not branch[0].isupper():
+            branch = branch.capitalize()
+
+        return f"{branch} {version}"
 
     @pyqtSlot()
     def search_finished(self):
