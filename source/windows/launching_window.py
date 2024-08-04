@@ -257,35 +257,36 @@ class LaunchingWindow(BaseWindow):
 
     @staticmethod
     def __version_url(info: BuildInfo) -> str:
-        branch = str(Path(info.link).parent.stem)
-        version = str(info.full_semversion)
+        branch = info.branch
+        version = str(info.subversion)
+        custom_name = info.custom_name
+        commit_time = str(info.commit_time)
 
-        replacements = [  # (remove_character, branch_rename, not_condition)
-            ("-", "", "-(sub)"),
-            ("+", "", ""),
-            ("lts", "LTS", ""),
-            ("alpha", "Alpha", ""),
-            ("beta", "Beta", ""),
-        ]
+        # Remove Time Zone from commit time
+        commit_time = commit_time.rsplit("+")[0]
 
-        # String parsing
-        if branch == "stable":
-            version = version.rsplit(".", 1)[0]
-
-        if branch in version:
-            version = version.replace(branch, "")
-
-        for remove_character, branch_rename, not_condition in replacements:
-            if remove_character in version and (not_condition == "" or not not_condition in version):
-                version = version.replace(remove_character, "")
-                if branch_rename:
-                    branch = branch_rename
-
+        # Use Version name for the Branch name and remove it from the version string
+        version_name = ["Alpha", "Beta", "Release Candidate"]
+        
+        for name in version_name:
+            if branch.lower() == "daily" and name.lower() in version.lower():
+                branch = name
+                version = version.lower().replace(name.lower(), "")
+            if name.lower() in version.lower():
+                version = version.lower().replace(name.lower(), "")
+        
+        if branch.lower() == "lts":
+            branch = branch.upper()
+        
         # Capitalize the branch name
         if branch and not branch[0].isupper():
             branch = branch.capitalize()
+        
+        # Use the custom name if it exists
+        if custom_name:
+            branch = custom_name
 
-        return f"{branch} {version}"
+        return f"{version} {branch} {commit_time}"
 
     @pyqtSlot()
     def search_finished(self):
