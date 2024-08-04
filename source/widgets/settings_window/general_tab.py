@@ -232,8 +232,7 @@ class GeneralTabWidget(SettingsFormWidget):
         file_place = FileDialogWindow().get_save_filename(
             parent=self, title="Choose destination", directory=str(destination)
         )
-        if file_place:
-            # print(file_place)
+        if file_place[0]:
             generate_program_shortcut(Path(file_place[0]))
 
     def refresh_association_buttons(self):
