@@ -302,7 +302,7 @@ class LaunchingWindow(BaseWindow):
 
         matches, builds = self.update_search()
         # If there's only one match, start a launch timer
-        if len(matches) == 1:
+        if self.launch_timer_duration != -1 and len(matches) == 1:
             self.ready = True
             build = builds[0]
             self.list_items[self.__version_url(build)].setSelected(True)
