@@ -148,7 +148,7 @@ class GeneralTabWidget(SettingsFormWidget):
         self.launch_timer_duration.setToolTip(
             "Determines how much time you have while opening blendfiles to change the build you're launching"
         )
-        self.launch_timer_duration.setRange(0, 120)
+        self.launch_timer_duration.setRange(-1, 120)
         self.launch_timer_duration.setValue(get_launch_timer_duration())
         self.launch_timer_duration.editingFinished.connect(self.set_launch_timer_duration)
         layout.addWidget(QLabel("Launch Timer Duration (secs)"), 2, 0, 1, 1)
