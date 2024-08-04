@@ -2,7 +2,6 @@
 for %%I in (.) do set CurrentDir=%%~nxI
 if %CurrentDir%==scripts cd ..
 
-
 if exist __pycache__ rd /S /Q __pycache__
 if exist build rd /S /Q build
 if exist "dist/debug" rd /S /Q "dist/debug"
