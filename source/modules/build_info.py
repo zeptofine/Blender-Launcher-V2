@@ -238,7 +238,14 @@ class BuildInfo:
         return data
 
     def __lt__(self, other: BuildInfo):
-        return self.full_semversion < other.full_semversion
+        sv, osv = self.semversion.finalize_version(), other.semversion.finalize_version()
+        if sv == osv:
+            # sort by commit time if possible
+            try:
+                return self.commit_time < other.commit_time
+            except Exception:  # Sometimes commit times are built without timezone information
+                return self.full_semversion < other.full_semversion
+        return sv < osv
 
 
 def fill_blender_info(exe: Path, info: BuildInfo | None = None) -> tuple[datetime, str, str, str]:
