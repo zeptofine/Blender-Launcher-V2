@@ -104,9 +104,7 @@ def main():
         "-ol", "--open-last", action="store_true", help="Open the last file in the specified blender build"
     )
 
-    launch_parser.add_argument(
-        "-v", "--version", help=f'Version to launch.\n Valid queries: {",".join(VALID_QUERIES.splitlines())}'
-    )
+    launch_parser.add_argument("-v", "--version", help=f"Version to launch. {VERSION_SEARCH_SYNTAX}")
     launch_parser.add_argument(
         "-c",
         "--cli",
