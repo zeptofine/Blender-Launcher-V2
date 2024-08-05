@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import json
+import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -15,7 +16,8 @@ from modules.settings import (
     set_version_specific_queries,
 )
 from modules.tasks import TaskQueue
-from modules.version_matcher import VALID_QUERIES, BasicBuildInfo, BInfoMatcher, VersionSearchQuery
+from modules.version_matcher import VALID_QUERIES, BInfoMatcher, VersionSearchQuery
+from modules.version_matcher import BasicBuildInfo as BBI
 from PyQt5.QtCore import Qt, QTimer, pyqtSlot
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (
@@ -39,6 +41,8 @@ from windows.base_window import BaseWindow
 if TYPE_CHECKING:
     from datetime import datetime
 
+logger = logging.getLogger()
+
 
 class LaunchingWindow(BaseWindow):
     def __init__(
@@ -49,7 +53,7 @@ class LaunchingWindow(BaseWindow):
         open_last: bool = False,
     ):
         super().__init__(app=app)
-        self.resize(360, 480)
+        self.resize(480, 480)
 
         # task queue
         self.task_queue = TaskQueue(
@@ -65,7 +69,7 @@ class LaunchingWindow(BaseWindow):
 
         # Get all available versions of Blender
         self.builds: dict[str, BuildInfo] = {}
-        self.list_items: dict[str, EnablableListWidgetItem] = {}
+        self.list_items: dict[BBI, EnablableListWidgetItem] = {}
         self.drawing_task = DrawLibraryTask()
         self.drawing_task.found.connect(self._build_found)
         self.drawing_task.finished.connect(self.search_finished)
@@ -125,6 +129,7 @@ class LaunchingWindow(BaseWindow):
         self.date_range_combo.addItems(["Latest (^)", "Any (*)", "Oldest (-)"])
         self.date_range_combo.setCurrentIndex(0)
         self.date_range_combo.currentIndexChanged.connect(self.update_query_from_edits)
+        self.date_range_combo.currentIndexChanged.connect(self.cancel_timer)
         self.error_preview = QLabel(self)
 
         if self.blendfile is not None:
@@ -164,6 +169,7 @@ class LaunchingWindow(BaseWindow):
         self.__enabled_font.setWeight(500)
         self.__disabled_font = QFont(self.font_8)
         self.__disabled_font.setItalic(True)
+        self.__disabled_font.setWeight(QFont.Weight.Light)
 
     @pyqtSlot()
     def update_query_from_edits(self, update_actual_query=True):
@@ -180,7 +186,7 @@ class LaunchingWindow(BaseWindow):
         if build_hash == "":
             build_hash = None
 
-        print(f"HASH: {build_hash}")
+        logger.debug(f"HASH: {build_hash}")
         date_range_choice = self.date_range_combo.currentIndex()
 
         if date_range_choice == 0:  # Latest (^)
@@ -195,7 +201,7 @@ class LaunchingWindow(BaseWindow):
                 self.version_query = (
                     VersionSearchQuery.parse(txt).with_branch(branch).with_build_hash(build_hash).with_commit_time(date)
                 )
-                print(f"Updating query: {self.version_query!r}")
+                logger.debug(f"Updating query: {self.version_query!r}")
                 self.version_query_edit.set_valid(True)
                 self.branch_edit.set_valid(True)
                 self.build_hash_edit.set_valid(True)
@@ -208,7 +214,7 @@ class LaunchingWindow(BaseWindow):
                 self.error_preview.setText(str(e))
 
     def update_query_boxes(self, query: VersionSearchQuery):
-        print("Updating query boxes...")
+        logger.debug("Updating query boxes...")
 
         self.version_query_edit.setText(f"{query.major}.{query.minor}.{query.patch}")
         self.branch_edit.setText(query.branch or "")
@@ -251,9 +257,10 @@ class LaunchingWindow(BaseWindow):
                     parent=self.builds_list,
                 )
                 item.setText(semversion)
+                basic_info = BBI.from_buildinfo(info)
 
                 self.builds[semversion] = info
-                self.list_items[semversion] = item
+                self.list_items[basic_info] = item
 
     @staticmethod
     def __version_url(info: BuildInfo) -> str:
@@ -294,9 +301,9 @@ class LaunchingWindow(BaseWindow):
 
         # Use quick launch if it exists
         if self.version_query is None and self.blendfile is None and (path := get_favorite_path()):
-            for version, build in self.builds.items():
+            for build in self.builds.values():
                 if build.link == path:
-                    self.list_items[version].setSelected(True)
+                    self.list_items[BBI.from_buildinfo(build)].setSelected(True)
                     self.set_query_from_selected_build()
 
         self.matcher = self.make_matcher()
@@ -308,7 +315,7 @@ class LaunchingWindow(BaseWindow):
 
         if self.blendfile is not None and self.blendfile.exists():  # check the blendfile's target version
             header = read_blendfile_header(self.blendfile)
-            print(header)
+            logger.debug(f"HEADER: {header}")
             if header is None:
                 raise
             self.saved_header = header
@@ -334,8 +341,7 @@ class LaunchingWindow(BaseWindow):
         if self.launch_timer_duration != -1 and len(matches) == 1:
             self.ready = True
             build = builds[0]
-            self.list_items[self.__version_url(build)].setSelected(True)
-            print(matches)
+            self.list_items[BBI.from_buildinfo(build)].setSelected(True)
 
             if self.launch_timer_duration == 0: # launch immediately
                 self.actually_launch(build)
@@ -343,20 +349,20 @@ class LaunchingWindow(BaseWindow):
                 self.prepare_launch(build)
 
     def make_matcher(self):
-        return BInfoMatcher(tuple(map(BasicBuildInfo.from_buildinfo, self.builds.values())))
+        return BInfoMatcher(tuple(map(BBI.from_buildinfo, self.builds.values())))
 
-    def update_search(self) -> tuple[tuple[BasicBuildInfo, ...], list[BuildInfo]]:
+    def update_search(self) -> tuple[tuple[BBI, ...], list[BuildInfo]]:
         """Updates the visibility of each item in the list depending on the search query. returns matches"""
         assert self.version_query is not None
-        print(f"QUERY: {self.version_query!r}")
+        logger.debug(f"QUERY: {self.version_query!r}")
         matcher = self.make_matcher()
         matches = matcher.match(self.version_query)
         versions = {b.version for b in matches}
 
         enabled_builds: list[BuildInfo] = []
 
-        for version, build in self.builds.items():
-            item = self.list_items[version]
+        for build in self.builds.values():
+            item = self.list_items[BBI.from_buildinfo(build)]
 
             item.enabled = build.full_semversion in versions
             if item.enabled:
