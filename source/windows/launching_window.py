@@ -267,21 +267,21 @@ class LaunchingWindow(BaseWindow):
 
         # Use Version name for the Branch name and remove it from the version string
         version_name = ["Alpha", "Beta", "Release Candidate"]
-
+        
         for name in version_name:
             if branch.lower() == "daily" and name.lower() in version.lower():
                 branch = name
                 version = version.lower().replace(name.lower(), "")
             if name.lower() in version.lower():
                 version = version.lower().replace(name.lower(), "")
-
+        
         if branch.lower() == "lts":
             branch = branch.upper()
-
+        
         # Capitalize the branch name
         if branch and not branch[0].isupper():
             branch = branch.capitalize()
-
+        
         # Use the custom name if it exists
         if custom_name:
             branch = custom_name
@@ -313,6 +313,8 @@ class LaunchingWindow(BaseWindow):
                 raise
             self.saved_header = header
             self.status_label.setText(f"Detected header version: {header.version}")
+            if self.save_current_query_button is not None:
+                self.save_current_query_button.setText(f"Save current query for {self.saved_header.version} blendfiles")
 
             v = header.version
 
@@ -323,11 +325,6 @@ class LaunchingWindow(BaseWindow):
                 vsq = VersionSearchQuery(v.major, v.minor, "^")
                 if self.version_query is None:
                     self.update_query_boxes(vsq)
-
-            if self.save_current_query_button is not None:
-                self.save_current_query_button.setText(
-                    f"Save Blender {self.version_query.major}.{self.version_query.minor}.{self.version_query.patch} as default version for this file"
-                )
 
         # Update query with the default settings
         self.update_query_from_edits()
@@ -340,7 +337,7 @@ class LaunchingWindow(BaseWindow):
             self.list_items[self.__version_url(build)].setSelected(True)
             print(matches)
 
-            if self.launch_timer_duration == 0:  # launch immediately
+            if self.launch_timer_duration == 0: # launch immediately
                 self.actually_launch(build)
             else:
                 self.prepare_launch(build)
