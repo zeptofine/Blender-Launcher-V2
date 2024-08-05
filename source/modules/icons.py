@@ -26,6 +26,7 @@ class Icons:
     file: QIcon
     taskbar: QIcon
     none: QIcon
+    bl_file: QIcon
 
     @classmethod
     @cache
