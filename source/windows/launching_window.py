@@ -19,7 +19,7 @@ from modules.tasks import TaskQueue
 from modules.version_matcher import VALID_QUERIES, BInfoMatcher, VersionSearchQuery
 from modules.version_matcher import BasicBuildInfo as BBI
 from PyQt5.QtCore import Qt, QTimer, pyqtSlot
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QFontMetricsF
 from PyQt5.QtWidgets import (
     QApplication,
     QComboBox,
@@ -70,6 +70,7 @@ class LaunchingWindow(BaseWindow):
         # Get all available versions of Blender
         self.builds: dict[str, BuildInfo] = {}
         self.list_items: dict[BBI, EnablableListWidgetItem] = {}
+        self.label_elements: dict[BBI, tuple[str, str, str, str]] = {}
         self.drawing_task = DrawLibraryTask()
         self.drawing_task.found.connect(self._build_found)
         self.drawing_task.finished.connect(self.search_finished)
@@ -249,6 +250,7 @@ class LaunchingWindow(BaseWindow):
                 info = BuildInfo.from_dict(str(pth), blinfo["blinfo"][0])
 
                 semversion = self.__version_url(info)
+                combined_url = " ".join(semversion)
 
                 item = EnablableListWidgetItem(
                     enabled_font=self.__enabled_font,
@@ -256,48 +258,94 @@ class LaunchingWindow(BaseWindow):
                     build=info,
                     parent=self.builds_list,
                 )
-                item.setText(semversion)
+                item.setText(combined_url)
                 basic_info = BBI.from_buildinfo(info)
 
-                self.builds[semversion] = info
+                self.builds[combined_url] = info
                 self.list_items[basic_info] = item
+                self.label_elements[basic_info] = semversion
 
     @staticmethod
-    def __version_url(info: BuildInfo) -> str:
+    def __version_url(info: BuildInfo) -> tuple[str, str, str, str]:
         branch = info.branch
-        version = str(info.subversion)
+        version = info.display_version
         custom_name = info.custom_name
-        commit_time = str(info.commit_time)
-
-        # Remove Time Zone from commit time
-        commit_time = commit_time.rsplit("+")[0]
+        commit_time = f"{info.commit_time.date()} {info.commit_time.time()}"
 
         # Use Version name for the Branch name and remove it from the version string
         version_name = ["Alpha", "Beta", "Release Candidate"]
-        
+
         for name in version_name:
             if branch.lower() == "daily" and name.lower() in version.lower():
                 branch = name
                 version = version.lower().replace(name.lower(), "")
             if name.lower() in version.lower():
                 version = version.lower().replace(name.lower(), "")
-        
+
         if branch.lower() == "lts":
             branch = branch.upper()
-        
+
         # Capitalize the branch name
         if branch and not branch[0].isupper():
             branch = branch.capitalize()
-        
+
         # Use the custom name if it exists
         if custom_name:
             branch = custom_name
 
-        return f"{version} {branch} {commit_time}"
+        return (
+            Path(info.link).parent.stem,
+            info.display_version,
+            branch,
+            commit_time,
+        )
+
+    def repad_list(self):
+        # Update the items so the text is aligned correctly
+        # loop over the builds and get the max length for each piece
+        target_p_len = 0
+        target_v_len = 0
+        target_b_len = 0
+        target_dtime = 0
+        metrics = QFontMetricsF(self.__disabled_font)
+
+        def sizeof(s):
+            return metrics.size(Qt.TextFlag.TextSingleLine, s).width()
+
+        size_of_space = sizeof(" ")
+        for build in self.list_items:
+            p, v, b, dtime = self.label_elements[build]
+            target_p_len = max(target_p_len, sizeof(p))
+            target_v_len = max(target_v_len, sizeof(v))
+            target_b_len = max(target_b_len, sizeof(b))
+            target_dtime = max(target_dtime, sizeof(dtime))
+
+        # edit the text on the list items to align the text
+        def formatter(p: str, v: str, b: str, dtime: str) -> str:
+            # get the proper number of spaces to fill the max length
+            num_of_spaces_p = int(max(0, target_p_len - sizeof(p)) // size_of_space)
+            num_of_spaces_v = int(max(0, target_v_len - sizeof(v)) // size_of_space)
+            num_of_spaces_b = int(max(0, target_b_len - sizeof(b)) // size_of_space)
+            num_of_spaces_d = int(max(0, target_dtime - sizeof(dtime)) // size_of_space)
+            return f"{p}{' ' * num_of_spaces_p} {v}{' ' * num_of_spaces_v} {b}{' ' * num_of_spaces_b} {dtime}{' ' * num_of_spaces_d}"
+
+        # rebuild the dictionaries and format the text
+        for build, item in self.list_items.copy().items():
+            build = self.builds.pop(item.text())
+            basic_info = BBI.from_buildinfo(build)
+
+            p, v, b, dtime = self.label_elements.pop(basic_info)
+
+            new_text = formatter(p, v, b, dtime)
+            item.setText(new_text)
+            self.builds[new_text] = build
+            self.label_elements[basic_info] = (p, v, b, dtime)
 
     @pyqtSlot()
     def search_finished(self):
         self.status_label.setText(f"Found {len(self.builds)} builds")
+
+        self.repad_list()
 
         # Use quick launch if it exists
         if self.version_query is None and self.blendfile is None and (path := get_favorite_path()):
@@ -343,7 +391,7 @@ class LaunchingWindow(BaseWindow):
             build = builds[0]
             self.list_items[BBI.from_buildinfo(build)].setSelected(True)
 
-            if self.launch_timer_duration == 0: # launch immediately
+            if self.launch_timer_duration == 0:  # launch immediately
                 self.actually_launch(build)
             else:
                 self.prepare_launch(build)
