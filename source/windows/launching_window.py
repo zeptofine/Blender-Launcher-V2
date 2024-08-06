@@ -137,6 +137,7 @@ class LaunchingWindow(BaseWindow):
             self.save_current_query_button = QPushButton("Save current query for ???", self)
             self.save_current_query_button.clicked.connect(self.save_current_query)
             self.save_current_query_button.setProperty("CreateButton", True)
+            self.save_current_query_button.hide()
         else:
             self.save_current_query_button = None
 
@@ -370,6 +371,8 @@ class LaunchingWindow(BaseWindow):
             self.status_label.setText(f"Detected header version: {header.version}")
             if self.save_current_query_button is not None:
                 self.save_current_query_button.setText(f"Save current query for {self.saved_header.version} blendfiles")
+                self.save_current_query_button.show()
+                
 
             v = header.version
 

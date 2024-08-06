@@ -209,9 +209,13 @@ def generate_program_shortcut(destination: Path):
     elif platform == "Linux":
         import shlex
 
-        bl_exe, _ = get_launcher_name()
-        cwd = get_cwd()
-        source = cwd / bl_exe
+        if is_frozen():
+            bl_exe, _ = get_launcher_name()
+            cwd = get_cwd()
+            source = shlex.quote(str(cwd / bl_exe))
+        else:
+            exe = Path(sys.executable)
+            source = f"{shlex.quote(str(exe))} {shlex.quote(str(Path(sys.argv[0]).resolve()))}"
 
         _exec = source
         text = "\n".join(
@@ -219,11 +223,12 @@ def generate_program_shortcut(destination: Path):
                 "[Desktop Entry]",
                 "Name=Blender Launcher V2",
                 "GenericName=Launcher",
-                f"Exec={shlex.quote(str(_exec))} __launch_target",
+                f"Exec={_exec} __launch_target",
                 "MimeType=application/x-blender;",
                 "Icon=blender-icon",
                 "Terminal=false",
                 "Type=Application",
+                "Categories=Graphics;3DGraphics",
             ]
         )
 
