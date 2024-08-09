@@ -268,7 +268,7 @@ class LaunchingWindow(BaseWindow):
 
     @staticmethod
     def __version_url(info: BuildInfo) -> tuple[str, str, str, str]:
-        branch = info.branch
+        branch = info.display_label
         version = info.display_version
         custom_name = info.custom_name
         commit_time = f"{info.commit_time.date()} {info.commit_time.time()}"
@@ -282,13 +282,6 @@ class LaunchingWindow(BaseWindow):
                 version = version.lower().replace(name.lower(), "")
             if name.lower() in version.lower():
                 version = version.lower().replace(name.lower(), "")
-
-        if branch.lower() == "lts":
-            branch = branch.upper()
-
-        # Capitalize the branch name
-        if branch and not branch[0].isupper():
-            branch = branch.capitalize()
 
         # Use the custom name if it exists
         if custom_name:
