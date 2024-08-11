@@ -17,7 +17,7 @@ from modules.settings import (
 )
 from PyQt5 import QtGui
 from PyQt5.QtCore import QRegExp, Qt
-from PyQt5.QtWidgets import QCheckBox, QComboBox, QFormLayout, QHBoxLayout, QLabel, QLineEdit, QVBoxLayout
+from PyQt5.QtWidgets import QCheckBox, QComboBox, QFormLayout, QHBoxLayout, QLabel, QLineEdit, QGridLayout
 from widgets.settings_form_widget import SettingsFormWidget
 
 from .settings_group import SettingsGroup
@@ -81,12 +81,14 @@ class ConnectionTabWidget(SettingsFormWidget):
         self.connection_authentication_settings = SettingsGroup("Connection Authentication", parent=self)
 
         # User ID
+        self.UserIDLabel = QLabel("User ID")
         self.UserIDLineEdit = QLineEdit()
         self.UserIDLineEdit.setText(get_user_id())
         self.UserIDLineEdit.editingFinished.connect(self.update_user_id)
 
-        self.connection_authentication_layout = QVBoxLayout()
-        self.connection_authentication_layout.addWidget(self.UserIDLineEdit)
+        self.connection_authentication_layout = QGridLayout()
+        self.connection_authentication_layout.addWidget(self.UserIDLabel, 0, 0, 1, 1)
+        self.connection_authentication_layout.addWidget(self.UserIDLineEdit, 0, 1, 1, 1)
         self.connection_authentication_settings.setLayout(self.connection_authentication_layout)
 
         # Layout
