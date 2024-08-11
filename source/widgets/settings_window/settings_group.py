@@ -1,22 +1,15 @@
 from __future__ import annotations
 
 from modules.icons import Icons
-from PyQt5.QtCore import QSize, Qt, pyqtSignal, pyqtSlot
-from PyQt5.QtNetwork import QLocalServer
+from PyQt5.QtCore import pyqtSignal, pyqtSlot
+
 from PyQt5.QtWidgets import (
-    QAction,
-    QApplication,
     QCheckBox,
     QFrame,
     QGridLayout,
-    QHBoxLayout,
     QLabel,
     QLayout,
     QPushButton,
-    QStatusBar,
-    QSystemTrayIcon,
-    QTabWidget,
-    QVBoxLayout,
     QWidget,
 )
 
