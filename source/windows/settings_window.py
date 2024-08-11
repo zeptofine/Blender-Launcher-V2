@@ -8,6 +8,7 @@ from modules.settings import (
     get_proxy_port,
     get_proxy_type,
     get_proxy_user,
+    get_user_id,
     get_quick_launch_key_seq,
     get_use_custom_tls_certificates,
     get_worker_thread_count,
@@ -52,6 +53,7 @@ class SettingsWindow(BaseWindow):
         self.old_proxy_port = get_proxy_port()
         self.old_proxy_user = get_proxy_user()
         self.old_proxy_password = get_proxy_password()
+        self.old_user_id = get_user_id()
 
         self.old_check_for_new_builds_automatically = get_check_for_new_builds_automatically()
         self.old_new_builds_check_frequency = get_new_builds_check_frequency()
@@ -118,6 +120,7 @@ class SettingsWindow(BaseWindow):
         proxy_port = get_proxy_port()
         proxy_user = get_proxy_user()
         proxy_password = get_proxy_password()
+        user_id = get_user_id()
 
         # Restart app if any of the connection settings changed
         if self.old_use_custom_tls_certificates != use_custom_tls_certificates:
@@ -144,6 +147,9 @@ class SettingsWindow(BaseWindow):
 
         if self.old_proxy_password != proxy_password:
             pending_to_restart.append("Proxy Password")
+
+        if self.old_user_id != user_id:
+            pending_to_restart.append(f"User ID: {self.old_user_id}🠆{user_id}")
 
         """Update build check frequency"""
         check_for_new_builds_automatically = get_check_for_new_builds_automatically()

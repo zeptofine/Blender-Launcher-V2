@@ -395,6 +395,15 @@ def set_use_custom_tls_certificates(is_checked):
     get_settings().setValue("use_custom_tls_certificates", is_checked)
 
 
+def get_user_id():
+    return get_settings().value("user_id", defaultValue="DefaultUserID", type=str).strip()
+
+
+def set_user_id(user_id):
+    get_settings().setValue("user_id", user_id.strip())
+
+
+# Blender Build Tab
 def get_check_for_new_builds_automatically():
     settings = get_settings()
 
