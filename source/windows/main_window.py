@@ -303,7 +303,7 @@ class BlenderLauncher(BaseWindow):
         self.UserTabLayout = QVBoxLayout()
         self.UserTabLayout.setContentsMargins(0, 0, 0, 0)
         self.UserTab.setLayout(self.UserTabLayout)
-        self.TabWidget.addTab(self.UserTab, "User")
+        self.TabWidget.addTab(self.UserTab, "Favorites")
 
         self.LibraryToolBox = BaseToolBoxWidget(self)
         self.DownloadsToolBox = BaseToolBoxWidget(self)
@@ -383,7 +383,7 @@ class BlenderLauncher(BaseWindow):
             show_reload=True,
             extended_selection=True,
         )
-        self.UserCustomListWidget = self.UserToolBox.add_page_widget(self.UserCustomPageWidget, "Custom")
+        self.UserCustomListWidget = self.LibraryToolBox.add_page_widget(self.UserCustomPageWidget, "Custom")
 
         self.TabWidget.setCurrentIndex(get_default_tab())
         self.LibraryToolBox.setCurrentIndex(get_default_library_page())
