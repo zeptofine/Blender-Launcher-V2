@@ -25,8 +25,8 @@ class Icons:
     download: QIcon
     file: QIcon
     taskbar: QIcon
-    none: QIcon
     bl_file: QIcon
+    none: QIcon
 
     @classmethod
     @cache
@@ -46,8 +46,8 @@ class Icons:
             load_icon(color, "quick_launch"),
             load_icon(color, "download"),
             load_icon(color, "file"),
-            QIcon(base_path + "bl/bl_file.ico"),
             QIcon(base_path + "bl/bl.ico"),
+            QIcon(base_path + "bl/bl_file.ico"),
             QIcon(),
         )
 

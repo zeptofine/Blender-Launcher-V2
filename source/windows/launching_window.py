@@ -23,15 +23,10 @@ from PyQt5.QtGui import QFont, QFontMetricsF
 from PyQt5.QtWidgets import (
     QApplication,
     QComboBox,
-    QDateTimeEdit,
     QGridLayout,
-    QHBoxLayout,
     QLabel,
-    QLineEdit,
     QListWidget,
-    QListWidgetItem,
     QPushButton,
-    QVBoxLayout,
     QWidget,
 )
 from threads.library_drawer import DrawLibraryTask
@@ -102,7 +97,11 @@ class LaunchingWindow(BaseWindow):
 
         self.status_label = QLabel("Reading builds...", parent=self)
 
-        self.help_label = QLabel("?", parent=self)
+        file_icon = self.icons.bl_file
+        pixmap = file_icon.pixmap(16, 16)
+
+        self.help_label = QLabel(parent=self)
+        self.help_label.setPixmap(pixmap)
         self.help_label.setToolTip(
             "<br>".join(
                 [
@@ -363,7 +362,9 @@ class LaunchingWindow(BaseWindow):
             self.saved_header = header
             self.status_label.setText(f"Detected header version: {header.version}")
             if self.save_current_query_button is not None:
-                self.save_current_query_button.setText(f"Save current query for .blend files made in {header.version.major}.{header.version.minor}")
+                self.save_current_query_button.setText(
+                    f"Save current query for .blend files made in {header.version.major}.{header.version.minor}"
+                )
                 self.save_current_query_button.show()
 
             v = header.version
