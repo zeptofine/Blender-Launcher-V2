@@ -19,7 +19,7 @@ from modules.tasks import TaskQueue
 from modules.version_matcher import VALID_QUERIES, BInfoMatcher, VersionSearchQuery
 from modules.version_matcher import BasicBuildInfo as BBI
 from PyQt5.QtCore import Qt, QTimer, pyqtSlot
-from PyQt5.QtGui import QFont, QFontMetricsF
+from PyQt5.QtGui import QFont, QFontMetricsF, QKeyEvent
 from PyQt5.QtWidgets import (
     QApplication,
     QComboBox,
@@ -49,6 +49,7 @@ class LaunchingWindow(BaseWindow):
     ):
         super().__init__(app=app)
         self.resize(480, 480)
+        self.setFocus(Qt.FocusReason.PopupFocusReason)
 
         # task queue
         self.task_queue = TaskQueue(
@@ -428,6 +429,20 @@ class LaunchingWindow(BaseWindow):
             all_matchers = get_version_specific_queries()
             all_matchers[self.saved_header.version] = self.version_query
             set_version_specific_queries(all_matchers)
+
+    def keyPressEvent(self, event: QKeyEvent):
+        if event.key() == Qt.Key.Key_Escape and self.hasFocus():
+            self.close()
+            event.accept()
+            return
+        if event.key() in {Qt.Key.Key_Return, Qt.Key.Key_Enter} and self.hasFocus():
+            self.launch_from_button()
+            event.accept()
+            return
+
+        # if the key is neither escape nor enter then we pass the event to the version query
+        if self.hasFocus():
+            self.version_query_edit.setFocus(Qt.FocusReason.ShortcutFocusReason)
 
     def launch_from_button(self):
         """Launches the currently selected build from the list of enabled builds."""
