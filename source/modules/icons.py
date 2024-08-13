@@ -63,3 +63,16 @@ def load_icon(color, name):
 
     pixmap = QPixmap.fromImage(image)
     return QIcon(pixmap)
+
+
+def get_bl_file_location():
+    import sys
+    from pathlib import Path
+
+    from modules._platform import get_cwd, is_frozen
+
+    assert sys.platform == "win32"
+    if is_frozen():
+        return Path(sys._MEIPASS, "files", "bl_file.ico")
+
+    return get_cwd() / "source" / "resources" / "icons" / "bl" / "bl_file.ico"

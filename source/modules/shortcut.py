@@ -5,7 +5,8 @@ import sys
 from pathlib import Path
 from shutil import copyfile
 
-from modules._platform import get_cwd, get_launcher_name, get_platform, is_frozen
+from modules._platform import get_cache_path, get_cwd, get_launcher_name, get_platform, is_frozen
+from modules.icons import get_bl_file_location
 from modules.settings import get_library_folder
 
 
@@ -102,6 +103,7 @@ def register_windows_filetypes():
             pth = f'"{Path(sys.executable).resolve()}" "{Path(sys.argv[0]).resolve()}"'
 
         winreg.SetValueEx(command_key, "", 0, winreg.REG_SZ, f'{pth} __launch_target "%1"')
+        logging.debug("Registered blenderlauncherv2.blend")
 
     # add it to the OpenWithProgids list
     with winreg.CreateKey(
@@ -109,15 +111,33 @@ def register_windows_filetypes():
         r"Software\Classes\.blend\OpenWithProgids",
     ) as progids_key:
         winreg.SetValueEx(progids_key, "blenderlauncherv2.blend", 0, winreg.REG_SZ, "")
+        logging.debug(r"Added blenderlauncherv2.blend to .blend\OpenWithProgids")
 
-    # addit to the OpenWithProgids list for .blend1
+    # add it to the OpenWithProgids list for .blend1
     with winreg.CreateKey(
         winreg.HKEY_CURRENT_USER,
         r"Software\Classes\.blend1\OpenWithProgids",
     ) as progids_key:
         winreg.SetValueEx(progids_key, "blenderlauncherv2.blend", 0, winreg.REG_SZ, "")
+        logging.debug(r"Added blenderlauncherv2.blend to .blend1\OpenWithProgids")
 
-    logging.info("Registered blenderlauncher for file associations")
+    # Extract and save the bl_file.ico
+    file_icon_path = get_bl_file_location()
+    desired_location = Path(get_cache_path()) / "bl_file.ico"
+
+    if not desired_location.exists():
+        copyfile(file_icon_path, desired_location)
+        logging.debug(f"Extracted and saved bl_file.ico to {desired_location}")
+
+    # add it to the DefaultIcon key for blenderlauncherv2.blend
+    with winreg.CreateKey(
+        winreg.HKEY_CURRENT_USER,
+        r"Software\Classes\blenderlauncherv2.blend\DefaultIcon",
+    ) as di_key:
+        winreg.SetValueEx(di_key, "", 0, winreg.REG_SZ, str(desired_location))
+        logging.debug(r"Added bl_file.ico to DefaultIcon")
+
+    logging.info("Finished registering Blender Launcher V2 for file associations")
 
 
 def unregister_windows_filetypes():
@@ -126,11 +146,16 @@ def unregister_windows_filetypes():
     import winreg
 
     # Unregister the program in the classes
-    with contextlib.suppress(FileNotFoundError):
-        winreg.DeleteKey(winreg.HKEY_CURRENT_USER, r"Software\Classes\blenderlauncherv2.blend\shell\open\command")
-        winreg.DeleteKey(winreg.HKEY_CURRENT_USER, r"Software\Classes\blenderlauncherv2.blend\shell\open")
-        winreg.DeleteKey(winreg.HKEY_CURRENT_USER, r"Software\Classes\blenderlauncherv2.blend\shell")
-        winreg.DeleteKey(winreg.HKEY_CURRENT_USER, r"Software\Classes\blenderlauncherv2.blend")
+    for key in (
+        r"Software\Classes\blenderlauncherv2.blend\shell\open\command",
+        r"Software\Classes\blenderlauncherv2.blend\shell\open",
+        r"Software\Classes\blenderlauncherv2.blend\shell",
+        r"Software\Classes\blenderlauncherv2.blend\DefaultIcon",
+        r"Software\Classes\blenderlauncherv2.blend",
+    ):
+        with contextlib.suppress(FileNotFoundError):
+            winreg.DeleteKey(winreg.HKEY_CURRENT_USER, key)
+            logging.debug(f"Deleted key {key}")
 
     # remove it from the OpenWithProgids list
     with (
@@ -142,6 +167,7 @@ def unregister_windows_filetypes():
         contextlib.suppress(FileNotFoundError),
     ):
         winreg.DeleteValue(command_key, "blenderlauncherv2.blend")
+        logging.debug("Deleted value blenderlauncherv2.blend from .blend\\OpenWithProgids")
 
     # remove it from the OpenWithProgids list for .blend1
     with (
@@ -153,8 +179,9 @@ def unregister_windows_filetypes():
         contextlib.suppress(FileNotFoundError),
     ):
         winreg.DeleteValue(command_key, "blenderlauncherv2.blend")
+        logging.debug("Deleted value blenderlauncherv2.blend from .blend1\\OpenWithProgids")
 
-    logging.info("Unregistered blenderlauncher for file associations")
+    logging.info("Finished Unregistering blenderlauncher for file associations")
 
 
 def get_shortcut_type() -> str:
@@ -171,7 +198,7 @@ def get_default_shortcut_destination():
             Path.home(), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Blender Launcher V2"
         ),
         "Linux": Path(Path.home(), ".local", "share", "applications", "BLV2.desktop"),
-    }.get(get_platform(), Path(Path.home(), ".local", "share", "applications", "BLV2.desktop"))
+    }.get(get_platform(), Path.home() / "BLV2.desktop")
 
 
 def generate_program_shortcut(destination: Path):

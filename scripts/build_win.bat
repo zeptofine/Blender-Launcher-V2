@@ -22,6 +22,7 @@ python -OO -m PyInstaller ^
 --name="Blender Launcher" ^
 --version-file="version.txt" ^
 --add-binary="source\resources\icons\winblender.ico;files" ^
+--add-data="source\resources\icons\bl\bl_file.ico;files" ^
 --add-binary="source\resources\certificates\custom.pem;files" ^
 --distpath="./dist/release" ^
 source\main.py
