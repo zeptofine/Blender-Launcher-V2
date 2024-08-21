@@ -51,8 +51,7 @@ class ConnectionManager(QObject):
         self.manager: REQUEST_MANAGER | None = None
 
         # Basic Headers
-        # TODO: Change back BLV2 to Blender-Launcher-v2 when it will be unblocked
-        agent = f"BLV2/v.{self.version!s}/{get_platform_full()}/UserID-{get_user_id()}"
+        agent = f"Blender-Launcher-v2/v.{self.version!s}/{get_platform_full()}/UserID-{get_user_id()}"
         self._headers = {"user-agent": agent}
         logger.info(f"Connection Manager Header: {agent}")
         # Get custom certificates file path
