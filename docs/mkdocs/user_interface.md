@@ -33,7 +33,7 @@ The top horizontal menu bar contains following buttons from left to right:
 
 !!! note
 
-    By default Library and Downloads pages will be automatically matched between each over. To change this behavior toggle [Sync Library & Downloads Pages](settings.md#sync-library-downloads-pages) checkbox in settings.
+    By default Library and Downloads pages will be automatically matched between each over. To change this behavior toggle [Sync Library & Downloads Pages](settings.md#sync-library-downloads) checkbox in settings.
 
 The bottom status bar shows following information from left to right:
 
