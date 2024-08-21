@@ -5,49 +5,52 @@
 ## Requirements
 
 - Linux or Windows x64
-- Python 3.9
-- pdm
+- Python >=3.9, <3.11
 
-!!! warning
-
-    To use different Python version, run `pdm use` to select the correct python interpreter
-
-## Using Pdm
 
 !!! info "Note"
 
     All actions should be performed under repository root folder i.e. `/Blender-Launcher-V2`!
 
-### Preparing virtual environment
+### Preparing the virtual environment
 
-1. Install pdm package
-
-        pip install pdm
-
-2. Create the virtual environment
+1. Create the virtual environment
 
     ```bash
     python -m pip install virtualenv
     python -m virtualenv --clear --download .venv
-    python -m ensurepip
-    python -m pip install --upgrade pdm
-    # Enter the virtual Environment
-    pdm venv activate
-    # ^ Execute the command this returns with!
     ```
 
-3. Install dependencies
+    === "Windows (Powershell)"
+
+        ```ps1
+        .\.venv\Scripts\activate.ps1
+        ```
+
+    === "Windows (Cmd)"
+
+        ```bat
+        .\.venv\Scripts\activate
+        ```
+
+    ===+ "Linux"
+
+        ```bash
+        source .venv/bin/activate
+        ```
+
+2. Install dependencies
 
     === "Minimum set of packages for building executable"
 
-        ```
+        ```bash
         pip install -e .
         ```
 
-    === "All set of packages including development tools"
+    ===+ "All packages including development tools"
 
-        ```
-        pdm install
+        ```bash
+        pip install -e ".[docs,ruff]"
         ```
 
 ## Running Blender Launcher
@@ -60,7 +63,7 @@
 python source/main.py
 ```
 
-## Building Blender Launcher .exe
+## Building Blender Launcher.exe
 
 !!! warning
 
@@ -71,38 +74,43 @@ python source/main.py
     1. Run batch file
 
         ```
-        .\build_win.bat
+        .\scripts\build_win.bat
         ```
 
-    2. Look for bundled app under `Blender-Launcher-V2\dist\release` folder
+    2. Look for bundled app under the `Blender-Launcher-V2\dist\release` folder
 
 === "Linux"
 
     1. Run shell script file
 
         ```
-        sh build_linux.sh
+        sh scripts/build_linux.sh
         ```
 
-    2. Look for bundled app under `Blender-Launcher-V2/dist/release` folder
-
+    2. Look for bundled app under the `Blender-Launcher-V2/dist/release` folder
 
 ## Documentation
 
 ### Preview the Documentation
 
 === "Windows"
-   1. Run the batch file
+
+    1. Run the batch file
+
+        ```bat
+        .\scripts\mkdocs_serve.bat
         ```
-        .\script\mkdocs_serve.bat
-        ```
-   2. [Open the Documentation](http://127.0.0.1:8000/) in a web browser.
+
+    2. [Open the Documentation](http://127.0.0.1:8000/) in a web browser.
 
 === "Linux"
+
     1. Run the shell script file
+
+        ```sh
+        sh ./scripts/mkdocs_serve.sh
         ```
-        sh .\script\mkdocs_serve.sh
-        ```
+
     2. [Open the Documentation](http://127.0.0.1:8000/) in a web browser.
 
 ### Update the Documentation
@@ -114,14 +122,20 @@ Make the desired modifications in the .md files.
 
 ### Publish the Documentation
 
+!!! warning
+
+    These scripts will only work if you have write access to the Blender-Launcher-V2 repo.
+
+Run the script
+
 === "Windows"
-   1. Run the batch file
-        ```
-        .\script\mkdocs_publish.bat
-        ```
+
+    ```bat 
+    .\scripts\mkdocs_publish.bat
+    ```
 
 === "Linux"
-    1. Run the shell script file
-        ```
-        sh .\script\mkdocs_publish.sh
-        ```
+
+    ```bash
+    sh ./script/mkdocs_publish.sh
+    ```

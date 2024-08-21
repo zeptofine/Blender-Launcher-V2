@@ -25,6 +25,7 @@ theme:
         - navigation.instant
         - search.suggest
         - search.highlight
+        - content.code.copy
     favicon: icons/favicon.ico
     logo: icons/favicon.ico
 markdown_extensions:
