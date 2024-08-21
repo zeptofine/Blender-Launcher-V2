@@ -364,7 +364,7 @@ class LaunchingWindow(BaseWindow):
             self.status_label.setText(f"Detected header version: {header.version}")
             if self.save_current_query_button is not None:
                 self.save_current_query_button.setText(
-                    f"Save current query for .blend files made in {header.version.major}.{header.version.minor}"
+                    f"Save current search for .blend files made in {header.version.major}.{header.version.minor}"
                 )
                 self.save_current_query_button.show()
 
@@ -492,6 +492,7 @@ class LaunchingWindow(BaseWindow):
         launch_build(info=build, launch_mode=launch_mode)
 
         self.close()
+        self.app.exit()
 
     @pyqtSlot()
     def close_(self):

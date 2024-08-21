@@ -160,9 +160,9 @@ def main():
         start_launch(app, args.file, None, False)
 
     if args.command == "register":
-        start_register(args.instanced)
+        start_register()
     if args.command == "unregister":
-        start_unregister(args.instanced)
+        start_unregister()
 
     if not args.instanced:
         check_for_instance()
@@ -225,7 +225,7 @@ def start_launch(
     open_last: bool = False,
     cli: bool = False,
 ) -> NoReturn:
-    from modules.version_matcher import VALID_QUERIES, VersionSearchQuery
+    from modules.version_matcher import VersionSearchQuery
     from windows.launching_window import LaunchingWindow
 
     # convert version_query to VersionSearchQuery
@@ -253,7 +253,7 @@ def start_launch(
         sys.exit(app.exec())
 
 
-def start_register(instanced: bool):
+def start_register():
     import sys
 
     register_windows_filetypes()
@@ -261,7 +261,7 @@ def start_register(instanced: bool):
     sys.exit(0)
 
 
-def start_unregister(instanced: bool):
+def start_unregister():
     import sys
 
     unregister_windows_filetypes()
