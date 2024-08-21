@@ -142,6 +142,9 @@ def main():
     else:
         logging.root.setLevel(logging.INFO)
 
+    # Log Blender Launcher version
+    logger.info(f"Blender Launcher Version: {version}")
+
     # Create an instance of application and set its core properties
     app = QApplication([])
     app.setStyle("Fusion")

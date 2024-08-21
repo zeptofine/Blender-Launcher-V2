@@ -2,6 +2,7 @@ import contextlib
 import os
 import shutil
 import sys
+import uuid
 from datetime import datetime, timezone
 from functools import cache
 from pathlib import Path
@@ -397,6 +398,19 @@ def set_use_custom_tls_certificates(is_checked):
     get_settings().setValue("use_custom_tls_certificates", is_checked)
 
 
+def get_user_id():
+    user_id = get_settings().value("user_id", type=str).strip()
+    if not user_id:
+        user_id = str(uuid.uuid4())
+        set_user_id(user_id)
+    return user_id
+
+
+def set_user_id(user_id):
+    get_settings().setValue("user_id", user_id.strip())
+
+
+# Blender Build Tab
 def get_check_for_new_builds_automatically():
     settings = get_settings()
 
