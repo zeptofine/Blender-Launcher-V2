@@ -115,7 +115,7 @@ class BlenderLauncher(BaseWindow):
         super().__init__(app=app, version=version)
         self.resize(640, 480)
         self.setMinimumSize(QSize(640, 480))
-        self.setMaximumSize(QSize(1024, 768))
+        self.setMaximumWidth(1024)
         widget = QWidget(self)
         self.CentralLayout = QVBoxLayout(widget)
         self.CentralLayout.setContentsMargins(1, 1, 1, 1)
