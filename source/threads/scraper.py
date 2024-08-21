@@ -326,11 +326,8 @@ class Scraper(QThread):
             logger.info("Failed to gather stable releases")
             logger.info(content)
             self.stable_error.emit(
-                "No releases were scraped from the site!<br>Using cached links.<br>check -debug logs for more details.<br>"
+                "No releases were scraped from the site!<br>check -debug logs for more details."
             )
-            # Use cached links
-            for build in self.cache.folders.values():
-                yield from build.assets
             return
 
         # Convert string to Verison
