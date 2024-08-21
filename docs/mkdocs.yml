@@ -8,6 +8,7 @@ nav:
     - Settings: settings.md
     - Manual Blender Installation: manual_build_installation.md
     - Build Initialization: build_initialization.md
+    - File Association: file_association.md
     - Troubleshooting: troubleshooting.md
     - Known Issues: known_issues.md
     - Feature Request: feature_request.md

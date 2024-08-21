@@ -25,6 +25,7 @@ class Icons:
     download: QIcon
     file: QIcon
     taskbar: QIcon
+    bl_file: QIcon
     none: QIcon
 
     @classmethod
@@ -46,6 +47,7 @@ class Icons:
             load_icon(color, "download"),
             load_icon(color, "file"),
             QIcon(base_path + "bl/bl.ico"),
+            QIcon(base_path + "bl/bl_file.ico"),
             QIcon(),
         )
 
@@ -61,3 +63,16 @@ def load_icon(color, name):
 
     pixmap = QPixmap.fromImage(image)
     return QIcon(pixmap)
+
+
+def get_bl_file_location():
+    import sys
+    from pathlib import Path
+
+    from modules._platform import get_cwd, is_frozen
+
+    assert sys.platform == "win32"
+    if is_frozen():
+        return Path(sys._MEIPASS, "files", "bl_file.ico")  # noqa: SLF001
+
+    return get_cwd() / "source" / "resources" / "icons" / "bl" / "bl_file.ico"

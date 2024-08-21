@@ -4,7 +4,7 @@
 
 ## Settings Window
 
-To open the **Settings Window**, use the button with a gear icon on the top left of the **Main Window**. All changes are saved automatically.
+:   To open the **Settings Window**, use the button with a gear icon on the top left of the **Main Window**. All changes are saved automatically.
 
 ## General
 
@@ -12,7 +12,9 @@ To open the **Settings Window**, use the button with a gear icon on the top left
 
 ### Library Folder
 
-**Library Folder** - a directory on the hard drive where all downloaded builds are stored. For detailed information, check the [Library Folder](library_folder.md) page.
+:   **Library Folder** - a directory on the hard drive where all downloaded builds are stored.
+    
+:    For detailed information, check the [Library Folder](library_folder.md) page.
 
 ### Launch When System Starts
 
@@ -33,6 +35,35 @@ If this option is enabled, to completely close the **Blender Launcher** you need
 ### Worker Thread Count
 
 :   Sets the maximal number of **CPU Thread Blender** Launcher can use.
+
+### File Association
+:   Use the Blender Launcher as Default program to launch `.blend` files with the desired version
+:   For detail information, check the [File Association](file_association.md) page.
+
+#### Create Shortcut
+
+:   TODO
+
+#### Register File Association
+
+:   Add Blender Launcher as the Default program to open `.blend` and `.blend1` files
+
+#### Unregister File Association
+
+:   Remove the Blender Launcher as the Default program to open `.blend` and `.blend1` files
+
+#### Launch Time Duration
+
+:   Set the time to automatically lunch a `.blend` file with the corresponding version
+
+    !!! info
+        Blend files will be automatically lunch after this timer if the correspond Blender version exist in the [Blender Launcher Library](library_folder.md)
+
+    ```
+    -1 -> No Timer (Require the user to click on launch)
+     0 -> instant (Only if matching version exist)
+     3 -> 3 Seconde (Will lunch after 3s if matching version exist)
+    ```
 
 ## Appearance
 
