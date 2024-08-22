@@ -1,4 +1,3 @@
-
 from enum import Enum
 
 from modules.config_info import ConfigInfo, config_path_name
@@ -29,10 +28,11 @@ class PreferenceFactoryWidget(BaseBuildWidget):
 
     def __init__(self, parent, list_widget, task_queue: TaskQueue):
         super().__init__(parent=parent)
-        self.setAcceptDrops(True)
+        self.setAcceptDrops(False)
 
         self.list_widget = list_widget
         self.task_queue = task_queue
+        self.existing_configs: list[str] = []  # Used to check if the name is already taken
 
         # box should highlight when dragged over
         self.layout: QGridLayout = QGridLayout()
@@ -49,12 +49,13 @@ class PreferenceFactoryWidget(BaseBuildWidget):
         self.creation_button.setProperty("CreateButton", True)
         self.creation_button.pressed.connect(self.start_creation)
 
-        self.name_text_label = QLabel("config name", self)
+        self.name_text_label = QLabel("Config name", self)
+        self.name_text_label.setContentsMargins(2, 0, 0, 0)
         self.name_text_edit = QLineEdit(self)
-        self.name_text_edit.setPlaceholderText("Enter config name...")
         self.name_text_edit.textChanged.connect(self.text_changed)
 
         self.target_version_label = QLabel("target")
+        self.target_version_label.setContentsMargins(2, 0, 0, 0)
         self.target_version_dial = QDoubleSpinBox(self)
         self.target_version_dial.setFixedWidth(85)
         self.target_version_dial.setMinimum(1.0)
@@ -103,11 +104,18 @@ class PreferenceFactoryWidget(BaseBuildWidget):
             self.confirm_button.show()
             self.cancel_button.show()
 
+    def update_existing_configs(self, existing: list[str]):
+        self.existing_configs = existing
+
     def start_creation(self):
         self.update_state(PreferenceFactoryState.CREATING)
 
     def text_changed(self):
-        if self.name_text_edit.text().strip():
+        if s := self.name_text_edit.text().strip():
+            if s in self.existing_configs:
+                self.name_text_label.setText("Name is already taken!")
+            else:
+                self.name_text_label.setText("Config name")
             self.confirm_button.setEnabled(True)
         else:
             self.confirm_button.setEnabled(False)
@@ -131,15 +139,6 @@ class PreferenceFactoryWidget(BaseBuildWidget):
         self.config_created.emit(info)
         self.update_state(PreferenceFactoryState.READY)
 
-    def mouseReleaseEvent(self, event):
-        if event.button == Qt.MouseButton.LeftButton:
-            mod = QApplication.keyboardModifiers()
-            if mod not in (Qt.KeyboardModifier.ShiftModifier, Qt.KeyboardModifier.ControlModifier):
-                self.list_widget.clearSelection()
-
-            event.accept()
-        event.ignore()
-
     @pyqtSlot()
     def install(self):
         self.create_pressed.emit()
@@ -152,7 +151,7 @@ class PreferenceFactoryWidget(BaseBuildWidget):
             text="Are you sure you want to<br> \
                   delete these preferences?<br> \
                   Any blender version using these will<br> \
-                  automatically create a new one.",
+                  revert to the default.",
             accept_text="Yes",
             cancel_text="No",
         )

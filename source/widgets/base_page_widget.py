@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Generic
 
 from modules.settings import get_blender_preferences_management, get_list_sorting_type, set_list_sorting_type
 from PyQt5.QtCore import Qt, pyqtSignal
@@ -10,7 +11,7 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from widgets.base_list_widget import BaseListWidget
+from widgets.base_list_widget import BaseListWidget, W
 
 
 class SortingType(Enum):
@@ -18,7 +19,8 @@ class SortingType(Enum):
     VERSION = 2
 
 
-class BasePageWidget(QWidget):
+
+class BasePageWidget(QWidget, Generic[W]):
     reload_pressed = pyqtSignal()
 
     def __init__(self, parent, page_name, time_label, info_text, show_reload=False, extended_selection=False):
@@ -48,7 +50,7 @@ class BasePageWidget(QWidget):
         self.InfoLabel = QLabel(info_text)
         self.InfoLabelLayout.addWidget(self.InfoLabel)
 
-        self.list_widget = BaseListWidget(self, extended_selection=extended_selection)
+        self.list_widget: BaseListWidget[W] = BaseListWidget(self, extended_selection=extended_selection)
         self.list_widget.hide()
 
         self.InfoLayout = QHBoxLayout()
