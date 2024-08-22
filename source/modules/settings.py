@@ -311,7 +311,7 @@ def set_tray_icon_notified(b=True):
 
 
 def get_launch_blender_no_console():
-    return get_settings().value("launch_blender_no_console", type=bool)
+    return get_settings().value("launch_blender_no_console", defaultValue=True, type=bool)
 
 
 def set_launch_blender_no_console(is_checked):
