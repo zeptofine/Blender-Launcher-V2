@@ -76,6 +76,7 @@ from widgets.foreign_build_widget import UnrecoBuildWidget
 from widgets.header import WHeaderButton, WindowHeader
 from widgets.library_widget import LibraryWidget
 from widgets.preference_factory_widget import PreferenceFactoryWidget
+from widgets.preference_widget import PreferenceWidget
 from windows.base_window import BaseWindow
 from windows.dialog_window import DialogIcon, DialogWindow
 from windows.file_dialog_window import FileDialogWindow
@@ -96,7 +97,6 @@ if TYPE_CHECKING:
     from PyQt5.QtGui import QDragEnterEvent, QDragMoveEvent
     from widgets.base_build_widget import BaseBuildWidget
     from widgets.base_list_widget import BaseListWidget
-    from widgets.preference_widget import PreferenceWidget
 
 if get_platform() == "Windows":
     from PyQt5.QtWinExtras import QWinThumbnailToolBar, QWinThumbnailToolButton
@@ -978,12 +978,14 @@ class BlenderLauncher(BaseWindow):
         self.preferences[info.name] = info
 
         # Add a preference widget
+        item = BaseListWidgetItem()
+        widget = PreferenceWidget(info, parent=self)
+        self.PreferencesListWidget.add_item(item, widget)
 
         self.update_preference_views()
 
     def update_preference_views(self):
         preferences_names = list(self.preferences.keys())
-        print(preferences_names)
 
         for list_widget in self.LibraryToolBox.list_widgets:
             for widget in list_widget.widgets:

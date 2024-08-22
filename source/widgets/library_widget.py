@@ -530,8 +530,6 @@ class LibraryWidget(BaseBuildWidget):
         self.dropdownMenu.addItems(items)
 
         for config in available:
-            if self.build_info is not None:
-                print(config, self.build_info.target_config)
             if (
                 self.build_info is not None and config == self.build_info.target_config
             ):  # Set it as the dropdown position
