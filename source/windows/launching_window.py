@@ -221,6 +221,12 @@ class LaunchingWindow(BaseWindow):
         self.version_query_edit.setText(f"{query.major}.{query.minor}.{query.patch}")
         self.branch_edit.setText(query.branch or "")
         self.build_hash_edit.setText(query.build_hash or "")
+        if query.commit_time == "^":
+            self.date_range_combo.setCurrentIndex(0)
+        elif query.commit_time == "*":
+            self.date_range_combo.setCurrentIndex(1)
+        elif query.commit_time == "-":
+            self.date_range_combo.setCurrentIndex(2)
 
     def set_query_from_selected_build(self):
         items = self.builds_list.selectedItems()
