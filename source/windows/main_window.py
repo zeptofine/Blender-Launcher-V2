@@ -915,6 +915,7 @@ class BlenderLauncher(BaseWindow):
 
         item = BaseListWidgetItem()
         widget = LibraryWidget(self, item, path, library, show_new)
+        widget.request_new_config.connect(self.create_new_config)
 
         if download is not None:
 
@@ -949,7 +950,13 @@ class BlenderLauncher(BaseWindow):
 
     def draw_preferences_factory(self):
         item = BaseListWidgetItem()
-        self.PreferencesListWidget.add_item(item, PreferenceFactoryWidget(self, self.PreferencesListWidget))
+        widget = PreferenceFactoryWidget(self, self.PreferencesListWidget)
+        widget.create_pressed.connect(self.create_new_config)
+        self.PreferencesListWidget.add_item(item, widget)
+
+    def create_new_config(self):
+        print("NEW CONFIG REQUESTED")
+
 
     def focus_widget(self, widget: BaseBuildWidget):
         tab: QWidget | None = None

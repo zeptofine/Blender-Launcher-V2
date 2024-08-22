@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from functools import cache
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from modules._platform import _check_output, _popen, get_platform, reset_locale, set_locale
 from modules.settings import (
@@ -19,6 +20,9 @@ from modules.settings import (
 from modules.task import Task
 from PyQt5.QtCore import pyqtSignal
 from semver import Version
+
+if TYPE_CHECKING:
+    from modules.config_info import ConfigInfo
 
 logger = logging.getLogger()
 
@@ -118,6 +122,7 @@ class BuildInfo:
     custom_name: str = ""
     is_favorite: bool = False
     custom_executable: str | None = None
+    target_config: str | None = None
 
     def __post_init__(self):
         if self.branch == "stable" and self.subversion.startswith(self.lts_tags):
@@ -211,7 +216,8 @@ class BuildInfo:
             blinfo["branch"],
             blinfo["custom_name"],
             blinfo["is_favorite"],
-            blinfo.get("custom_executable", ""),
+            blinfo.get("custom_executable"),
+            blinfo.get("target_config"),
         )
 
     def to_dict(self):
@@ -226,6 +232,7 @@ class BuildInfo:
                     "custom_name": self.custom_name,
                     "is_favorite": self.is_favorite,
                     "custom_executable": self.custom_executable,
+                    "target_config": self.target_config,
                 }
             ],
         }
@@ -438,6 +445,20 @@ class LaunchWithBlendFile(LaunchMode):
 class LaunchOpenLast(LaunchMode): ...
 
 
+class ConfigMode: ...
+
+
+class DefaultConfig(ConfigMode): ...
+
+
+default_config = DefaultConfig()
+
+
+@dataclass(frozen=True)
+class CustomConfig(ConfigMode):
+    info: ConfigInfo
+
+
 def get_args(info: BuildInfo, exe=None, launch_mode: LaunchMode | None = None, linux_nohup=True) -> list[str] | str:
     platform = get_platform()
     library_folder = get_library_folder()
@@ -502,7 +523,17 @@ def get_args(info: BuildInfo, exe=None, launch_mode: LaunchMode | None = None, l
     return args
 
 
-def launch_build(info: BuildInfo, exe=None, launch_mode: LaunchMode | None = None):
+def launch_build(
+    info: BuildInfo,
+    exe=None,
+    launch_mode: LaunchMode | None = None,
+    config_mode: ConfigMode = default_config,
+):
     args = get_args(info, exe, launch_mode)
     logger.debug(f"Running build with args {args!s}")
-    return _popen(args)
+
+    env = None
+    if isinstance(config_mode, CustomConfig):
+        env = config_mode.info.get_env(info.semversion)
+
+    return _popen(args, env=env)

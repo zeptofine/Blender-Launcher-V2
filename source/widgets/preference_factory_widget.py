@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from PyQt5 import QtCore
-from PyQt5.QtCore import Qt, pyqtSlot
+from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import QAction, QApplication, QHBoxLayout, QLabel, QPushButton
 from widgets.base_build_widget import BaseBuildWidget
 from widgets.base_line_edit import BaseLineEdit
@@ -19,6 +19,8 @@ if TYPE_CHECKING:
 
 
 class PreferenceFactoryWidget(BaseBuildWidget):
+    create_pressed = pyqtSignal()
+
     def __init__(self, parent, list_widget):
         super().__init__(parent=parent)
         self.setAcceptDrops(True)
@@ -59,7 +61,7 @@ class PreferenceFactoryWidget(BaseBuildWidget):
 
     @pyqtSlot()
     def install(self):
-        ...
+        self.create_pressed.emit()
 
     @QtCore.pyqtSlot()
     def ask_remove_from_drive(self):

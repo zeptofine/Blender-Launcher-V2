@@ -58,6 +58,7 @@ logger = logging.getLogger()
 
 class LibraryWidget(BaseBuildWidget):
     initialized = pyqtSignal()
+    request_new_config = pyqtSignal()
 
     def __init__(
         self,
@@ -158,12 +159,13 @@ class LibraryWidget(BaseBuildWidget):
         if get_blender_preferences_management():
             self.dropdownMenu = QComboBox(self)
             self.dropdownMenu.setFixedWidth(100)
-            self.dropdownMenu.addItems(["Main", "New"])
+            self.dropdownMenu.addItems(["Default", "New..."])
+            self.dropdownMenu.currentIndexChanged.connect(self.config_changed)
 
         self.layout.addWidget(self.launchButton)
         self.layout.addWidget(self.subversionLabel)
         self.layout.addWidget(self.branchLabel, stretch=1)
-        
+
         if get_blender_preferences_management():
             self.layout.addWidget(self.dropdownMenu)
 
@@ -486,6 +488,40 @@ class LibraryWidget(BaseBuildWidget):
 
         if self.child_widget is not None:
             self.child_widget.observer_finished()
+
+    @QtCore.pyqtSlot()
+    def config_changed(self):
+        if self.dropdownMenu.currentIndex() == self.dropdownMenu.count() - 1:  # The new button has been pressed
+            self.request_new_config.emit()
+            return
+
+        if self.dropdownMenu.currentIndex() == 0:
+            target = None
+        else:
+            target = self.dropdownMenu.currentText()
+
+
+        if (
+            self.build_info is not None
+            and self.build_info.target_config != target  # the target config has changed
+        ):
+            self.build_info.target_config = target
+
+            # update the build in the info file
+            task = WriteBuildTask(Path(self.build_info.link), self.build_info)
+            self.parent.task_queue.append(task)
+
+    def update_available_configs(self, available: list[str]):
+        self.dropdownMenu.clear()
+        self.dropdownMenu.addItem("Default")
+        for config in available:
+            self.dropdownMenu.addItem(config)
+            if (
+                self.build_info is not None and config == self.build_info.target_config
+            ):  # Set it as the dropdown position
+                self.dropdownMenu.setCurrentText(config)
+
+        self.dropdownMenu.addItem("New...")
 
     @QtCore.pyqtSlot()
     def rename_branch(self):
