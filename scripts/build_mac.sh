@@ -1,4 +1,11 @@
-cd..
+#!/bin/bash
+
+# check if we need to move back to the root of the project folder
+if [ "$(basename "$PWD")" = "scripts" ]; then
+    cd ..
+fi
+
+
 PYTHONOPTIMIZE=2 pyinstaller \
     --windowed \
     --icon "source/resources/icons/bl/bl.icns" \

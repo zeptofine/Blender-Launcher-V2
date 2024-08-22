@@ -1,6 +1,6 @@
 from modules.settings import (
-    favorite_pages,
     blender_minimum_versions,
+    favorite_pages,
     get_bash_arguments,
     get_blender_startup_arguments,
     get_check_for_new_builds_automatically,
@@ -244,10 +244,7 @@ class BlenderBuildsTabWidget(SettingsFormWidget):
             modifiers
             and modifiers & MOD_MASK == modifiers
             and key > 0
-            and key != Qt.Key.Key_Shift
-            and key != Qt.Key.Key_Alt
-            and key != Qt.Key.Key_Control
-            and key != Qt.Key.Key_Meta
+            and key not in {Qt.Key.Key_Shift, Qt.Key.Key_Alt, Qt.Key.Key_Control, Qt.Key.Key_Meta}
         ):
             key_name = QtGui.QKeySequence(modifiers + key).toString()
         elif not modifiers and (key != Qt.Key.Key_Meta):

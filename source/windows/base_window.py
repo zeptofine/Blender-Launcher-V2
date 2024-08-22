@@ -107,7 +107,7 @@ class BaseWindow(QMainWindow):
                 if window is not self:
                     window.moveWindow(delta)
 
-    def mouseReleaseEvent(self, QMouseEvent):
+    def mouseReleaseEvent(self, _event):
         self.pressing = False
         self.setCursor(Qt.CursorShape.ArrowCursor)
 

@@ -10,6 +10,7 @@ from modules.enums import MessageType
 from modules.settings import get_install_template, get_library_folder
 from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout
+from semver import Version
 from threads.downloader import DownloadTask
 from threads.extractor import ExtractTask
 from threads.renamer import RenameTask
@@ -138,7 +139,7 @@ class DownloadWidget(BaseBuildWidget):
 
         self.menu.trigger()
 
-    def mouseDoubleClickEvent(self, event):
+    def mouseDoubleClickEvent(self, _event):
         if self.state != DownloadState.DOWNLOADING and not self.installed:
             self.init_downloader()
         elif self.installed:
@@ -148,7 +149,7 @@ class DownloadWidget(BaseBuildWidget):
     def focus_installed(self):
         self.focus_installed_widget.emit(self.installed)
 
-    def mouseReleaseEvent(self, event):
+    def mouseReleaseEvent(self, _event):
         if self.show_new is True:
             self.build_state_widget.setNewBuild(False)
             self.show_new = False
@@ -248,7 +249,13 @@ class DownloadWidget(BaseBuildWidget):
         assert self.build_dir is not None
 
         # If the returned version from the executable is invalid it might break loading.
-        ver = parse_blender_ver(self.build_dir.name, search=True)
+        ver_ = parse_blender_ver(self.build_dir.name, search=True)
+        ver = Version(
+            ver_.major,
+            ver_.minor,
+            ver_.patch,
+            prerelease=ver_.prerelease,
+        )
 
         a = ReadBuildTask(
             self.build_dir,

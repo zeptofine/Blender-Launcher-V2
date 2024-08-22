@@ -2,12 +2,15 @@ import contextlib
 import os
 import shutil
 import sys
+import uuid
 from datetime import datetime, timezone
 from functools import cache
 from pathlib import Path
 
 from modules._platform import get_config_file, get_config_path, get_cwd, get_platform, local_config, user_config
+from modules.version_matcher import VersionSearchQuery
 from PyQt5.QtCore import QSettings
+from semver import Version
 
 EPOCH = datetime.fromtimestamp(0, tz=timezone.utc)
 ISO_EPOCH = EPOCH.isoformat()
@@ -94,6 +97,7 @@ def get_actual_library_folder():
         settings.setValue("library_folder", library_folder)
 
     return Path(library_folder)
+
 
 def get_library_folder():
     return get_actual_library_folder().resolve()
@@ -403,6 +407,19 @@ def set_use_custom_tls_certificates(is_checked):
     get_settings().setValue("use_custom_tls_certificates", is_checked)
 
 
+def get_user_id():
+    user_id = get_settings().value("user_id", type=str).strip()
+    if not user_id:
+        user_id = str(uuid.uuid4())
+        set_user_id(user_id)
+    return user_id
+
+
+def set_user_id(user_id):
+    get_settings().setValue("user_id", user_id.strip())
+
+
+# Blender Build Tab
 def get_check_for_new_builds_automatically():
     settings = get_settings()
 
@@ -442,8 +459,8 @@ def get_minimum_blender_stable_version():
 
     if value is not None and "." in value:
         return blender_minimum_versions.get(value, 7)
-    else:
-        return get_settings().value("minimum_blender_stable_version", defaultValue=7, type=int)
+
+    return get_settings().value("minimum_blender_stable_version", defaultValue=7, type=int)
 
 
 def set_minimum_blender_stable_version(blender_minimum_version):
@@ -540,6 +557,32 @@ def get_use_system_titlebar():
 
 def set_use_system_titlebar(b: bool):
     get_settings().setValue("use_system_title_bar", b)
+
+
+def get_version_specific_queries() -> dict[Version, VersionSearchQuery]:
+    import json
+
+    dct = get_settings().value("version_specific_queries", defaultValue="{}", type=str)
+    if dct is None:
+        return {}
+    return {Version.parse(k): VersionSearchQuery.parse(v) for k, v in json.loads(dct).items()}
+
+
+def set_version_specific_queries(dct: dict[Version, VersionSearchQuery]):
+    import json
+
+    v = {str(k): str(v) for k, v in dct.items()}
+    j = json.dumps(v)
+    get_settings().setValue("version_specific_queries", j)
+
+
+def get_launch_timer_duration() -> int:
+    return get_settings().value("launch_timer", defaultValue=3, type=int)
+
+
+def set_launch_timer_duration(duration: int):
+    """Sets the launch timer duration, in seconds"""
+    get_settings().setValue("launch_timer", duration)
 
 
 def migrate_config(force=False):

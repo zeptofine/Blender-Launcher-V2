@@ -1,20 +1,27 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 import sys
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime
 from functools import cache
-from typing import TYPE_CHECKING
+from pathlib import Path
 
-from modules._platform import _check_output, get_platform, reset_locale, set_locale
+from modules._platform import _check_output, _popen, get_platform, reset_locale, set_locale
+from modules.settings import (
+    get_bash_arguments,
+    get_blender_startup_arguments,
+    get_launch_blender_no_console,
+    get_library_folder,
+)
 from modules.task import Task
 from PyQt5.QtCore import pyqtSignal
 from semver import Version
 
-if TYPE_CHECKING:
-    from pathlib import Path
+logger = logging.getLogger()
+
 
 # TODO: Combine some of these
 matchers = tuple(
@@ -100,7 +107,7 @@ class BuildInfo:
     # Class variables
     file_version = "1.3"
     # https://www.blender.org/download/lts/
-    lts_tags = ("2.83", "2.93", "3.3", "3.6", "4.3", "4.6")
+    lts_tags = ("2.83", "2.93", "3.3", "3.6", "4.2", "4.6", "5.2")
 
     # Build variables
     link: str
@@ -230,6 +237,16 @@ class BuildInfo:
             json.dump(data, file)
         return data
 
+    def __lt__(self, other: BuildInfo):
+        sv, osv = self.semversion.finalize_version(), other.semversion.finalize_version()
+        if sv == osv:
+            # sort by commit time if possible
+            try:
+                return self.commit_time < other.commit_time
+            except Exception:  # Sometimes commit times are built without timezone information
+                return self.full_semversion < other.full_semversion
+        return sv < osv
+
 
 def fill_blender_info(exe: Path, info: BuildInfo | None = None) -> tuple[datetime, str, str, str]:
     set_locale()
@@ -258,7 +275,9 @@ def fill_blender_info(exe: Path, info: BuildInfo | None = None) -> tuple[datetim
     if s := re.search("build hash: (.*)", version):
         build_hash = s[1].rstrip()
 
-    if s := re.search("Blender (.*)", version):
+    if info is not None and info.subversion is not None:
+        subversion = info.subversion
+    elif s := re.search("Blender (.*)", version):
         subversion = s[1].rstrip()
     else:
         s = version.splitlines()[0].strip()
@@ -289,17 +308,15 @@ def read_blender_version(
         }.get(get_platform(), "blender")
 
         exe_path = path / blender_exe
+
     commit_time, build_hash, subversion, custom_name = fill_blender_info(exe_path, info=old_build_info)
 
     subfolder = path.parent.name
 
     name = archive_name or path.name
     branch = subfolder
-    if subfolder == "daily":
-        # If branch from console is empty, it is probably stable release
-        if len(subversion.split(" ")) == 1:
-            subversion += " Stable"
-    elif subfolder == "custom":
+
+    if subfolder == "custom":
         branch = name
     elif subfolder == "experimental":
         # Sensitive data! Requires proper folder naming!
@@ -392,7 +409,6 @@ class ReadBuildTask(Task):
     path: Path
     info: BuildInfo | None = None
     archive_name: str | None = None
-    custom_exe: str | None = None
     auto_write: bool = True
 
     finished = pyqtSignal(BuildInfo)
@@ -409,3 +425,84 @@ class ReadBuildTask(Task):
 
     def __str__(self):
         return f"Read build at {self.path}"
+
+
+class LaunchMode: ...
+
+
+@dataclass(frozen=True)
+class LaunchWithBlendFile(LaunchMode):
+    blendfile: Path
+
+
+class LaunchOpenLast(LaunchMode): ...
+
+
+def get_args(info: BuildInfo, exe=None, launch_mode: LaunchMode | None = None, linux_nohup=True) -> list[str] | str:
+    platform = get_platform()
+    library_folder = get_library_folder()
+    blender_args = get_blender_startup_arguments()
+
+    b3d_exe: Path
+    args: str | list[str] = ""
+    if platform == "Windows":
+        if exe is not None:
+            b3d_exe = library_folder / info.link / exe
+            args = ["cmd", "/C", b3d_exe.as_posix()]
+        else:
+            cexe = info.custom_executable
+            if cexe:
+                b3d_exe = library_folder / info.link / cexe
+            else:
+                if (
+                    get_launch_blender_no_console()
+                    and (launcher := (library_folder / info.link / "blender_launcher.exe")).exists()
+                ):
+                    b3d_exe = launcher
+                else:
+                    b3d_exe = library_folder / info.link / "blender.exe"
+
+            if blender_args == "":
+                args = [b3d_exe.as_posix()]
+            else:
+                args = [b3d_exe.as_posix(), *blender_args.split(" ")]
+
+    elif platform == "Linux":
+        bash_args = get_bash_arguments()
+
+        if bash_args != "":
+            bash_args += " "
+        if linux_nohup:
+            bash_args += "nohup"
+
+        cexe = info.custom_executable
+        if cexe:
+            b3d_exe = library_folder / info.link / cexe
+        else:
+            b3d_exe = library_folder / info.link / "blender"
+
+        args = f'{bash_args} "{b3d_exe.as_posix()}" {blender_args}'
+
+    elif platform == "macOS":
+        b3d_exe = Path(info.link) / "Blender" / "Blender.app"
+        args = f"open -W -n {b3d_exe.as_posix()} --args"
+
+    if launch_mode is not None:
+        if isinstance(launch_mode, LaunchWithBlendFile):
+            if isinstance(args, list):
+                args.append(launch_mode.blendfile.as_posix())
+            else:
+                args += f' "{launch_mode.blendfile.as_posix()}"'
+        elif isinstance(launch_mode, LaunchOpenLast):
+            if isinstance(args, list):
+                args.append("--open-last")
+            else:
+                args += " --open-last"
+
+    return args
+
+
+def launch_build(info: BuildInfo, exe=None, launch_mode: LaunchMode | None = None):
+    args = get_args(info, exe, launch_mode)
+    logger.debug(f"Running build with args {args!s}")
+    return _popen(args)

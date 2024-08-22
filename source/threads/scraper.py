@@ -4,7 +4,6 @@ import contextlib
 import json
 import logging
 import re
-
 from datetime import datetime, timezone
 from itertools import chain
 from pathlib import Path
@@ -12,23 +11,22 @@ from typing import TYPE_CHECKING
 from urllib.parse import urljoin
 
 import distro
-import semver
-from semver import Version
 from bs4 import BeautifulSoup, SoupStrainer
-from modules._platform import get_platform, reset_locale, set_locale, stable_cache_path, get_architecture
+from modules._platform import get_architecture, get_platform, reset_locale, set_locale, stable_cache_path
 from modules.build_info import BuildInfo, parse_blender_ver
 from modules.scraper_cache import StableCache
 from modules.settings import (
+    blender_minimum_versions,
     get_minimum_blender_stable_version,
     get_scrape_automated_builds,
     get_scrape_stable_builds,
-    get_use_pre_release_builds,
     get_show_daily_archive_builds,
     get_show_experimental_archive_builds,
     get_show_patch_archive_builds,
-    blender_minimum_versions,
+    get_use_pre_release_builds,
 )
 from PyQt5.QtCore import QThread, pyqtSignal
+from semver import Version
 
 if TYPE_CHECKING:
     from modules.connection_manager import ConnectionManager
@@ -81,19 +79,18 @@ def get_latest_pre_release_tag(
                 platform = "Ubuntu"
                 break
 
-    parsed_data = json.loads(r.data)
-    platform_valid_tags = []
+    platform_valid_tags = (
+        release["tag_name"]
+        for release in parsed_data
+        for asset in release["assets"]
+        if asset["name"].endswith(".zip") and platform.lower() in asset["name"].lower()
+    )
+    pre_release_tags = (release.lstrip("v") for release in platform_valid_tags)
 
-    for release in parsed_data:
-        for asset in release["assets"]:
-            if asset["name"].endswith(".zip") and platform.lower() in asset["name"].lower():
-                platform_valid_tags.append(release["tag_name"])
-
-    pre_release_tags = [release.lstrip("v") for release in platform_valid_tags]
-    valid_pre_release_tags = [tag for tag in pre_release_tags if semver.VersionInfo.is_valid(tag)]
+    valid_pre_release_tags = [tag for tag in pre_release_tags if Version.is_valid(tag)]
 
     if valid_pre_release_tags:
-        tag = max(valid_pre_release_tags, key=semver.VersionInfo.parse)
+        tag = max(valid_pre_release_tags, key=Version.parse)
         return f"v{tag}"
 
     r.release_conn()
@@ -108,10 +105,10 @@ class Scraper(QThread):
     error = pyqtSignal()
     stable_error = pyqtSignal(str)
 
-    def __init__(self, parent, man):
+    def __init__(self, parent, man: ConnectionManager):
         QThread.__init__(self)
         self.parent = parent
-        self.manager: ConnectionManager = man
+        self.manager = man
         self.platform = get_platform()
         self.architecture = get_architecture()
 
@@ -148,6 +145,7 @@ class Scraper(QThread):
     def run(self):
         self.get_download_links()
 
+        assert self.manager.manager is not None
         if get_use_pre_release_builds():
             url = "https://api.github.com/repos/Victor-IX/Blender-Launcher-V2/releases"
             latest_tag = get_latest_pre_release_tag(self.manager, url)
@@ -245,7 +243,7 @@ class Scraper(QThread):
             branch_type,
         )
 
-    def scrap_download_links(self, url, branch_type, _limit=None, stable=False):
+    def scrap_download_links(self, url, branch_type, _limit=None):
         r = self.manager.request("GET", url)
 
         if r is None:
@@ -321,19 +319,15 @@ class Scraper(QThread):
         content = r.data
         soup = BeautifulSoup(content, "lxml")
 
-        b3d_link = re.compile(r"Blender\d+\.\d+")
-        subversion = re.compile(r"\d+\.\d+")
+        b3d_link = re.compile(r"Blender(\d+\.\d+)")
 
         releases = soup.find_all(href=b3d_link)
         if not any(releases):
             logger.info("Failed to gather stable releases")
             logger.info(content)
             self.stable_error.emit(
-                "No releases were scraped from the site!<br>Using cached links.<br>check -debug logs for more details.<br>"
+                "No releases were scraped from the site!<br>check -debug logs for more details."
             )
-            # Use cached links
-            for build in self.cache.folders.values():
-                yield from build.assets
             return
 
         # Convert string to Verison
@@ -343,16 +337,16 @@ class Scraper(QThread):
             minimum_smver_version = Version(0, 0, 0)
         else:
             major, minor = version_at_index.split(".")
-            minimum_smver_version = Version(major, minor, 0)
+            minimum_smver_version = Version(int(major), int(minor), 0)
 
         cache_modified = False
         for release in releases:
             href = release["href"]
-            match = re.search(subversion, href)
+            match = re.search(b3d_link, href)
             if match is None:
                 continue
 
-            ver = parse_blender_ver(match.group(0))
+            ver = parse_blender_ver(match.group(1))
             if ver >= minimum_smver_version:
                 # Check modified dates of folders, if available
                 date_sibling = release.find_next_sibling(string=True)
@@ -367,7 +361,7 @@ class Scraper(QThread):
                             folder = self.cache[ver]
 
                         if folder.modified_date != modified_date:
-                            builds = list(self.scrap_download_links(urljoin(url, href), "stable", stable=True))
+                            builds = list(self.scrap_download_links(urljoin(url, href), "stable"))
                             logger.debug(f"Caching {href}: {modified_date} (previous was {folder.modified_date})")
 
                             folder.assets = builds
@@ -380,7 +374,7 @@ class Scraper(QThread):
                         yield from builds
                         continue
 
-                yield from self.scrap_download_links(urljoin(url, href), "stable", stable=True)
+                yield from self.scrap_download_links(urljoin(url, href), "stable")
 
         if cache_modified:
             with self.cache_path.open("w", encoding="utf-8") as f:

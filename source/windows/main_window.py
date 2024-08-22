@@ -117,7 +117,7 @@ class BlenderLauncher(BaseWindow):
         super().__init__(app=app, version=version)
         self.resize(640, 480)
         self.setMinimumSize(QSize(640, 480))
-        self.setMaximumSize(QSize(1024, 768))
+        self.setMaximumWidth(1024)
         widget = QWidget(self)
         self.CentralLayout = QVBoxLayout(widget)
         self.CentralLayout.setContentsMargins(1, 1, 1, 1)
@@ -305,7 +305,7 @@ class BlenderLauncher(BaseWindow):
         self.UserTabLayout = QVBoxLayout()
         self.UserTabLayout.setContentsMargins(0, 0, 0, 0)
         self.UserTab.setLayout(self.UserTabLayout)
-        self.TabWidget.addTab(self.UserTab, "User")
+        self.TabWidget.addTab(self.UserTab, "Favorites")
 
         self.PreferencesTab = QWidget()
         self.PreferencesTabLayout = QVBoxLayout()
@@ -393,7 +393,7 @@ class BlenderLauncher(BaseWindow):
             show_reload=True,
             extended_selection=True,
         )
-        self.UserCustomListWidget = self.UserToolBox.add_page_widget(self.UserCustomPageWidget, "Custom")
+        self.UserCustomListWidget = self.LibraryToolBox.add_page_widget(self.UserCustomPageWidget, "Custom")
 
         self.PreferencesPageWidget = BasePageWidget(
             parent=self,
@@ -692,29 +692,6 @@ class BlenderLauncher(BaseWindow):
         elif reason == QSystemTrayIcon.ActivationReason.Context:
             self.tray_menu.trigger()
 
-    def _aboutToQuit(self):
-        self.quit_()
-
-    def quit_(self):
-        busy = self.task_queue.get_busy_threads()
-        if any(busy):
-            self.dlg = DialogWindow(
-                parent=self,
-                title="Warning",
-                text=(
-                    "Some tasks are still in progress!<br>"
-                    + "\n".join([f" - {item}<br>" for worker, item in busy.items()])
-                    + "Are you sure you want to quit?"
-                ),
-                accept_text="Yes",
-                cancel_text="No",
-            )
-
-            self.dlg.accepted.connect(self.destroy)
-            return
-
-        self.destroy()
-
     def kill_thread_with_task(self, task: Task):
         """
         Kills a thread listener using the current task
@@ -878,17 +855,14 @@ class BlenderLauncher(BaseWindow):
         if self.app_state == AppState.IDLE:
             for cashed_build in self.cashed_builds:
                 if build_info == cashed_build:
-                    self.draw_to_downloads(cashed_build, False)
+                    self.draw_to_downloads(cashed_build)
                     return
 
-    def draw_to_downloads(self, build_info: BuildInfo, show_new=True):
-        if self.started:
-            show_new = False
+    def draw_to_downloads(self, build_info: BuildInfo):
+        if self.started and build_info.commit_time < self.last_time_checked:
+            is_new = False
         else:
-            show_new = True
-
-        if build_info.commit_time > self.last_time_checked:
-            show_new = True
+            is_new = True
 
         if build_info not in self.cashed_builds:
             self.cashed_builds.append(build_info)
@@ -914,11 +888,11 @@ class BlenderLauncher(BaseWindow):
                 item,
                 build_info,
                 installed=installed,
-                show_new=show_new,
+                show_new=is_new,
             )
             widget.focus_installed_widget.connect(self.focus_widget)
             downloads_list_widget.add_item(item, widget)
-            if show_new:
+            if is_new:
                 self.new_downloads = True
 
     def draw_to_library(self, path: Path, show_new=False):
@@ -1033,12 +1007,32 @@ class BlenderLauncher(BaseWindow):
         a = RemovalTask(path)
         self.task_queue.append(a)
 
+    def _aboutToQuit(self):  # MacOS Target
+        self.quit_()
+
+    def quit_(self):
+        busy = self.task_queue.get_busy_threads()
+        if any(busy):
+            self.dlg = DialogWindow(
+                parent=self,
+                title="Warning",
+                text=(
+                    "Some tasks are still in progress!<br>"
+                    + "\n".join([f" - {item}<br>" for worker, item in busy.items()])
+                    + "Are you sure you want to quit?"
+                ),
+                accept_text="Yes",
+                cancel_text="No",
+            )
+
+            self.dlg.accepted.connect(self.destroy)
+            return
+
+        self.destroy()
+
     @pyqtSlot()
     def attempt_close(self):
-        if get_show_tray_icon():
-            self.close()
-        else:
-            self.quit_()
+        self.close()
 
     def closeEvent(self, event):
         if get_show_tray_icon():
@@ -1052,7 +1046,7 @@ class BlenderLauncher(BaseWindow):
             self.hide()
             self.close_signal.emit()
         else:
-            self.destroy()
+            self.quit_()
 
     def new_connection(self):
         self.socket = self.server.nextPendingConnection()

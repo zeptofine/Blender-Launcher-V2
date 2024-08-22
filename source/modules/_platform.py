@@ -31,6 +31,7 @@ def get_platform():
 def get_architecture():
     return platform.machine()
 
+
 @cache
 def get_launcher_name():
     if sys.platform == "win32":
@@ -41,7 +42,7 @@ def get_launcher_name():
 
 @cache
 def get_platform_full():
-    return f"{get_platform()} {os.name} {platform.release()}"
+    return f"{get_platform()}-{platform.release()}"
 
 
 def set_locale():

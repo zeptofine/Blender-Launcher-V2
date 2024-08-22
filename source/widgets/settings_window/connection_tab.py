@@ -5,6 +5,7 @@ from modules.settings import (
     get_proxy_type,
     get_proxy_user,
     get_use_custom_tls_certificates,
+    get_user_id,
     proxy_types,
     set_proxy_host,
     set_proxy_password,
@@ -12,10 +13,11 @@ from modules.settings import (
     set_proxy_type,
     set_proxy_user,
     set_use_custom_tls_certificates,
+    set_user_id,
 )
 from PyQt5 import QtGui
 from PyQt5.QtCore import QRegExp, Qt
-from PyQt5.QtWidgets import QCheckBox, QComboBox, QFormLayout, QHBoxLayout, QLabel, QLineEdit
+from PyQt5.QtWidgets import QCheckBox, QComboBox, QFormLayout, QHBoxLayout, QLabel, QLineEdit, QGridLayout
 from widgets.settings_form_widget import SettingsFormWidget
 
 from .settings_group import SettingsGroup
@@ -75,6 +77,20 @@ class ConnectionTabWidget(SettingsFormWidget):
         self.ProxyPasswordLineEdit.setEchoMode(QLineEdit.Password)
         self.ProxyPasswordLineEdit.editingFinished.connect(self.update_proxy_password)
 
+        # Connection Authentication
+        self.connection_authentication_settings = SettingsGroup("Connection Authentication", parent=self)
+
+        # User ID
+        self.UserIDLabel = QLabel("User ID")
+        self.UserIDLineEdit = QLineEdit()
+        self.UserIDLineEdit.setText(get_user_id())
+        self.UserIDLineEdit.editingFinished.connect(self.update_user_id)
+
+        self.connection_authentication_layout = QGridLayout()
+        self.connection_authentication_layout.addWidget(self.UserIDLabel, 0, 0, 1, 1)
+        self.connection_authentication_layout.addWidget(self.UserIDLineEdit, 0, 1, 1, 1)
+        self.connection_authentication_settings.setLayout(self.connection_authentication_layout)
+
         # Layout
         layout = QFormLayout()
         layout.addRow(self.UseCustomCertificatesCheckBox)
@@ -86,6 +102,8 @@ class ConnectionTabWidget(SettingsFormWidget):
         layout.addRow(QLabel("IP", self), sub_layout)
         layout.addRow(QLabel("Proxy User", self), self.ProxyUserLineEdit)
         layout.addRow(QLabel("Password", self), self.ProxyPasswordLineEdit)
+
+        self.addRow(self.connection_authentication_settings)
 
         self.proxy_settings.setLayout(layout)
         self.addRow(self.proxy_settings)
@@ -111,3 +129,7 @@ class ConnectionTabWidget(SettingsFormWidget):
     def update_proxy_password(self):
         password = self.ProxyPasswordLineEdit.text()
         set_proxy_password(password)
+
+    def update_user_id(self):
+        user_id = self.UserIDLineEdit.text()
+        set_user_id(user_id)

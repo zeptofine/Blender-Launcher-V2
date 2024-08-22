@@ -22,6 +22,7 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from widgets.lintable_line_edit import LintableLineEdit
 from windows.base_window import BaseWindow
 
 if TYPE_CHECKING:
@@ -116,7 +117,7 @@ class CustomBuildDialogWindow(BaseWindow):
             return label
 
         self.executable_label = QLabel("Executable name: ")
-        self.executable_choice = QLineEdit(self)
+        self.executable_choice = LintableLineEdit(self)
 
         self.executable_choice.setCompleter(completer)
         self.executable_choice.textChanged.connect(self.check_executable_choice)
@@ -201,10 +202,8 @@ class CustomBuildDialogWindow(BaseWindow):
 
         self.show()
 
-    def accept(self):
-        # create build_info
-
-        build_info = BuildInfo(
+    def current_binfo(self):
+        return BuildInfo(
             str(self.path),
             self.subversion_edit.text(),
             self.hash_edit.text(),
@@ -214,6 +213,11 @@ class CustomBuildDialogWindow(BaseWindow):
             self.favorite.isChecked(),
             self.executable_choice.text(),
         )
+
+    def accept(self):
+        # create build_info
+
+        build_info = self.current_binfo()
 
         self.accepted.emit(build_info)
         self.close()
@@ -225,10 +229,10 @@ class CustomBuildDialogWindow(BaseWindow):
     def check_executable_choice(self):
         p = self.path / self.executable_choice.text()
         if os.access(p, os.X_OK):
-            self.executable_choice.setStyleSheet("border-color:")
+            self.executable_choice.set_valid(True)
             self.exe_is_valid = True
         else:
-            self.executable_choice.setStyleSheet("border-color: red;")
+            self.executable_choice.set_valid(False)
             self.exe_is_valid = False
 
         is_chosen = bool(self.executable_choice.text())
@@ -236,7 +240,11 @@ class CustomBuildDialogWindow(BaseWindow):
         self.accept_button.setEnabled(is_chosen)
 
     def auto_detect_info(self):
-        a = ReadBuildTask(self.path, custom_exe=self.executable_choice.text(), auto_write=False)
+        a = ReadBuildTask(
+            self.path,
+            info=self.current_binfo(),
+            auto_write=False,
+        )
         a.finished.connect(self.load_from_build_info)
         a.failure.connect(self.auto_detect_failed)
         self.parent_.task_queue.append(a)

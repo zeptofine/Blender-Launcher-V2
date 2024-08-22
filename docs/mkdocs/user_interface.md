@@ -33,7 +33,7 @@ The top horizontal menu bar contains following buttons from left to right:
 
 !!! note
 
-    By default Library and Downloads pages will be automatically matched between each over. To change this behaviour toggle [Sync Library & Downloads Pages](settings.md#sync-library-downloads-pages) checkbox in settings.
+    By default Library and Downloads pages will be automatically matched between each over. To change this behavior toggle [Sync Library & Downloads Pages](settings.md#sync-library-downloads) checkbox in settings.
 
 The bottom status bar shows following information from left to right:
 
@@ -92,7 +92,7 @@ Build context menu can be accessed via right click on build item.
 
 #### Add To Quick Launch
 
-:   Sets selected build to be accessed from tray icon context menu or middle click on it.
+:   Sets selected build to be accessed from tray icon context menu.
 
 #### Add To Favorites
 
@@ -100,7 +100,7 @@ Build context menu can be accessed via right click on build item.
 
 ### Debug
 
-:   Multiple option to investigate and debug the programe
+:   Multiple option to investigate and debug the program
 
 #### Register Extension [Windows only]
 
