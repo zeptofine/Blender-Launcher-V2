@@ -64,7 +64,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 from semver import Version
-from threads.library_drawer import DrawLibraryTask
+from threads.library_drawer import DrawConfigsTask, DrawLibraryTask
 from threads.remover import RemovalTask
 from threads.scraper import Scraper
 from widgets.base_menu_widget import BaseMenuWidget
@@ -92,6 +92,7 @@ except Exception as e:
 
 if TYPE_CHECKING:
     from modules.build_info import BuildInfo
+    from modules.config_info import ConfigInfo
     from PyQt5.QtGui import QDragEnterEvent, QDragMoveEvent
     from widgets.base_build_widget import BaseBuildWidget
     from widgets.base_list_widget import BaseListWidget
@@ -393,16 +394,18 @@ class BlenderLauncher(BaseWindow):
             show_reload=True,
             extended_selection=True,
         )
+        self.UserCustomPageWidget.reload_pressed.connect(self.reload_custom_builds)
         self.UserCustomListWidget = self.LibraryToolBox.add_page_widget(self.UserCustomPageWidget, "Custom")
 
         self.PreferencesPageWidget = BasePageWidget(
             parent=self,
             page_name="PreferencesPageWidget",
-            time_label="Commit Time",
+            time_label="",
             info_text="Nothing to show yet",
             show_reload=True,
             extended_selection=True,
         )
+        self.PreferencesPageWidget.reload_pressed.connect(self.reload_preferences)
         self.PreferencesListWidget = self.PreferencesToolBox.add_page_widget(self.PreferencesPageWidget, "Versions")
 
         self.TabWidget.setCurrentIndex(get_default_tab())
@@ -442,6 +445,7 @@ class BlenderLauncher(BaseWindow):
         self.draw_library()
 
         # Draw preferences
+        self.draw_preferences()
         self.draw_preferences_factory()
 
         # Setup tray icon context Menu
@@ -915,7 +919,6 @@ class BlenderLauncher(BaseWindow):
 
         item = BaseListWidgetItem()
         widget = LibraryWidget(self, item, path, library, show_new)
-        widget.request_new_config.connect(self.create_new_config)
 
         if download is not None:
 
@@ -948,15 +951,26 @@ class BlenderLauncher(BaseWindow):
 
         list_widget.insert_item(item, widget)
 
+    def reload_preferences(self):
+        print("RELOAD")
+        self.draw_preferences()
+        self.draw_preferences_factory()
+
+    @pyqtSlot()
+    def draw_preferences(self):
+        self.PreferencesListWidget.clear_()
+        drawer = DrawConfigsTask(get_library_folder() / "config")
+        drawer.found.connect(self.draw_to_preferences)
+        self.task_queue.append(drawer)
+
     def draw_preferences_factory(self):
         item = BaseListWidgetItem()
-        widget = PreferenceFactoryWidget(self, self.PreferencesListWidget)
-        widget.create_pressed.connect(self.create_new_config)
+        widget = PreferenceFactoryWidget(self, self.PreferencesListWidget, self.task_queue)
+        widget.config_created.connect(self.draw_to_preferences)
         self.PreferencesListWidget.add_item(item, widget)
 
-    def create_new_config(self):
-        print("NEW CONFIG REQUESTED")
-
+    def draw_to_preferences(self, info: ConfigInfo):
+        print("FOUND PREFERENCES: " + str(info))
 
     def focus_widget(self, widget: BaseBuildWidget):
         tab: QWidget | None = None

@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from modules._platform import get_platform
+from modules.config_info import ConfigInfo, read_config
 from modules.settings import get_library_folder
 from modules.task import Task
 from PyQt5.QtCore import pyqtSignal
@@ -65,3 +66,21 @@ class DrawLibraryTask(Task):
 
     def __str__(self):
         return f"Draw libraries {self.folders}"
+
+
+def get_configs(folder: Path) -> Iterable[ConfigInfo]:
+    for subfolder in folder.iterdir():
+        if not subfolder.is_dir():
+            continue
+
+        yield read_config(subfolder)
+
+
+@dataclass(frozen=True)
+class DrawConfigsTask(Task):
+    folder: Path
+    found = pyqtSignal(ConfigInfo)
+
+    def run(self):
+        for c in get_configs(self.folder):
+            self.found.emit(c)

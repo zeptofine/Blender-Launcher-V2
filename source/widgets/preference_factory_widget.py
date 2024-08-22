@@ -1,54 +1,135 @@
-import os
-from pathlib import Path
-from typing import TYPE_CHECKING
 
+from enum import Enum
+
+from modules.config_info import ConfigInfo, config_path_name
+from modules.settings import get_library_folder
+from modules.tasks import TaskQueue
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
-from PyQt5.QtWidgets import QAction, QApplication, QHBoxLayout, QLabel, QPushButton
+from PyQt5.QtWidgets import (
+    QApplication,
+    QDoubleSpinBox,
+    QGridLayout,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+)
+from semver import Version
 from widgets.base_build_widget import BaseBuildWidget
-from widgets.base_line_edit import BaseLineEdit
-from widgets.base_menu_widget import BaseMenuWidget
-from widgets.build_state_widget import BuildStateWidget
-from widgets.datetime_widget import DateTimeWidget
-from widgets.elided_text_label import ElidedTextLabel
-from widgets.left_icon_button_widget import LeftIconButtonWidget
 from windows.dialog_window import DialogWindow
 
-if TYPE_CHECKING:
-    from windows.main_window import BlenderLauncher
+
+class PreferenceFactoryState(Enum):
+    READY = 0
+    CREATING = 1
 
 
 class PreferenceFactoryWidget(BaseBuildWidget):
-    create_pressed = pyqtSignal()
+    config_created = pyqtSignal(ConfigInfo)
 
-    def __init__(self, parent, list_widget):
+    def __init__(self, parent, list_widget, task_queue: TaskQueue):
         super().__init__(parent=parent)
         self.setAcceptDrops(True)
 
         self.list_widget = list_widget
+        self.task_queue = task_queue
 
         # box should highlight when dragged over
-        self.layout: QHBoxLayout = QHBoxLayout()
+        self.layout: QGridLayout = QGridLayout()
         self.layout.setContentsMargins(2, 2, 0, 2)
         self.layout.setSpacing(0)
         self.layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.setLayout(self.layout)
         self.draw()
+        self.update_state(PreferenceFactoryState.READY)
 
     def draw(self):
-        self.installButton = QPushButton("Create...")
-        self.installButton.setFixedWidth(85)
-        self.installButton.setProperty("CreateButton", True)
+        self.creation_button = QPushButton("Create...", self)
+        self.creation_button.setFixedWidth(85)
+        self.creation_button.setProperty("CreateButton", True)
+        self.creation_button.pressed.connect(self.start_creation)
 
-        self.subversionLabel = QLabel()
-        self.subversionLabel.setFixedWidth(85)
-        self.subversionLabel.setIndent(20)
+        self.name_text_label = QLabel("config name", self)
+        self.name_text_edit = QLineEdit(self)
+        self.name_text_edit.setPlaceholderText("Enter config name...")
+        self.name_text_edit.textChanged.connect(self.text_changed)
 
-        self.layout.addWidget(self.installButton)
-        self.layout.addWidget(self.subversionLabel)
+        self.target_version_label = QLabel("target")
+        self.target_version_dial = QDoubleSpinBox(self)
+        self.target_version_dial.setFixedWidth(85)
+        self.target_version_dial.setMinimum(1.0)
+        self.target_version_dial.setDecimals(2)
+        self.target_version_dial.setSingleStep(0.1)
 
-        self.installButton.clicked.connect(self.install)
-        self.installButton.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.confirm_button = QPushButton("Confirm", self)
+        self.confirm_button.setFixedWidth(85)
+        self.confirm_button.setProperty("LaunchButton", True)
+        self.confirm_button.pressed.connect(self.confirm)
+        self.confirm_button.setEnabled(False)
+
+        self.cancel_button = QPushButton("Cancel", self)
+        self.cancel_button.setFixedWidth(85)
+        self.cancel_button.setProperty("CancelButton", True)
+        self.cancel_button.pressed.connect(self.cancel)
+
+        self.layout.addWidget(self.creation_button, 0, 0, 1, 1)
+        self.layout.addWidget(self.name_text_label, 0, 1, 1, 1)
+        self.layout.addWidget(self.name_text_edit, 1, 1, 1, 1)
+        self.layout.addWidget(self.target_version_label, 0, 2, 1, 1)
+        self.layout.addWidget(self.target_version_dial, 1, 2, 1, 1)
+        self.layout.addWidget(self.confirm_button, 0, 3, 2, 1)
+        self.layout.addWidget(self.cancel_button, 0, 4, 2, 1)
+
+        self.creation_button.setCursor(Qt.CursorShape.PointingHandCursor)
+
+    def update_state(self, state: PreferenceFactoryState):
+        self.state = state
+        if state == PreferenceFactoryState.READY:
+            self.creation_button.show()
+            self.name_text_label.hide()
+            self.name_text_edit.hide()
+            self.name_text_edit.clear()
+            self.target_version_label.hide()
+            self.target_version_dial.hide()
+            self.target_version_dial.setValue(4.02)
+            self.confirm_button.hide()
+            self.cancel_button.hide()
+        elif state == PreferenceFactoryState.CREATING:
+            self.creation_button.hide()
+            self.name_text_label.show()
+            self.name_text_edit.show()
+            self.target_version_label.show()
+            self.target_version_dial.show()
+            self.confirm_button.show()
+            self.cancel_button.show()
+
+    def start_creation(self):
+        self.update_state(PreferenceFactoryState.CREATING)
+
+    def text_changed(self):
+        if self.name_text_edit.text().strip():
+            self.confirm_button.setEnabled(True)
+        else:
+            self.confirm_button.setEnabled(False)
+
+    def cancel(self):
+        self.update_state(PreferenceFactoryState.READY)
+
+    def confirm(self):
+        name = self.name_text_edit.text().strip()
+        v = self.target_version_dial.value()
+        major = int(v)
+        minor = int((v % 1) * 10)
+
+        target_version = Version(major, minor, 0)
+        config_name = config_path_name(name)
+
+        info = ConfigInfo(get_library_folder() / "config" / config_name, target_version, name)
+        # ? Do we need to move this to a task? This should be very fast anyways
+        info.write()  # Write the file to disk
+
+        self.config_created.emit(info)
+        self.update_state(PreferenceFactoryState.READY)
 
     def mouseReleaseEvent(self, event):
         if event.button == Qt.MouseButton.LeftButton:

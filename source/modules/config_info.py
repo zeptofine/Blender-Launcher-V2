@@ -1,21 +1,21 @@
 from __future__ import annotations
 
 import json
+import string
+import uuid
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from pathlib import Path
 
 from modules.task import Task
 from PyQt5.QtCore import pyqtSignal
 from semver import Version
 
-if TYPE_CHECKING:
-    from pathlib import Path
-
 # This is the version that started supporting the BLENDER_USER_RESOURCES environment variable
+# (according to the docs)
 RESOURCES_SUPPORT_VER = Version(3, 4, 0)
 
 
-@dataclass
+@dataclass(frozen=True)
 class ConfigInfo:
     file_version = "1.0"
 
@@ -27,17 +27,15 @@ class ConfigInfo:
         return self.directory == other.directory and self.target_version == other.target_version
 
     def get_env(self, v: Version | None = None) -> dict[str, str]:
-        env = {
+        if v is not None and v >= RESOURCES_SUPPORT_VER:
+            return {"BLENDER_USER_RESOURCES": str(self.directory)}
+
+        return {
             "BLENDER_USER_CONFIG": str(self.directory / "config"),
             "BLENDER_USER_SCRIPTS": str(self.directory / "scripts"),
             "BLENDER_USER_EXTENSIONS": str(self.directory / "extensions"),
             "BLENDER_USER_DATAFILES": str(self.directory / "datafiles"),
         }
-
-        if v is not None and v >= RESOURCES_SUPPORT_VER:
-            env = {"BLENDER_USER_RESOURCES": str(self.directory)}
-
-        return env
 
     @classmethod
     def from_dict(cls, directory: Path, confinfo: dict):
@@ -52,6 +50,14 @@ class ConfigInfo:
             confinfo["name"],
         )
 
+    @classmethod
+    def from_path(cls, directory: Path):
+        """
+        Creates a default ConfigInfo from a directory. Does not store
+        a target version and assumes the name from the path stem.
+        """
+        return cls(directory=directory, target_version=None, name=directory.stem)
+
     def to_dict(self):
         return {
             "file_version": self.__class__.file_version,
@@ -61,24 +67,34 @@ class ConfigInfo:
 
     def write(self):
         data = self.to_dict()
+        self.directory.mkdir(parents=True, exist_ok=True)
         blinfo = self.directory / ".confinfo"
         with blinfo.open("w", encoding="utf-8") as file:
             json.dump(data, file)
         return data
 
 
-@dataclass(frozen=True)
-class ReadConfigTask(Task):
-    path: Path
+def read_config(path: Path):
+    cinfo = path / ".confinfo"
+    if not cinfo.exists():  # Create a default info
+        return ConfigInfo.from_path(path)
 
-    finished = pyqtSignal(ConfigInfo)
-    failure = pyqtSignal(Exception)
+    with cinfo.open("r") as f:
+        return ConfigInfo.from_dict(path, json.load(f))
 
-    def run(self):
-        cinfo = self.path / ".confinfo"
-        if not cinfo.exists():
-            raise FileNotFoundError(cinfo)
 
-        with cinfo.open("r") as f:
-            info = ConfigInfo.from_dict(self.path, json.load(f))
-            self.finished.emit(info)
+VALID_CHARS_IN_CONFIG_DIR = string.ascii_letters + string.digits + "+-._"
+
+
+def sanitize_pathname(s: str):
+    return "".join(c for c in s.replace(" ", "-") if c in VALID_CHARS_IN_CONFIG_DIR)
+
+
+def config_path_name(s: str) -> Path:
+    s = sanitize_pathname(s)
+
+    # add a uuid to prevent future collisions
+    path_id = str(uuid.uuid1()).split("-", 1)[0]
+    s = f"{s}-{path_id}"
+
+    return Path(s)

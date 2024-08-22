@@ -1,7 +1,7 @@
 from enum import Enum
 
-from modules.settings import get_list_sorting_type, set_list_sorting_type, get_blender_preferences_management
-from PyQt5.QtCore import Qt
+from modules.settings import get_blender_preferences_management, get_list_sorting_type, set_list_sorting_type
+from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import (
     QHBoxLayout,
@@ -19,6 +19,8 @@ class SortingType(Enum):
 
 
 class BasePageWidget(QWidget):
+    reload_pressed = pyqtSignal()
+
     def __init__(self, parent, page_name, time_label, info_text, show_reload=False, extended_selection=False):
         super().__init__(parent)
         self.name = page_name
@@ -62,8 +64,8 @@ class BasePageWidget(QWidget):
 
         if show_reload is True:
             self.ReloadBtn = QPushButton("Reload")
-            self.ReloadBtn.setToolTip("Reload Custom builds from disk")
-            self.ReloadBtn.clicked.connect(parent.reload_custom_builds)
+            self.ReloadBtn.setToolTip("Reload from disk")
+            self.ReloadBtn.clicked.connect(self.reload_pressed.emit)
 
             self.ReloadBtnLayout = QHBoxLayout()
             self.ReloadBtnLayout.addStretch()
@@ -84,9 +86,9 @@ class BasePageWidget(QWidget):
 
         if show_reload is True:
             self.fakeLabel = QPushButton("Reload")
-            self.fakeLabel.setToolTip("Reload Custom builds from disk")
+            self.fakeLabel.setToolTip("Reload from disk")
             self.fakeLabel.setProperty("ListHeader", True)
-            self.fakeLabel.clicked.connect(parent.reload_custom_builds)
+            self.fakeLabel.clicked.connect(self.reload_pressed.emit)
         else:
             self.fakeLabel = QLabel()
 
@@ -99,7 +101,7 @@ class BasePageWidget(QWidget):
         self.subversionLabel.clicked.connect(lambda: self.set_sorting_type(SortingType.VERSION))
 
         self.branchLabel = QLabel("Branch")
-        
+
         if get_blender_preferences_management():
             self.configLabel = QLabel("Config")
             self.configLabel.setAlignment(Qt.AlignmentFlag.AlignRight)

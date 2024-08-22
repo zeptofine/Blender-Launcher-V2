@@ -58,7 +58,6 @@ logger = logging.getLogger()
 
 class LibraryWidget(BaseBuildWidget):
     initialized = pyqtSignal()
-    request_new_config = pyqtSignal()
 
     def __init__(
         self,
@@ -159,7 +158,7 @@ class LibraryWidget(BaseBuildWidget):
         if get_blender_preferences_management():
             self.dropdownMenu = QComboBox(self)
             self.dropdownMenu.setFixedWidth(100)
-            self.dropdownMenu.addItems(["Default", "New..."])
+            self.dropdownMenu.addItems(["Default"])
             self.dropdownMenu.currentIndexChanged.connect(self.config_changed)
 
         self.layout.addWidget(self.launchButton)
@@ -491,10 +490,6 @@ class LibraryWidget(BaseBuildWidget):
 
     @QtCore.pyqtSlot()
     def config_changed(self):
-        if self.dropdownMenu.currentIndex() == self.dropdownMenu.count() - 1:  # The new button has been pressed
-            self.request_new_config.emit()
-            return
-
         if self.dropdownMenu.currentIndex() == 0:
             target = None
         else:
@@ -764,7 +759,7 @@ class LibraryWidget(BaseBuildWidget):
 
         if platform == "Windows":
             appdata_folder = os.getenv("APPDATA")
-            folder = os.path.join(appdata_folder, "Blender Foundation\Blender", version)
+            folder = os.path.join(appdata_folder, r"Blender Foundation\Blender", version)
             print(folder)
             if os.path.exists(folder):
                 os.startfile(folder)

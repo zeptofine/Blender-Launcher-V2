@@ -52,6 +52,7 @@ library_subfolders = [
     "daily",
     "experimental",
     "template",
+    "config",
 ]
 
 
@@ -541,7 +542,7 @@ def get_use_pre_release_builds():
 
 def set_use_pre_release_builds(b: bool):
     get_settings().setValue("use_pre_release_builds", b)
-    
+
 
 def get_blender_preferences_management():
     return get_settings().value("blender_preferences_management", defaultValue=False, type=bool)
