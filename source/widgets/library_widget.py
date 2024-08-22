@@ -35,7 +35,7 @@ from PyQt5.QtGui import (
     QDropEvent,
     QHoverEvent,
 )
-from PyQt5.QtWidgets import QAction, QApplication, QComboBox, QHBoxLayout, QLabel, QWidget
+from PyQt5.QtWidgets import QAction, QApplication, QComboBox, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 from threads.observer import Observer
 from threads.register import Register
 from threads.remover import RemovalTask
@@ -160,13 +160,21 @@ class LibraryWidget(BaseBuildWidget):
             self.dropdownMenu.setFixedWidth(100)
             self.dropdownMenu.addItems(["Default"])
             self.dropdownMenu.currentIndexChanged.connect(self.config_changed)
+            self.dropdownMenuSaveButton = QPushButton(self)
+            self.dropdownMenuSaveButton.setIcon(self.parent.icons.favorite)
+            self.dropdownMenuSaveButton.setToolTip("Save this config choice in the future")
+            self.dropdownMenuSaveButton.clicked.connect(self.save_config_selection)
+            self.dropdownMenuSaveButton.hide()
 
         self.layout.addWidget(self.launchButton)
         self.layout.addWidget(self.subversionLabel)
         self.layout.addWidget(self.branchLabel, stretch=1)
 
         if get_blender_preferences_management():
-            self.layout.addWidget(self.dropdownMenu)
+            layout = QHBoxLayout()
+            layout.addWidget(self.dropdownMenu)
+            layout.addWidget(self.dropdownMenuSaveButton)
+            self.layout.addLayout(layout)
 
         if self.parent_widget is not None:
             self.lineEdit = BaseLineEdit(self)
@@ -488,35 +496,46 @@ class LibraryWidget(BaseBuildWidget):
         if self.child_widget is not None:
             self.child_widget.observer_finished()
 
-    @QtCore.pyqtSlot()
-    def config_changed(self):
+    def config_target(self) -> str | None:
         if self.dropdownMenu.currentIndex() == 0:
             target = None
         else:
             target = self.dropdownMenu.currentText()
 
+        return target
+
+    @QtCore.pyqtSlot()
+    def config_changed(self):
+        if self.dropdownMenu.count() == 0:
+            return
 
         if (
-            self.build_info is not None
-            and self.build_info.target_config != target  # the target config has changed
+            self.build_info is not None and self.build_info.target_config != self.config_target()  # the target config has changed
         ):
-            self.build_info.target_config = target
+            self.dropdownMenuSaveButton.show()
+        else:
+            self.dropdownMenuSaveButton.hide()
 
+    def save_config_selection(self):
+        if self.build_info is not None:
             # update the build in the info file
+            self.build_info.target_config = self.config_target()
             task = WriteBuildTask(Path(self.build_info.link), self.build_info)
+            task.written.connect(self.dropdownMenuSaveButton.hide)
             self.parent.task_queue.append(task)
 
     def update_available_configs(self, available: list[str]):
         self.dropdownMenu.clear()
-        self.dropdownMenu.addItem("Default")
+        items = ["Default", *available]
+        self.dropdownMenu.addItems(items)
+
         for config in available:
-            self.dropdownMenu.addItem(config)
+            if self.build_info is not None:
+                print(config, self.build_info.target_config)
             if (
                 self.build_info is not None and config == self.build_info.target_config
             ):  # Set it as the dropdown position
                 self.dropdownMenu.setCurrentText(config)
-
-        self.dropdownMenu.addItem("New...")
 
     @QtCore.pyqtSlot()
     def rename_branch(self):

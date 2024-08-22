@@ -96,6 +96,7 @@ if TYPE_CHECKING:
     from PyQt5.QtGui import QDragEnterEvent, QDragMoveEvent
     from widgets.base_build_widget import BaseBuildWidget
     from widgets.base_list_widget import BaseListWidget
+    from widgets.preference_widget import PreferenceWidget
 
 if get_platform() == "Windows":
     from PyQt5.QtWinExtras import QWinThumbnailToolBar, QWinThumbnailToolButton
@@ -314,10 +315,10 @@ class BlenderLauncher(BaseWindow):
         self.PreferencesTab.setLayout(self.PreferencesTabLayout)
         self.TabWidget.addTab(self.PreferencesTab, "Preferences")
 
-        self.LibraryToolBox = BaseToolBoxWidget(self)
-        self.DownloadsToolBox = BaseToolBoxWidget(self)
-        self.UserToolBox = BaseToolBoxWidget(self)
-        self.PreferencesToolBox = BaseToolBoxWidget(self)
+        self.LibraryToolBox: BaseToolBoxWidget[LibraryWidget | UnrecoBuildWidget] = BaseToolBoxWidget(self)
+        self.DownloadsToolBox: BaseToolBoxWidget[DownloadWidget] = BaseToolBoxWidget(self)
+        self.UserToolBox: BaseToolBoxWidget[LibraryWidget] = BaseToolBoxWidget(self)
+        self.PreferencesToolBox: BaseToolBoxWidget[PreferenceFactoryWidget | PreferenceWidget] = BaseToolBoxWidget(self)
 
         self.toggle_sync_library_and_downloads_pages(get_sync_library_and_downloads_pages())
 
@@ -326,7 +327,7 @@ class BlenderLauncher(BaseWindow):
         self.UserTabLayout.addWidget(self.UserToolBox)
         self.PreferencesTabLayout.addWidget(self.PreferencesToolBox)
 
-        self.LibraryStablePageWidget = BasePageWidget(
+        self.LibraryStablePageWidget: BasePageWidget[LibraryWidget | UnrecoBuildWidget] = BasePageWidget(
             parent=self,
             page_name="LibraryStableListWidget",
             time_label="Commit Time",
@@ -335,7 +336,7 @@ class BlenderLauncher(BaseWindow):
         )
         self.LibraryStableListWidget = self.LibraryToolBox.add_page_widget(self.LibraryStablePageWidget, "Stable")
 
-        self.LibraryDailyPageWidget = BasePageWidget(
+        self.LibraryDailyPageWidget: BasePageWidget[LibraryWidget | UnrecoBuildWidget] = BasePageWidget(
             parent=self,
             page_name="LibraryDailyListWidget",
             time_label="Commit Time",
@@ -344,7 +345,7 @@ class BlenderLauncher(BaseWindow):
         )
         self.LibraryDailyListWidget = self.LibraryToolBox.add_page_widget(self.LibraryDailyPageWidget, "Daily")
 
-        self.LibraryExperimentalPageWidget = BasePageWidget(
+        self.LibraryExperimentalPageWidget: BasePageWidget[LibraryWidget | UnrecoBuildWidget] = BasePageWidget(
             parent=self,
             page_name="LibraryExperimentalListWidget",
             time_label="Commit Time",
@@ -355,7 +356,7 @@ class BlenderLauncher(BaseWindow):
             self.LibraryExperimentalPageWidget, "Experimental"
         )
 
-        self.DownloadsStablePageWidget = BasePageWidget(
+        self.DownloadsStablePageWidget: BasePageWidget[DownloadWidget] = BasePageWidget(
             parent=self,
             page_name="DownloadsStableListWidget",
             time_label="Upload Time",
@@ -363,7 +364,7 @@ class BlenderLauncher(BaseWindow):
         )
         self.DownloadsStableListWidget = self.DownloadsToolBox.add_page_widget(self.DownloadsStablePageWidget, "Stable")
 
-        self.DownloadsDailyPageWidget = BasePageWidget(
+        self.DownloadsDailyPageWidget: BasePageWidget[DownloadWidget] = BasePageWidget(
             parent=self,
             page_name="DownloadsDailyListWidget",
             time_label="Upload Time",
@@ -371,7 +372,7 @@ class BlenderLauncher(BaseWindow):
         )
         self.DownloadsDailyListWidget = self.DownloadsToolBox.add_page_widget(self.DownloadsDailyPageWidget, "Daily")
 
-        self.DownloadsExperimentalPageWidget = BasePageWidget(
+        self.DownloadsExperimentalPageWidget: BasePageWidget[DownloadWidget] = BasePageWidget(
             parent=self,
             page_name="DownloadsExperimentalListWidget",
             time_label="Upload Time",
@@ -381,12 +382,12 @@ class BlenderLauncher(BaseWindow):
             self.DownloadsExperimentalPageWidget, "Experimental"
         )
 
-        self.UserFavoritesListWidget = BasePageWidget(
+        self.UserFavoritesListWidget: BasePageWidget[LibraryWidget] = BasePageWidget(
             parent=self, page_name="UserFavoritesListWidget", time_label="Commit Time", info_text="Nothing to show yet"
         )
         self.UserFavoritesListWidget = self.UserToolBox.add_page_widget(self.UserFavoritesListWidget, "Favorites")
 
-        self.UserCustomPageWidget = BasePageWidget(
+        self.UserCustomPageWidget: BasePageWidget[LibraryWidget | UnrecoBuildWidget] = BasePageWidget(
             parent=self,
             page_name="UserCustomListWidget",
             time_label="Commit Time",
@@ -397,7 +398,7 @@ class BlenderLauncher(BaseWindow):
         self.UserCustomPageWidget.reload_pressed.connect(self.reload_custom_builds)
         self.UserCustomListWidget = self.LibraryToolBox.add_page_widget(self.UserCustomPageWidget, "Custom")
 
-        self.PreferencesPageWidget = BasePageWidget(
+        self.PreferencesPageWidget: BasePageWidget[PreferenceFactoryWidget | PreferenceWidget] = BasePageWidget(
             parent=self,
             page_name="PreferencesPageWidget",
             time_label="",
@@ -445,6 +446,7 @@ class BlenderLauncher(BaseWindow):
         self.draw_library()
 
         # Draw preferences
+        self.preferences: dict[str, ConfigInfo] = {}
         self.draw_preferences()
         self.draw_preferences_factory()
 
@@ -919,7 +921,7 @@ class BlenderLauncher(BaseWindow):
 
         item = BaseListWidgetItem()
         widget = LibraryWidget(self, item, path, library, show_new)
-
+        widget.initialized.connect(self.update_preference_views)
         if download is not None:
 
             def _initialized():
@@ -928,6 +930,7 @@ class BlenderLauncher(BaseWindow):
                     dlw.setInstalled(widget)
 
             widget.initialized.connect(_initialized)
+
 
         library.insert_item(item, widget)
         return widget
@@ -965,12 +968,29 @@ class BlenderLauncher(BaseWindow):
 
     def draw_preferences_factory(self):
         item = BaseListWidgetItem()
-        widget = PreferenceFactoryWidget(self, self.PreferencesListWidget, self.task_queue)
-        widget.config_created.connect(self.draw_to_preferences)
-        self.PreferencesListWidget.add_item(item, widget)
+        self.preferences_factory = PreferenceFactoryWidget(self, self.PreferencesListWidget, self.task_queue)
+        self.preferences_factory.config_created.connect(self.draw_to_preferences)
+
+        self.PreferencesListWidget.add_item(item, self.preferences_factory)
 
     def draw_to_preferences(self, info: ConfigInfo):
         print("FOUND PREFERENCES: " + str(info))
+        self.preferences[info.name] = info
+
+        # Add a preference widget
+
+        self.update_preference_views()
+
+    def update_preference_views(self):
+        preferences_names = list(self.preferences.keys())
+        print(preferences_names)
+
+        for list_widget in self.LibraryToolBox.list_widgets:
+            for widget in list_widget.widgets:
+                if isinstance(widget, LibraryWidget) and widget.build_info is not None: # the build has been initialized
+                        widget.update_available_configs(preferences_names)
+
+        self.preferences_factory.update_existing_configs(preferences_names)
 
     def focus_widget(self, widget: BaseBuildWidget):
         tab: QWidget | None = None
