@@ -530,10 +530,13 @@ def launch_build(
     config_mode: ConfigMode = default_config,
 ):
     args = get_args(info, exe, launch_mode)
-    logger.debug(f"Running build with args {args!s}")
 
     env = None
     if isinstance(config_mode, CustomConfig):
         env = config_mode.info.get_env(info.semversion)
+
+    logger.debug(f"Running build {info}")
+    logger.debug(f"With args {args!s}")
+    logger.debug(f"With env {env}")
 
     return _popen(args, env=env)
