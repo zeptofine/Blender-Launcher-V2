@@ -80,7 +80,9 @@ def get_configs(folder: Path) -> Iterable[ConfigInfo]:
 class DrawConfigsTask(Task):
     folder: Path
     found = pyqtSignal(ConfigInfo)
+    finished = pyqtSignal()
 
     def run(self):
         for c in get_configs(self.folder):
             self.found.emit(c)
+        self.finished.emit()

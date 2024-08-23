@@ -4,14 +4,16 @@ import contextlib
 import json
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 from items.enablable_list_widget_item import EnablableListWidgetItem
 from modules.blendfile_reader import BlendfileHeader, read_blendfile_header
-from modules.build_info import BuildInfo, LaunchOpenLast, LaunchWithBlendFile, launch_build
+from modules.build_info import BuildInfo, CustomConfig, DefaultConfig, LaunchOpenLast, LaunchWithBlendFile, launch_build
+from modules.config_info import ConfigInfo
 from modules.settings import (
+    get_blender_preferences_management,
     get_favorite_path,
     get_launch_timer_duration,
+    get_library_folder,
     get_version_specific_queries,
     set_version_specific_queries,
 )
@@ -29,12 +31,9 @@ from PyQt5.QtWidgets import (
     QPushButton,
     QWidget,
 )
-from threads.library_drawer import DrawLibraryTask
+from threads.library_drawer import DrawConfigsTask, DrawLibraryTask
 from widgets.lintable_line_edit import LintableLineEdit
 from windows.base_window import BaseWindow
-
-if TYPE_CHECKING:
-    from datetime import datetime
 
 logger = logging.getLogger()
 
@@ -53,7 +52,7 @@ class LaunchingWindow(BaseWindow):
 
         # task queue
         self.task_queue = TaskQueue(
-            worker_count=1,
+            worker_count=2,
             parent=self,
         )
         self.task_queue.start()
@@ -67,10 +66,20 @@ class LaunchingWindow(BaseWindow):
         self.builds: dict[str, BuildInfo] = {}
         self.list_items: dict[BBI, EnablableListWidgetItem] = {}
         self.label_elements: dict[BBI, tuple[str, str, str, str]] = {}
-        self.drawing_task = DrawLibraryTask()
-        self.drawing_task.found.connect(self._build_found)
-        self.drawing_task.finished.connect(self.search_finished)
-        self.task_queue.append(self.drawing_task)
+
+        drawing_task = DrawLibraryTask()
+        drawing_task.found.connect(self._build_found)
+        drawing_task.finished.connect(self.search_finished)
+        self.__search_finished = False
+        self.task_queue.append(drawing_task)
+
+        # Get configs for Blender
+        if get_blender_preferences_management():
+            self.configs: dict[str, ConfigInfo] = {}
+            drawing_task = DrawConfigsTask(get_library_folder() / "config")
+            drawing_task.found.connect(self._config_found)
+            drawing_task.finished.connect(self.cfg_collection_finished)
+            self.task_queue.append(drawing_task)
 
         self.launch_timer = QTimer(self)
         self.launch_timer.setSingleShot(True)
@@ -131,6 +140,11 @@ class LaunchingWindow(BaseWindow):
         self.date_range_combo.setCurrentIndex(0)
         self.date_range_combo.currentIndexChanged.connect(self.update_query_from_edits)
         self.date_range_combo.currentIndexChanged.connect(self.cancel_timer)
+        if get_blender_preferences_management():
+            self.config_label = QLabel("Loading configs... ", self)
+            self.config_selection = QComboBox(self)
+            self.config_selection.addItem("Default")
+            self.config_selection.setEnabled(False)
         self.error_preview = QLabel(self)
 
         if self.blendfile is not None:
@@ -159,12 +173,15 @@ class LaunchingWindow(BaseWindow):
         self.central_layout.addWidget(QLabel("Date selection: ", parent=self), 4, 0, 1, 1)
         self.central_layout.addWidget(self.date_range_combo, 4, 1, 1, 2)
         self.central_layout.addWidget(self.error_preview, 5, 0, 1, 3)
-        self.central_layout.addWidget(self.builds_list, 6, 0, 1, 3)
-        self.central_layout.addWidget(self.timer_label, 7, 0, 1, 3)
+        if get_blender_preferences_management():
+            self.central_layout.addWidget(self.config_label, 6, 0, 1, 1)
+            self.central_layout.addWidget(self.config_selection, 6, 1, 1, 2)
+        self.central_layout.addWidget(self.builds_list, 7, 0, 1, 3)
+        self.central_layout.addWidget(self.timer_label, 8, 0, 1, 3)
         if self.save_current_query_button is not None:
-            self.central_layout.addWidget(self.save_current_query_button, 8, 0, 1, 3)
-        self.central_layout.addWidget(self.cancel_button, 9, 0, 1, 1)
-        self.central_layout.addWidget(self.launch_button, 9, 1, 1, 2)
+            self.central_layout.addWidget(self.save_current_query_button, 9, 0, 1, 3)
+        self.central_layout.addWidget(self.cancel_button, 10, 0, 1, 1)
+        self.central_layout.addWidget(self.launch_button, 10, 1, 1, 2)
 
         self.__enabled_font = QFont(self.font_10)
         self.__enabled_font.setBold(True)
@@ -208,12 +225,14 @@ class LaunchingWindow(BaseWindow):
                 self.branch_edit.set_valid(True)
                 self.build_hash_edit.set_valid(True)
                 self.update_search()
-                self.error_preview.setText("")
+                self.error_preview.setText("parsed successfully")
+                self.error_preview.setEnabled(False)
             except ValueError as e:
                 self.version_query_edit.set_valid(False)
                 self.branch_edit.set_valid(False)
                 self.build_hash_edit.set_valid(False)
                 self.error_preview.setText(str(e))
+                self.error_preview.setEnabled(True)
 
     def update_query_boxes(self, query: VersionSearchQuery):
         logger.debug("Updating query boxes...")
@@ -246,6 +265,33 @@ class LaunchingWindow(BaseWindow):
             self.update_query_boxes(vsq)
             self.update_query_from_edits()
             self.update_search()
+            self.select_config(build)
+
+    @pyqtSlot(ConfigInfo)
+    def _config_found(self, config: ConfigInfo):
+        self.configs[config.name] = config
+        self.config_selection.addItem(config.name)
+
+    @pyqtSlot()
+    def cfg_collection_finished(self):
+        self.config_label.setText("Config selection: ")
+        self.config_selection.setEnabled(True)
+
+        if self.__search_finished:
+            matches, builds = self.update_search()
+            # If there's only one match, start a launch timer
+            if self.launch_timer_duration != -1 and len(matches) == 1:
+                build = builds[0]
+                self.select_config(build)
+
+
+    def select_config(self, build: BuildInfo):
+        print(build)
+        if get_blender_preferences_management():
+            if build.target_config is not None and build.target_config in self.configs:
+                self.config_selection.setCurrentText(build.target_config)
+            else:
+                self.config_selection.setCurrentIndex(0)
 
     @pyqtSlot(Path)
     def _build_found(self, pth: Path):
@@ -394,10 +440,13 @@ class LaunchingWindow(BaseWindow):
             build = builds[0]
             self.list_items[BBI.from_buildinfo(build)].setSelected(True)
 
+            self.select_config(build)
             if self.launch_timer_duration == 0:  # launch immediately
                 self.actually_launch(build)
             else:
                 self.prepare_launch(build)
+        
+        self.__search_finished = True
 
     def make_matcher(self):
         return BInfoMatcher(tuple(map(BBI.from_buildinfo, self.builds.values())))
@@ -495,7 +544,11 @@ class LaunchingWindow(BaseWindow):
         if self.open_last:
             launch_mode = LaunchOpenLast()
 
-        launch_build(info=build, launch_mode=launch_mode)
+        config_mode = DefaultConfig()
+        if self.config_selection.currentIndex() != 0:
+            config_mode = CustomConfig(self.configs[self.config_selection.currentText()])
+
+        launch_build(info=build, launch_mode=launch_mode, config_mode=config_mode)
 
         self.close()
         self.app.exit()
