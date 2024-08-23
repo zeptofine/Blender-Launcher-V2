@@ -16,6 +16,7 @@ from time import localtime, mktime, strftime
 from typing import TYPE_CHECKING
 
 from items.base_list_widget_item import BaseListWidgetItem
+from items.config_list_widget_item import ConfigListWidgetItem
 from modules._platform import _popen, get_cwd, get_launcher_name, get_platform, is_frozen
 from modules.connection_manager import ConnectionManager
 from modules.enums import MessageType
@@ -1013,7 +1014,7 @@ class BlenderLauncher(BaseWindow):
         self.task_queue.append(drawer)
 
     def draw_preferences_factory(self):
-        item = BaseListWidgetItem()
+        item = ConfigListWidgetItem(has_info=False)
         self.preferences_factory = PreferenceFactoryWidget(self, self.PreferencesListWidget, self.task_queue)
         self.preferences_factory.config_created.connect(self.draw_to_preferences)
 
@@ -1024,7 +1025,7 @@ class BlenderLauncher(BaseWindow):
         self.preferences[info.name] = info
 
         # Add a preference widget
-        item = BaseListWidgetItem()
+        item = ConfigListWidgetItem()
         widget = PreferenceWidget(info, parent=self)
         self.PreferencesListWidget.add_item(item, widget)
 

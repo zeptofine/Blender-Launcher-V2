@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Generic, TypeVar
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFontMetrics
-from PyQt5.QtWidgets import QAbstractItemView, QListWidget, QWidget
+from PyQt5.QtWidgets import QAbstractItemView, QListWidget, QListWidgetItem, QWidget
 
 if TYPE_CHECKING:
     from modules.build_info import BuildInfo
@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 
 
 W = TypeVar("W", bound=QWidget)
+
 
 class BaseListWidget(QListWidget, Generic[W]):
     def __init__(self, parent: BasePageWidget | None = None, extended_selection=False):
@@ -30,6 +31,10 @@ class BaseListWidget(QListWidget, Generic[W]):
 
         if extended_selection is True:
             self.setSelectionMode(QAbstractItemView.ExtendedSelection)
+
+    # Override for typing
+    def itemWidget(self, item: QListWidgetItem) -> W | None:
+        return super().itemWidget(item)
 
     def add_item(self, item, widget: W):
         item.setSizeHint(widget.sizeHint())
