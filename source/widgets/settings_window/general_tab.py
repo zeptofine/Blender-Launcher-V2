@@ -73,12 +73,16 @@ class GeneralTabWidget(SettingsFormWidget):
         self.LaunchMinimizedToTrayCheckBox = QCheckBox()
         self.LaunchMinimizedToTrayCheckBox.setText("Launch Minimized To Tray")
         self.LaunchMinimizedToTrayCheckBox.setChecked(get_launch_minimized_to_tray())
+        self.LaunchMinimizedToTrayCheckBox.setEnabled(get_launch_when_system_starts())
         self.LaunchMinimizedToTrayCheckBox.clicked.connect(self.toggle_launch_minimized_to_tray)
 
         # Show Tray Icon
         self.ShowTrayIconCheckBox = QCheckBox()
-        self.ShowTrayIconCheckBox.setText("Show Tray Icon")
+        self.ShowTrayIconCheckBox.setText("Minimise to tray")
         self.ShowTrayIconCheckBox.setChecked(get_show_tray_icon())
+        self.ShowTrayIconCheckBox.setToolTip(
+            "Closing the app will minimise it to the system tray instead of closing it completely"
+        )
         self.ShowTrayIconCheckBox.clicked.connect(self.toggle_show_tray_icon)
 
         # Worker thread count

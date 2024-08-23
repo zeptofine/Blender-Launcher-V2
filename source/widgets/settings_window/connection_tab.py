@@ -47,9 +47,11 @@ class ConnectionTabWidget(SettingsFormWidget):
         self.ProxyHostLineEdit = QLineEdit()
         self.ProxyHostLineEdit.setText(get_proxy_host())
         self.ProxyHostLineEdit.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
+
         rx = QRegExp(
             r"^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$"
         )
+
         self.host_validator = QtGui.QRegExpValidator(rx, self)
         self.ProxyHostLineEdit.setValidator(self.host_validator)
         self.ProxyHostLineEdit.editingFinished.connect(self.update_proxy_host)
@@ -58,7 +60,9 @@ class ConnectionTabWidget(SettingsFormWidget):
         self.ProxyPortLineEdit = QLineEdit()
         self.ProxyPortLineEdit.setText(get_proxy_port())
         self.ProxyPortLineEdit.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
+
         rx = QRegExp(r"\d{2,5}")
+
         self.port_validator = QtGui.QRegExpValidator(rx, self)
         self.ProxyPortLineEdit.setValidator(self.port_validator)
         self.ProxyPortLineEdit.editingFinished.connect(self.update_proxy_port)
@@ -84,6 +88,11 @@ class ConnectionTabWidget(SettingsFormWidget):
         self.UserIDLabel = QLabel("User ID")
         self.UserIDLineEdit = QLineEdit()
         self.UserIDLineEdit.setText(get_user_id())
+
+        rx = QRegExp(r"^[a-zA-Z0-9-]{8,64}$")
+
+        self.user_id_validator = QtGui.QRegExpValidator(rx, self)
+        self.UserIDLineEdit.setValidator(self.user_id_validator)
         self.UserIDLineEdit.editingFinished.connect(self.update_user_id)
 
         self.connection_authentication_layout = QGridLayout()
