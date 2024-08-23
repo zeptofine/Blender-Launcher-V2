@@ -351,7 +351,6 @@ class BlenderLauncher(BaseWindow):
                 Column(
                     "Config",
                     stretch=True,
-                    alignment=Qt.AlignmentFlag.AlignCenter,
                 ),
             )
 

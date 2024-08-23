@@ -178,7 +178,8 @@ class LibraryWidget(BaseBuildWidget):
             layout = QHBoxLayout()
             layout.addWidget(self.dropdownMenu)
             layout.addWidget(self.dropdownMenuSaveButton)
-            self.layout.addLayout(layout)
+            layout.addStretch()
+            self.layout.addLayout(layout, stretch=1)
 
         if self.parent_widget is not None:
             self.lineEdit = BaseLineEdit(self)
@@ -188,7 +189,6 @@ class LibraryWidget(BaseBuildWidget):
             self.lineEdit.returnPressed.connect(self.rename_branch_accepted)
             self.layout.addWidget(self.lineEdit, stretch=1)
             self.lineEdit.hide()
-
         self.layout.addWidget(self.commitTimeLabel)
         self.layout.addWidget(self.build_state_widget)
 
@@ -519,7 +519,8 @@ class LibraryWidget(BaseBuildWidget):
             return
 
         if (
-            self.build_info is not None and self.build_info.target_config != self.config_target()  # the target config has changed
+            self.build_info is not None
+            and self.build_info.target_config != self.config_target()  # the target config has changed
         ):
             self.dropdownMenuSaveButton.show()
         else:
