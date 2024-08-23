@@ -454,7 +454,8 @@ class BlenderLauncher(BaseWindow):
             parent=self,
             page_schema=prefs_schema,
         )
-        self.PreferencesPageWidget.reload_pressed.connect(self.reload_preferences)
+        if get_blender_preferences_management():
+            self.PreferencesPageWidget.reload_pressed.connect(self.reload_preferences)
         self.PreferencesListWidget = self.PreferencesToolBox.add_page_widget(self.PreferencesPageWidget, "Versions")
 
         self.TabWidget.setCurrentIndex(get_default_tab())
@@ -969,7 +970,8 @@ class BlenderLauncher(BaseWindow):
 
         item = BaseListWidgetItem()
         widget = LibraryWidget(self, item, path, library, show_new)
-        widget.initialized.connect(self.update_preference_views)
+        if get_blender_preferences_management():
+            widget.initialized.connect(self.update_preference_views)
         if download is not None:
 
             def _initialized():
