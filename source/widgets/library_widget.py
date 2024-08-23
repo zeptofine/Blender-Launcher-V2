@@ -12,6 +12,8 @@ from items.base_list_widget_item import BaseListWidgetItem
 from modules._platform import _call, get_platform
 from modules.build_info import (
     BuildInfo,
+    CustomConfig,
+    DefaultConfig,
     LaunchMode,
     LaunchOpenLast,
     LaunchWithBlendFile,
@@ -51,6 +53,7 @@ from windows.custom_build_dialog_window import CustomBuildDialogWindow
 from windows.dialog_window import DialogIcon, DialogWindow
 
 if TYPE_CHECKING:
+    from modules.config_info import ConfigInfo
     from windows.main_window import BlenderLauncher
 
 logger = logging.getLogger()
@@ -160,6 +163,7 @@ class LibraryWidget(BaseBuildWidget):
             self.dropdownMenu.setFixedWidth(100)
             self.dropdownMenu.addItems(["Default"])
             self.dropdownMenu.currentIndexChanged.connect(self.config_changed)
+            self.available_configs = {}
             self.dropdownMenuSaveButton = QPushButton(self)
             self.dropdownMenuSaveButton.setIcon(self.parent.icons.favorite)
             self.dropdownMenuSaveButton.setToolTip("Save this config choice in the future")
@@ -462,7 +466,12 @@ class LibraryWidget(BaseBuildWidget):
             self.build_state_widget.setNewBuild(False)
             self.show_new = False
 
-        proc = launch_build(self.build_info, exe, launch_mode=launch_mode)
+        if (target := self.config_target()) is not None:
+            config_mode = CustomConfig(self.available_configs[target])
+        else:
+            config_mode = DefaultConfig()
+
+        proc = launch_build(self.build_info, exe, launch_mode=launch_mode, config_mode=config_mode)
 
         assert proc is not None
         if self.observer is None:
@@ -524,8 +533,9 @@ class LibraryWidget(BaseBuildWidget):
             task.written.connect(self.dropdownMenuSaveButton.hide)
             self.parent.task_queue.append(task)
 
-    def update_available_configs(self, available: list[str]):
+    def update_available_configs(self, available: dict[str, ConfigInfo]):
         self.dropdownMenu.clear()
+        self.available_configs = available
         items = ["Default", *available]
         self.dropdownMenu.addItems(items)
 

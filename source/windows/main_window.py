@@ -1038,7 +1038,7 @@ class BlenderLauncher(BaseWindow):
                 if (
                     isinstance(widget, LibraryWidget) and widget.build_info is not None
                 ):  # the build has been initialized
-                    widget.update_available_configs(preferences_names)
+                    widget.update_available_configs(self.preferences)
 
         self.preferences_factory.update_existing_configs(preferences_names)
 
