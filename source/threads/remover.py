@@ -4,19 +4,24 @@ from shutil import rmtree
 
 from modules.task import Task
 from PyQt5.QtCore import pyqtSignal
+from send2trash import send2trash
 
 
 @dataclass
 class RemovalTask(Task):
     path: Path
+    trash: bool = True
     finished = pyqtSignal(bool)
 
     def run(self):
         try:
-            if self.path.is_dir():
-                rmtree(self.path.as_posix())
+            if self.trash:
+                send2trash(str(self.path))
             else:
-                self.path.unlink()
+                if self.path.is_dir():
+                    rmtree(self.path.as_posix())
+                else:
+                    self.path.unlink()
 
             self.finished.emit(0)
         except OSError:
