@@ -502,7 +502,7 @@ def get_args(info: BuildInfo, exe=None, launch_mode: LaunchMode | None = None, l
         else:
             b3d_exe = library_folder / info.link / "blender"
 
-        args = f'{bash_args} "{b3d_exe.as_posix()}" {blender_args}'
+        args = f'{bash_args} "{b3d_exe.as_posix()}" {blender_args}'.strip()
 
     elif platform == "macOS":
         b3d_exe = Path(info.link) / "Blender" / "Blender.app"

@@ -112,11 +112,16 @@ def get_environment():
 
     return env
 
-
-def _popen(args, env: dict | None = None):
+def overlay_environment(env: dict | None = None):
     e = get_environment()
     if env is not None:
         e.update(env)
+    
+    return e
+
+
+def _popen(args, env: dict | None = None):
+    e = overlay_environment(env)
 
     if get_platform() == "Windows":
         DETACHED_PROCESS = 0x00000008

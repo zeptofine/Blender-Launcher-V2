@@ -27,7 +27,8 @@ class ConfigInfo:
         return self.directory == other.directory and self.target_version == other.target_version
 
     def get_env(self, v: Version | None = None) -> dict[str, str]:
-        if v is not None and v >= RESOURCES_SUPPORT_VER:
+        v = v or self.target_version
+        if (v is not None and v >= RESOURCES_SUPPORT_VER):
             return {"BLENDER_USER_RESOURCES": str(self.directory)}
 
         return {
