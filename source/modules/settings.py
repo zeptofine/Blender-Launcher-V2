@@ -295,7 +295,7 @@ def set_install_template(is_checked):
 
 
 def get_show_tray_icon():
-    return get_settings().value("show_tray_icon", defaultValue=True, type=bool)
+    return get_settings().value("show_tray_icon", defaultValue=False, type=bool)
 
 
 def set_show_tray_icon(is_checked):

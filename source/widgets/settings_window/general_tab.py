@@ -106,7 +106,11 @@ class GeneralTabWidget(SettingsFormWidget):
         if get_platform() == "Windows":
             self._addRow("Launch When System Starts", self.LaunchWhenSystemStartsCheckBox)
 
-        self._addRow("Show Tray Icon", self.ShowTrayIconCheckBox)
+        self._addRow("Minimise to Tray", self.ShowTrayIconCheckBox)
+        self.ShowTrayIconCheckBox.setToolTip(
+            "Closing the app will minimise it to the system tray instead of closing it completely"
+        )
+        
         self.LaunchMinimizedToTrayRow = self._addRow("Launch Minimized To Tray", self.LaunchMinimizedToTrayCheckBox)
         self.LaunchMinimizedToTrayRow.setEnabled(get_show_tray_icon())
 
