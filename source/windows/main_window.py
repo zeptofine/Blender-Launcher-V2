@@ -21,6 +21,7 @@ from modules.connection_manager import ConnectionManager
 from modules.enums import MessageType
 from modules.settings import (
     create_library_folders,
+    get_blender_preferences_management,
     get_check_for_new_builds_on_startup,
     get_default_downloads_page,
     get_default_library_page,
@@ -68,7 +69,7 @@ from threads.library_drawer import DrawConfigsTask, DrawLibraryTask
 from threads.remover import RemovalTask
 from threads.scraper import Scraper
 from widgets.base_menu_widget import BaseMenuWidget
-from widgets.base_page_widget import BasePageWidget
+from widgets.base_page_widget import BasePageWidget, Column, PageSchema, SortingType
 from widgets.base_tool_box_widget import BaseToolBoxWidget
 from widgets.datetime_widget import DATETIME_FORMAT
 from widgets.download_widget import DownloadState, DownloadWidget
@@ -327,30 +328,89 @@ class BlenderLauncher(BaseWindow):
         self.UserTabLayout.addWidget(self.UserToolBox)
         self.PreferencesTabLayout.addWidget(self.PreferencesToolBox)
 
+        # Default setup of columns
+        stable_page_columns = [
+            Column("Version", sortby=SortingType.VERSION, width=75),
+            Column(
+                "Branch",
+                spacing=(20, 0),
+                stretch=True,
+            ),
+            Column(
+                "Commit Time",
+                sortby=SortingType.DATETIME,
+                width=118,
+                spacing=(0, 34),
+            ),
+        ]
+
+        if get_blender_preferences_management():
+            stable_page_columns.insert(
+                2,
+                Column(
+                    "Config",
+                    stretch=True,
+                    alignment=Qt.AlignmentFlag.AlignCenter,
+                ),
+            )
+
+        stable_page_columns = tuple(stable_page_columns)
+        # Create page schemas
+        library_schema = PageSchema(
+            "",  # to be overridden
+            columns=stable_page_columns,
+            extended_selection=True,
+        )
+        user_schema = PageSchema(
+            "",  # to be overridden
+            columns=stable_page_columns,
+            show_reload=True,
+            extended_selection=True,
+        )
+        downloads_schema = PageSchema(
+            "",  # to be overridden
+            columns=(
+                Column("Version", SortingType.VERSION, 75),
+                Column(
+                    "Branch",
+                    None,
+                    spacing=(20, 0),
+                    stretch=True,
+                ),
+                Column("Upload Time", SortingType.DATETIME, 118, spacing=(0, 34)),
+            ),
+            empty_text="No new builds available",
+        )
+        prefs_schema = PageSchema(
+            "PreferencesPageWidget",
+            columns=(
+                Column("Version", SortingType.VERSION, 75),
+                Column(
+                    "Name",
+                    None,
+                    spacing=(20, 0),
+                    stretch=True,
+                ),
+            ),
+            empty_text="Hey! How are you seeing this? I should always be hidden...",
+            show_reload=True,
+        )
+
         self.LibraryStablePageWidget: BasePageWidget[LibraryWidget | UnrecoBuildWidget] = BasePageWidget(
             parent=self,
-            page_name="LibraryStableListWidget",
-            time_label="Commit Time",
-            info_text="Nothing to show yet",
-            extended_selection=True,
+            page_schema=library_schema.with_name("LibraryStableListWidget"),
         )
         self.LibraryStableListWidget = self.LibraryToolBox.add_page_widget(self.LibraryStablePageWidget, "Stable")
 
         self.LibraryDailyPageWidget: BasePageWidget[LibraryWidget | UnrecoBuildWidget] = BasePageWidget(
             parent=self,
-            page_name="LibraryDailyListWidget",
-            time_label="Commit Time",
-            info_text="Nothing to show yet",
-            extended_selection=True,
+            page_schema=library_schema.with_name("LibraryDailyListWidget"),
         )
         self.LibraryDailyListWidget = self.LibraryToolBox.add_page_widget(self.LibraryDailyPageWidget, "Daily")
 
         self.LibraryExperimentalPageWidget: BasePageWidget[LibraryWidget | UnrecoBuildWidget] = BasePageWidget(
             parent=self,
-            page_name="LibraryExperimentalListWidget",
-            time_label="Commit Time",
-            info_text="Nothing to show yet",
-            extended_selection=True,
+            page_schema=library_schema.with_name("LibraryExperimentalListWidget"),
         )
         self.LibraryExperimentalListWidget = self.LibraryToolBox.add_page_widget(
             self.LibraryExperimentalPageWidget, "Experimental"
@@ -358,53 +418,40 @@ class BlenderLauncher(BaseWindow):
 
         self.DownloadsStablePageWidget: BasePageWidget[DownloadWidget] = BasePageWidget(
             parent=self,
-            page_name="DownloadsStableListWidget",
-            time_label="Upload Time",
-            info_text="No new builds available",
+            page_schema=downloads_schema.with_name("DownloadsStableListWidget"),
         )
         self.DownloadsStableListWidget = self.DownloadsToolBox.add_page_widget(self.DownloadsStablePageWidget, "Stable")
 
         self.DownloadsDailyPageWidget: BasePageWidget[DownloadWidget] = BasePageWidget(
             parent=self,
-            page_name="DownloadsDailyListWidget",
-            time_label="Upload Time",
-            info_text="No new builds available",
+            page_schema=downloads_schema.with_name("DownloadsDailyListWidget"),
         )
         self.DownloadsDailyListWidget = self.DownloadsToolBox.add_page_widget(self.DownloadsDailyPageWidget, "Daily")
 
         self.DownloadsExperimentalPageWidget: BasePageWidget[DownloadWidget] = BasePageWidget(
             parent=self,
-            page_name="DownloadsExperimentalListWidget",
-            time_label="Upload Time",
-            info_text="No new builds available",
+            page_schema=downloads_schema.with_name("DownloadsExperimentalListWidget"),
         )
         self.DownloadsExperimentalListWidget = self.DownloadsToolBox.add_page_widget(
             self.DownloadsExperimentalPageWidget, "Experimental"
         )
 
         self.UserFavoritesListWidget: BasePageWidget[LibraryWidget] = BasePageWidget(
-            parent=self, page_name="UserFavoritesListWidget", time_label="Commit Time", info_text="Nothing to show yet"
+            parent=self,
+            page_schema=library_schema.with_name("UserFavoritesListWidget"),
         )
         self.UserFavoritesListWidget = self.UserToolBox.add_page_widget(self.UserFavoritesListWidget, "Favorites")
 
         self.UserCustomPageWidget: BasePageWidget[LibraryWidget | UnrecoBuildWidget] = BasePageWidget(
             parent=self,
-            page_name="UserCustomListWidget",
-            time_label="Commit Time",
-            info_text="Nothing to show yet",
-            show_reload=True,
-            extended_selection=True,
+            page_schema=user_schema.with_name("UserCustomListWidget"),
         )
         self.UserCustomPageWidget.reload_pressed.connect(self.reload_custom_builds)
         self.UserCustomListWidget = self.LibraryToolBox.add_page_widget(self.UserCustomPageWidget, "Custom")
 
         self.PreferencesPageWidget: BasePageWidget[PreferenceFactoryWidget | PreferenceWidget] = BasePageWidget(
             parent=self,
-            page_name="PreferencesPageWidget",
-            time_label="",
-            info_text="Nothing to show yet",
-            show_reload=True,
-            extended_selection=True,
+            page_schema=prefs_schema,
         )
         self.PreferencesPageWidget.reload_pressed.connect(self.reload_preferences)
         self.PreferencesListWidget = self.PreferencesToolBox.add_page_widget(self.PreferencesPageWidget, "Versions")
@@ -931,7 +978,6 @@ class BlenderLauncher(BaseWindow):
 
             widget.initialized.connect(_initialized)
 
-
         library.insert_item(item, widget)
         return widget
 
@@ -989,8 +1035,10 @@ class BlenderLauncher(BaseWindow):
 
         for list_widget in self.LibraryToolBox.list_widgets:
             for widget in list_widget.widgets:
-                if isinstance(widget, LibraryWidget) and widget.build_info is not None: # the build has been initialized
-                        widget.update_available_configs(preferences_names)
+                if (
+                    isinstance(widget, LibraryWidget) and widget.build_info is not None
+                ):  # the build has been initialized
+                    widget.update_available_configs(preferences_names)
 
         self.preferences_factory.update_existing_configs(preferences_names)
 
