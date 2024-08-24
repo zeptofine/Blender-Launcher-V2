@@ -394,6 +394,7 @@ class BlenderLauncher(BaseWindow):
             ),
             empty_text="Hey! How are you seeing this? I should always be hidden...",
             show_reload=True,
+            extended_selection=True,
         )
 
         self.LibraryStablePageWidget: BasePageWidget[LibraryWidget | UnrecoBuildWidget] = BasePageWidget(
@@ -494,7 +495,7 @@ class BlenderLauncher(BaseWindow):
         self.draw_library()
 
         # Draw preferences
-        self.preferences: dict[str, ConfigInfo] = {}
+        self.preferences: dict[str, tuple[ConfigListWidgetItem, PreferenceWidget]] = {}
         self.draw_preferences()
         self.draw_preferences_factory()
 
@@ -1023,24 +1024,33 @@ class BlenderLauncher(BaseWindow):
 
     def draw_to_preferences(self, info: ConfigInfo):
         print("FOUND PREFERENCES: " + str(info))
-        self.preferences[info.name] = info
 
         # Add a preference widget
         item = ConfigListWidgetItem()
-        widget = PreferenceWidget(info, parent=self)
+        widget = PreferenceWidget(info,list_widget=self.PreferencesListWidget, parent=self)
+        widget.deleted.connect(lambda: self.delete_preference(info.name))
+        self.preferences[info.name] = (item, widget)
+
         self.PreferencesListWidget.add_item(item, widget)
 
         self.update_preference_views()
 
+    def delete_preference(self, name: str):
+        item, _ = self.preferences.pop(name)
+        self.PreferencesListWidget.remove_item(item)
+        self.update_preference_views()
+
+
     def update_preference_views(self):
         preferences_names = list(self.preferences.keys())
+        configs = {k: w.info for k, (_, w) in self.preferences.items()}
 
         for list_widget in self.LibraryToolBox.list_widgets:
             for widget in list_widget.widgets:
                 if (
                     isinstance(widget, LibraryWidget) and widget.build_info is not None
                 ):  # the build has been initialized
-                    widget.update_available_configs(self.preferences)
+                    widget.update_available_configs(configs)
 
         self.preferences_factory.update_existing_configs(preferences_names)
 

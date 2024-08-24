@@ -133,8 +133,9 @@ class PreferenceFactoryWidget(BaseBuildWidget):
     def confirm(self):
         name = self.name_text_edit.text().strip()
         v = self.target_version_dial.value()
+
         major = int(v)
-        minor = int((v % 1) * 10)
+        minor = round(v * 100) % 100
 
         target_version = Version(major, minor, 0)
         config_name = config_path_name(name)
@@ -149,21 +150,3 @@ class PreferenceFactoryWidget(BaseBuildWidget):
     @pyqtSlot()
     def install(self):
         self.create_pressed.emit()
-
-    @QtCore.pyqtSlot()
-    def ask_remove_from_drive(self):
-        self.dlg = DialogWindow(
-            parent=self,
-            title="Warning",
-            text="Are you sure you want to<br> \
-                  delete these preferences?<br> \
-                  Any blender version using these will<br> \
-                  revert to the default.",
-            accept_text="Yes",
-            cancel_text="No",
-        )
-
-        if len(self.list_widget.selectedItems()) > 1:
-            self.dlg.accepted.connect(self.remove_from_drive_extended)
-        else:
-            self.dlg.accepted.connect(self.remove_from_drive)

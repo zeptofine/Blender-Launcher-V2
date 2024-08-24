@@ -163,7 +163,10 @@ class LibraryWidget(BaseBuildWidget):
             self.dropdownMenu.setFixedWidth(100)
             self.dropdownMenu.addItems(["Default"])
             self.dropdownMenu.currentIndexChanged.connect(self.config_changed)
-            self.available_configs = {}
+
+            # {"<version>: <name>" -> ConfigInfo} format
+            self.available_configs: dict[str, ConfigInfo] = {}
+
             self.dropdownMenuSaveButton = QPushButton(self)
             self.dropdownMenuSaveButton.setIcon(self.parent.icons.favorite)
             self.dropdownMenuSaveButton.setToolTip("Save this config choice in the future")
@@ -509,7 +512,7 @@ class LibraryWidget(BaseBuildWidget):
         if self.dropdownMenu.currentIndex() == 0:
             target = None
         else:
-            target = self.dropdownMenu.currentText()
+            target = self.dropdownMenu.currentText().split(": ")[1]
 
         return target
 
@@ -537,14 +540,31 @@ class LibraryWidget(BaseBuildWidget):
     def update_available_configs(self, available: dict[str, ConfigInfo]):
         self.dropdownMenu.clear()
         self.available_configs = available
-        items = ["Default", *available]
+
+        # prioritize builds in available that match self build info
+        if self.build_info is not None:
+            matched = []
+            unmatched = []
+            for item, cfg in available.items():
+                if (
+                    cfg.target_version is not None
+                    and cfg.target_version.major == self.build_info.semversion.major
+                    and cfg.target_version.minor == self.build_info.semversion.minor
+                ):
+                    matched.append(f"{cfg.target_version}: {item}")
+                else:
+                    unmatched.append(f"{cfg.target_version}: {item}")
+            items = ["Default", *matched, *unmatched]
+        else:
+            items = ["Default", *available.keys()]
+
         self.dropdownMenu.addItems(items)
 
-        for config in available:
+        for config in available.values():
             if (
-                self.build_info is not None and config == self.build_info.target_config
+                self.build_info is not None and config.name == self.build_info.target_config
             ):  # Set it as the dropdown position
-                self.dropdownMenu.setCurrentText(config)
+                self.dropdownMenu.setCurrentText(f"{config.target_version}: {config.name}")
 
     @QtCore.pyqtSlot()
     def rename_branch(self):
