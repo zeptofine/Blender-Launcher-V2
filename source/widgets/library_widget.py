@@ -73,7 +73,6 @@ class LibraryWidget(BaseBuildWidget):
         self.setMouseTracking(True)
         self.installEventFilter(self)
         self._hovering_and_shifting = False
-        self._hovering_and_shifting_when_contexed = False
         self._hovered = False
 
         self.parent: BlenderLauncher = parent
@@ -182,6 +181,12 @@ class LibraryWidget(BaseBuildWidget):
         # Context menu
         self.menu_extended = BaseMenuWidget(parent=self)
         self.menu_extended.setFont(self.parent.font_10)
+
+        # For checking if shift is held on menus
+        self.menu.enable_shifting()
+        self.menu_extended.enable_shifting()
+        self.menu.holding_shift.connect(self.update_delete_action)
+        self.menu_extended.holding_shift.connect(self.update_delete_action)
 
         self.deleteAction = QAction("Delete From Drive", self)
         self.deleteAction.setIcon(self.parent.icons.delete)
@@ -315,11 +320,7 @@ class LibraryWidget(BaseBuildWidget):
         if self.is_damaged:
             return
 
-        self._hovering_and_shifting_when_contexed = self.hovering_and_shifting
-        if self.hovering_and_shifting:
-            self.deleteAction.setText("Delete from Drive")
-        else:
-            self.deleteAction.setText("Send to Trash")
+        self.update_delete_action(self.hovering_and_shifting)
 
         if len(self.list_widget.selectedItems()) > 1:
             self.menu_extended.trigger()
@@ -333,6 +334,13 @@ class LibraryWidget(BaseBuildWidget):
             self.createSymlinkAction.setEnabled(False)
 
         self.menu.trigger()
+
+    @pyqtSlot(bool)
+    def update_delete_action(self, shifting: bool):
+        if shifting:
+            self.deleteAction.setText("Delete from Drive")
+        else:
+            self.deleteAction.setText("Send to Trash")
 
     def mouseDoubleClickEvent(self, _event):
         if self.build_info is not None and self.hovering_and_shifting:
@@ -519,7 +527,10 @@ class LibraryWidget(BaseBuildWidget):
 
     @QtCore.pyqtSlot()
     def ask_remove_from_drive(self):
-        if not self._hovering_and_shifting_when_contexed: # If not shift clicked, ask to send to trash
+
+        # if not shift clicked, ask to send to trash instead of deleting
+        mod = QApplication.keyboardModifiers()
+        if mod not in (Qt.KeyboardModifier.ShiftModifier, Qt.KeyboardModifier.ControlModifier):
             self.ask_send_to_trash()
             return
 
