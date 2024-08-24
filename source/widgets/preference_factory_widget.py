@@ -66,7 +66,7 @@ class PreferenceFactoryWidget(BaseBuildWidget):
         self.target_version_dial = QDoubleSpinBox(self)
         self.target_version_dial.setFixedWidth(85)
         self.target_version_dial.setMinimum(1.0)
-        self.target_version_dial.setDecimals(2)
+        self.target_version_dial.setDecimals(1)
         self.target_version_dial.setSingleStep(0.1)
 
         self.confirm_button = QPushButton("Confirm", self)
