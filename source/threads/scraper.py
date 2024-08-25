@@ -16,6 +16,7 @@ from bs4 import BeautifulSoup, SoupStrainer
 from modules._platform import get_architecture, get_platform, reset_locale, set_locale, stable_cache_path
 from modules.build_info import BuildInfo, parse_blender_ver
 from modules.scraper_cache import StableCache
+from modules.bl_api_manager import update_local_api_files, read_lts_blender_version
 from modules.settings import (
     blender_minimum_versions,
     get_minimum_blender_stable_version,
@@ -108,27 +109,34 @@ def get_tag(
 
 
 def get_bl_api_data(connection_manager: ConnectionManager) -> str | None:
-    url = "https://api.github.com/repos/Victor-IX/Blender-Launcher-V2/contents/api/blender_launcher_api.json"
+    url = "https://api.github.com/repos/Victor-IX/Blender-Launcher-V2/contents/source/resources/api/blender_launcher_api.json"
     r = connection_manager.request("GET", url)
 
     if r is None:
+        logger.error("Failed to fetch data from the URL.")
         return None
 
     try:
         data = json.loads(r.data)
     except json.JSONDecodeError as e:
-        logger.error(f"Failed to parse pre-release tag JSON data: {e}")
+        logger.error(f"Failed to parse blender launcher API JSON data: {e}")
         return None
 
     file_content = data["content"]
     file_content_encoding = data.get("encoding")
 
-    if file_content_encoding == "base64":
-        file_content = base64.b64decode(file_content).decode()
-        logger.info(f"Blender Launcher API data have been loaded successfully")
+    if file_content_encoding == "base64" and file_content:
+        try:
+            file_content = base64.b64decode(file_content).decode("utf-8")
+            json_data = json.loads(file_content)
+            logger.info("Blender Launcher API data have been loaded successfully")
+            return json_data
+        except (base64.binascii.Error, json.JSONDecodeError) as e:
+            logger.error(f"Failed to decode or parse JSON data: {e}")
+            return None
     else:
-        file_content = None
-        logger.error(f"Failed to load Blender Launcher API data")
+        logger.error("Failed to load Blender Launcher API data or unsupported encoding.")
+        return None
 
 
 class Scraper(QThread):
@@ -192,7 +200,9 @@ class Scraper(QThread):
         bl_api_data = get_bl_api_data(self.manager)
 
         if bl_api_data is not None:
-            self.new_bl_version.emit(bl_api_data)
+            update_local_api_files(bl_api_data)
+            read_lts_blender_version()
+
         self.manager.manager.clear()
 
     def get_download_links(self):
