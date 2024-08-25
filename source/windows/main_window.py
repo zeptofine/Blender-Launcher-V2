@@ -16,7 +16,7 @@ from time import localtime, mktime, strftime
 from typing import TYPE_CHECKING
 
 from items.base_list_widget_item import BaseListWidgetItem
-from items.config_list_widget_item import ConfigListWidgetItem
+from items.prefs_list_widget_item import PrefsListWidgetItem
 from modules._platform import _popen, get_cwd, get_launcher_name, get_platform, is_frozen
 from modules.connection_manager import ConnectionManager
 from modules.enums import MessageType
@@ -66,7 +66,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 from semver import Version
-from threads.library_drawer import DrawConfigsTask, DrawLibraryTask
+from threads.library_drawer import DrawLibraryTask, DrawPreferencesTask
 from threads.remover import RemovalTask
 from threads.scraper import Scraper
 from widgets.base_menu_widget import BaseMenuWidget
@@ -95,7 +95,7 @@ except Exception as e:
 
 if TYPE_CHECKING:
     from modules.build_info import BuildInfo
-    from modules.config_info import ConfigInfo
+    from modules.prefs_info import PreferenceInfo
     from PyQt5.QtGui import QDragEnterEvent, QDragMoveEvent
     from widgets.base_build_widget import BaseBuildWidget
     from widgets.base_list_widget import BaseListWidget
@@ -495,7 +495,7 @@ class BlenderLauncher(BaseWindow):
         self.draw_library()
 
         # Draw preferences
-        self.preferences: dict[str, tuple[ConfigListWidgetItem, PreferenceWidget]] = {}
+        self.preferences: dict[str, tuple[PrefsListWidgetItem, PreferenceWidget]] = {}
         self.draw_preferences()
         self.draw_preferences_factory()
 
@@ -1011,22 +1011,22 @@ class BlenderLauncher(BaseWindow):
     @pyqtSlot()
     def draw_preferences(self):
         self.PreferencesListWidget.clear_()
-        drawer = DrawConfigsTask(get_library_folder() / "config")
+        drawer = DrawPreferencesTask(get_library_folder() / "config")
         drawer.found.connect(self.draw_to_preferences)
         self.task_queue.append(drawer)
 
     def draw_preferences_factory(self):
-        item = ConfigListWidgetItem(has_info=False)
+        item = PrefsListWidgetItem(has_info=False)
         self.preferences_factory = PreferenceFactoryWidget(self, self.PreferencesListWidget, self.task_queue)
-        self.preferences_factory.config_created.connect(self.draw_to_preferences)
+        self.preferences_factory.preference_created.connect(self.draw_to_preferences)
 
         self.PreferencesListWidget.add_item(item, self.preferences_factory)
 
-    def draw_to_preferences(self, info: ConfigInfo):
+    def draw_to_preferences(self, info: PreferenceInfo):
         print("FOUND PREFERENCES: " + str(info))
 
         # Add a preference widget
-        item = ConfigListWidgetItem()
+        item = PrefsListWidgetItem()
         widget = PreferenceWidget(info,list_widget=self.PreferencesListWidget, parent=self)
         widget.deleted.connect(lambda: self.delete_preference(info.name))
         self.preferences[info.name] = (item, widget)
@@ -1043,16 +1043,16 @@ class BlenderLauncher(BaseWindow):
 
     def update_preference_views(self):
         preferences_names = list(self.preferences.keys())
-        configs = {k: w.info for k, (_, w) in self.preferences.items()}
+        prefs = {k: w.info for k, (_, w) in self.preferences.items()}
 
         for list_widget in self.LibraryToolBox.list_widgets:
             for widget in list_widget.widgets:
                 if (
                     isinstance(widget, LibraryWidget) and widget.build_info is not None
                 ):  # the build has been initialized
-                    widget.update_available_configs(configs)
+                    widget.update_available_prefs(prefs)
 
-        self.preferences_factory.update_existing_configs(preferences_names)
+        self.preferences_factory.update_existing_prefs(preferences_names)
 
     def focus_widget(self, widget: BaseBuildWidget):
         tab: QWidget | None = None

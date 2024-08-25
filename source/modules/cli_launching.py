@@ -6,15 +6,13 @@ import logging
 import subprocess
 from pathlib import Path
 
-from modules import config_info
+from modules import prefs_info
 from modules.blendfile_reader import read_blendfile_header
 from modules.build_info import (
     BuildInfo,
-    LaunchMode,
-    LaunchOpenLast,
-    LaunchWithBlendFile,
     get_args,
 )
+from modules.build_info import LaunchArgs as LA
 from modules.settings import get_favorite_path, get_library_folder, get_version_specific_queries
 from modules.version_matcher import BasicBuildInfo, BInfoMatcher, VersionSearchQuery
 from threads.library_drawer import get_blender_builds
@@ -89,7 +87,7 @@ def select_build(
 def cli_launch(
     file: Path | None = None,
     version_query: VersionSearchQuery | None = None,
-    config_mode: str | None = None,
+    pref_mode: str | None = None,
     open_last: bool = False,
 ) -> int:
     # Search for builds
@@ -111,20 +109,20 @@ def cli_launch(
         logger.info("No build was chosen from matches")
         return 1
 
-    launch_mode: LaunchMode | None = None
+    launch_mode: LA.LaunchMode | None = None
     if file is not None:
-        launch_mode = LaunchWithBlendFile(file)
+        launch_mode = LA.LaunchWithBlendFile(file)
     if open_last:
-        launch_mode = LaunchOpenLast()
+        launch_mode = LA.LaunchOpenLast()
 
     env = None
 
-    if config_mode is not None and config_mode != "default" or (config_mode := build_info.target_config) is not None:
+    if pref_mode is not None and pref_mode != "default" or (pref_mode := build_info.target_preferences) is not None:
         logging.info("Searching for configs...")
-        configs_folder = get_library_folder() / "config"
-        for p in (p_ for p_ in configs_folder.iterdir() if p_.is_dir()):
-            cfg = config_info.read_config(p)
-            if cfg.name == config_mode:
+        prefs_folder = get_library_folder() / "config"
+        for p in (p_ for p_ in prefs_folder.iterdir() if p_.is_dir()):
+            cfg = prefs_info.read_prefs(p)
+            if cfg.name == pref_mode:
                 logging.info(f"Found environment: {cfg}")
                 env = cfg.get_env(build_info.semversion)
                 break

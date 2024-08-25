@@ -12,14 +12,12 @@ from items.base_list_widget_item import BaseListWidgetItem
 from modules._platform import _call, get_platform
 from modules.build_info import (
     BuildInfo,
-    CustomConfig,
-    DefaultConfig,
-    LaunchMode,
-    LaunchOpenLast,
-    LaunchWithBlendFile,
     ReadBuildTask,
     WriteBuildTask,
     launch_build,
+)
+from modules.build_info import (
+    LaunchArgs as LA,
 )
 from modules.settings import (
     get_blender_preferences_management,
@@ -53,7 +51,7 @@ from windows.custom_build_dialog_window import CustomBuildDialogWindow
 from windows.dialog_window import DialogIcon, DialogWindow
 
 if TYPE_CHECKING:
-    from modules.config_info import ConfigInfo
+    from modules.prefs_info import PreferenceInfo
     from windows.main_window import BlenderLauncher
 
 logger = logging.getLogger()
@@ -162,15 +160,15 @@ class LibraryWidget(BaseBuildWidget):
             self.dropdownMenu = QComboBox(self)
             self.dropdownMenu.setFixedWidth(100)
             self.dropdownMenu.addItems(["Default"])
-            self.dropdownMenu.currentIndexChanged.connect(self.config_changed)
+            self.dropdownMenu.currentIndexChanged.connect(self.prefs_choice_changed)
 
-            # {"<version>: <name>" -> ConfigInfo} format
-            self.available_configs: dict[str, ConfigInfo] = {}
+            # {"<version>: <name>" -> PreferenceInfo} format
+            self.available_prefs: dict[str, PreferenceInfo] = {}
 
             self.dropdownMenuSaveButton = QPushButton(self)
             self.dropdownMenuSaveButton.setIcon(self.parent.icons.favorite)
-            self.dropdownMenuSaveButton.setToolTip("Save this config choice in the future")
-            self.dropdownMenuSaveButton.clicked.connect(self.save_config_selection)
+            self.dropdownMenuSaveButton.setToolTip("Save this preference choice in the future")
+            self.dropdownMenuSaveButton.clicked.connect(self.save_preference_selection)
             self.dropdownMenuSaveButton.hide()
 
         self.layout.addWidget(self.launchButton)
@@ -455,7 +453,7 @@ class LibraryWidget(BaseBuildWidget):
         self.deleteAction.setEnabled(True)
         self.installTemplateAction.setEnabled(True)
 
-    def launch(self, update_selection=False, exe=None, launch_mode: LaunchMode | None = None):
+    def launch(self, update_selection=False, exe=None, launch_mode: LA.LaunchMode | None = None):
         assert self.build_info is not None
         if update_selection is True:
             self.list_widget.clearSelection()
@@ -469,12 +467,12 @@ class LibraryWidget(BaseBuildWidget):
             self.build_state_widget.setNewBuild(False)
             self.show_new = False
 
-        if (target := self.config_target()) is not None:
-            config_mode = CustomConfig(self.available_configs[target])
+        if (target := self.pref_target()) is not None:
+            preference_mode = LA.CustomPreferences(self.available_prefs[target])
         else:
-            config_mode = DefaultConfig()
+            preference_mode = LA.DefaultPreferences()
 
-        proc = launch_build(self.build_info, exe, launch_mode=launch_mode, config_mode=config_mode)
+        proc = launch_build(self.build_info, exe, launch_mode=launch_mode, preference_mode=preference_mode)
 
         assert proc is not None
         if self.observer is None:
@@ -508,7 +506,7 @@ class LibraryWidget(BaseBuildWidget):
         if self.child_widget is not None:
             self.child_widget.observer_finished()
 
-    def config_target(self) -> str | None:
+    def pref_target(self) -> str | None:
         if self.dropdownMenu.currentIndex() == 0:
             target = None
         else:
@@ -517,54 +515,54 @@ class LibraryWidget(BaseBuildWidget):
         return target
 
     @QtCore.pyqtSlot()
-    def config_changed(self):
+    def prefs_choice_changed(self):
         if self.dropdownMenu.count() == 0:
             return
 
         if (
             self.build_info is not None
-            and self.build_info.target_config != self.config_target()  # the target config has changed
+            and self.build_info.target_preferences != self.pref_target()  # the target config has changed
         ):
             self.dropdownMenuSaveButton.show()
         else:
             self.dropdownMenuSaveButton.hide()
 
-    def save_config_selection(self):
+    def save_preference_selection(self):
         if self.build_info is not None:
             # update the build in the info file
-            self.build_info.target_config = self.config_target()
+            self.build_info.target_preferences = self.pref_target()
             task = WriteBuildTask(Path(self.build_info.link), self.build_info)
             task.written.connect(self.dropdownMenuSaveButton.hide)
             self.parent.task_queue.append(task)
 
-    def update_available_configs(self, available: dict[str, ConfigInfo]):
+    def update_available_prefs(self, available: dict[str, PreferenceInfo]):
         self.dropdownMenu.clear()
-        self.available_configs = available
+        self.available_prefs = available
 
         # prioritize builds in available that match self build info
         if self.build_info is not None:
             matched = []
             unmatched = []
-            for item, cfg in available.items():
+            for item, pref in available.items():
                 if (
-                    cfg.target_version is not None
-                    and cfg.target_version.major == self.build_info.semversion.major
-                    and cfg.target_version.minor == self.build_info.semversion.minor
+                    pref.target_version is not None
+                    and pref.target_version.major == self.build_info.semversion.major
+                    and pref.target_version.minor == self.build_info.semversion.minor
                 ):
-                    matched.append(f"{cfg.target_version}: {item}")
+                    matched.append(f"{pref.target_version}: {item}")
                 else:
-                    unmatched.append(f"{cfg.target_version}: {item}")
+                    unmatched.append(f"{pref.target_version}: {item}")
             items = ["Default", *matched, *unmatched]
         else:
             items = ["Default", *available.keys()]
 
         self.dropdownMenu.addItems(items)
 
-        for config in available.values():
+        for pref in available.values():
             if (
-                self.build_info is not None and config.name == self.build_info.target_config
+                self.build_info is not None and pref.name == self.build_info.target_preferences
             ):  # Set it as the dropdown position
-                self.dropdownMenu.setCurrentText(f"{config.target_version}: {config.name}")
+                self.dropdownMenu.setCurrentText(f"{pref.target_version}: {pref.name}")
 
     @QtCore.pyqtSlot()
     def rename_branch(self):

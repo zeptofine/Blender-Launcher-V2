@@ -7,8 +7,9 @@ from pathlib import Path
 
 from items.enablable_list_widget_item import EnablableListWidgetItem
 from modules.blendfile_reader import BlendfileHeader, read_blendfile_header
-from modules.build_info import BuildInfo, CustomConfig, DefaultConfig, LaunchOpenLast, LaunchWithBlendFile, launch_build
-from modules.config_info import ConfigInfo
+from modules.build_info import BuildInfo, launch_build
+from modules.build_info import LaunchArgs as LA
+from modules.prefs_info import PreferenceInfo
 from modules.settings import (
     get_blender_preferences_management,
     get_favorite_path,
@@ -31,7 +32,7 @@ from PyQt5.QtWidgets import (
     QPushButton,
     QWidget,
 )
-from threads.library_drawer import DrawConfigsTask, DrawLibraryTask
+from threads.library_drawer import DrawLibraryTask, DrawPreferencesTask
 from widgets.lintable_line_edit import LintableLineEdit
 from windows.base_window import BaseWindow
 
@@ -73,11 +74,11 @@ class LaunchingWindow(BaseWindow):
         self.__search_finished = False
         self.task_queue.append(drawing_task)
 
-        # Get configs for Blender
+        # Get preferences for Blender
         if get_blender_preferences_management():
-            self.configs: dict[str, ConfigInfo] = {}
-            drawing_task = DrawConfigsTask(get_library_folder() / "config")
-            drawing_task.found.connect(self._config_found)
+            self.prefs: dict[str, PreferenceInfo] = {}
+            drawing_task = DrawPreferencesTask(get_library_folder() / "config")
+            drawing_task.found.connect(self._pref_found)
             drawing_task.finished.connect(self.cfg_collection_finished)
             self.task_queue.append(drawing_task)
 
@@ -141,10 +142,10 @@ class LaunchingWindow(BaseWindow):
         self.date_range_combo.currentIndexChanged.connect(self.update_query_from_edits)
         self.date_range_combo.currentIndexChanged.connect(self.cancel_timer)
         if get_blender_preferences_management():
-            self.config_label = QLabel("Loading configs... ", self)
-            self.config_selection = QComboBox(self)
-            self.config_selection.addItem("Default")
-            self.config_selection.setEnabled(False)
+            self.preference_label = QLabel("Loading configs... ", self)
+            self.preference_selection = QComboBox(self)
+            self.preference_selection.addItem("Default")
+            self.preference_selection.setEnabled(False)
         self.error_preview = QLabel(self)
 
         if self.blendfile is not None:
@@ -174,8 +175,8 @@ class LaunchingWindow(BaseWindow):
         self.central_layout.addWidget(self.date_range_combo, 4, 1, 1, 2)
         self.central_layout.addWidget(self.error_preview, 5, 0, 1, 3)
         if get_blender_preferences_management():
-            self.central_layout.addWidget(self.config_label, 6, 0, 1, 1)
-            self.central_layout.addWidget(self.config_selection, 6, 1, 1, 2)
+            self.central_layout.addWidget(self.preference_label, 6, 0, 1, 1)
+            self.central_layout.addWidget(self.preference_selection, 6, 1, 1, 2)
         self.central_layout.addWidget(self.builds_list, 7, 0, 1, 3)
         self.central_layout.addWidget(self.timer_label, 8, 0, 1, 3)
         if self.save_current_query_button is not None:
@@ -267,15 +268,15 @@ class LaunchingWindow(BaseWindow):
             self.update_search()
             self.select_config(build)
 
-    @pyqtSlot(ConfigInfo)
-    def _config_found(self, config: ConfigInfo):
-        self.configs[config.name] = config
-        self.config_selection.addItem(config.name)
+    @pyqtSlot(PreferenceInfo)
+    def _pref_found(self, pref: PreferenceInfo):
+        self.prefs[pref.name] = pref
+        self.preference_selection.addItem(pref.name)
 
     @pyqtSlot()
     def cfg_collection_finished(self):
-        self.config_label.setText("Config selection: ")
-        self.config_selection.setEnabled(True)
+        self.preference_label.setText("Config selection: ")
+        self.preference_selection.setEnabled(True)
 
         if self.__search_finished:
             matches, builds = self.update_search()
@@ -288,10 +289,10 @@ class LaunchingWindow(BaseWindow):
     def select_config(self, build: BuildInfo):
         print(build)
         if get_blender_preferences_management():
-            if build.target_config is not None and build.target_config in self.configs:
-                self.config_selection.setCurrentText(build.target_config)
+            if build.target_preferences is not None and build.target_preferences in self.prefs:
+                self.preference_selection.setCurrentText(build.target_preferences)
             else:
-                self.config_selection.setCurrentIndex(0)
+                self.preference_selection.setCurrentIndex(0)
 
     @pyqtSlot(Path)
     def _build_found(self, pth: Path):
@@ -540,15 +541,15 @@ class LaunchingWindow(BaseWindow):
         # find an appropriate launch mode
         launch_mode = None
         if self.blendfile is not None:
-            launch_mode = LaunchWithBlendFile(self.blendfile)
+            launch_mode = LA.LaunchWithBlendFile(self.blendfile)
         if self.open_last:
-            launch_mode = LaunchOpenLast()
+            launch_mode = LA.LaunchOpenLast()
 
-        config_mode = DefaultConfig()
-        if self.config_selection.currentIndex() != 0:
-            config_mode = CustomConfig(self.configs[self.config_selection.currentText()])
+        pref_mode = LA.DefaultPreferences()
+        if self.preference_selection.currentIndex() != 0:
+            pref_mode = LA.CustomPreferences(self.prefs[self.preference_selection.currentText()])
 
-        launch_build(info=build, launch_mode=launch_mode, config_mode=config_mode)
+        launch_build(info=build, launch_mode=launch_mode, preference_mode=pref_mode)
 
         self.close()
         self.app.exit()

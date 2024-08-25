@@ -17,7 +17,7 @@ from widgets.elided_text_label import ElidedTextLabel
 from windows.dialog_window import DialogWindow
 
 if TYPE_CHECKING:
-    from modules.config_info import ConfigInfo
+    from modules.prefs_info import PreferenceInfo
     from widgets.base_list_widget import BaseListWidget
     from windows.main_window import BlenderLauncher
 
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 class PreferenceWidget(BaseBuildWidget):
     deleted = pyqtSignal()
 
-    def __init__(self, info: ConfigInfo, list_widget: BaseListWidget, parent: BlenderLauncher):
+    def __init__(self, info: PreferenceInfo, list_widget: BaseListWidget, parent: BlenderLauncher):
         super().__init__(parent)
         self.parent: BlenderLauncher
         self.list_widget = list_widget

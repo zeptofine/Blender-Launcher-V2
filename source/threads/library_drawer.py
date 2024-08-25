@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from modules._platform import get_platform
-from modules.config_info import ConfigInfo, read_config
+from modules.prefs_info import PreferenceInfo, read_prefs
 from modules.settings import get_library_folder
 from modules.task import Task
 from PyQt5.QtCore import pyqtSignal
@@ -68,21 +68,21 @@ class DrawLibraryTask(Task):
         return f"Draw libraries {self.folders}"
 
 
-def get_configs(folder: Path) -> Iterable[ConfigInfo]:
+def get_prefs(folder: Path) -> Iterable[PreferenceInfo]:
     for subfolder in folder.iterdir():
         if not subfolder.is_dir():
             continue
 
-        yield read_config(subfolder)
+        yield read_prefs(subfolder)
 
 
 @dataclass(frozen=True)
-class DrawConfigsTask(Task):
+class DrawPreferencesTask(Task):
     folder: Path
-    found = pyqtSignal(ConfigInfo)
+    found = pyqtSignal(PreferenceInfo)
     finished = pyqtSignal()
 
     def run(self):
-        for c in get_configs(self.folder):
+        for c in get_prefs(self.folder):
             self.found.emit(c)
         self.finished.emit()

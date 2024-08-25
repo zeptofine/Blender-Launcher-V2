@@ -22,7 +22,7 @@ from PyQt5.QtCore import pyqtSignal
 from semver import Version
 
 if TYPE_CHECKING:
-    from modules.config_info import ConfigInfo
+    from modules.prefs_info import PreferenceInfo
 
 logger = logging.getLogger()
 
@@ -122,7 +122,7 @@ class BuildInfo:
     custom_name: str = ""
     is_favorite: bool = False
     custom_executable: str | None = None
-    target_config: str | None = None
+    target_preferences: str | None = None
 
     def __post_init__(self):
         if self.branch == "stable" and self.subversion.startswith(self.lts_tags):
@@ -217,7 +217,7 @@ class BuildInfo:
             blinfo["custom_name"],
             blinfo["is_favorite"],
             blinfo.get("custom_executable"),
-            blinfo.get("target_config"),
+            blinfo.get("target_preferences"),
         )
 
     def to_dict(self):
@@ -232,7 +232,7 @@ class BuildInfo:
                     "custom_name": self.custom_name,
                     "is_favorite": self.is_favorite,
                     "custom_executable": self.custom_executable,
-                    "target_config": self.target_config,
+                    "target_preferences": self.target_preferences,
                 }
             ],
         }
@@ -434,32 +434,32 @@ class ReadBuildTask(Task):
         return f"Read build at {self.path}"
 
 
-class LaunchMode: ...
+class LaunchArgs:
+    class LaunchMode: ...
+
+    @dataclass(frozen=True)
+    class LaunchWithBlendFile(LaunchMode):
+        blendfile: Path
+
+    class LaunchOpenLast(LaunchMode): ...
+
+    class PrefsMode: ...
+
+    class DefaultPreferences(PrefsMode): ...
+
+    default_preferences = DefaultPreferences()
+
+    @dataclass(frozen=True)
+    class CustomPreferences(PrefsMode):
+        info: PreferenceInfo
 
 
-@dataclass(frozen=True)
-class LaunchWithBlendFile(LaunchMode):
-    blendfile: Path
-
-
-class LaunchOpenLast(LaunchMode): ...
-
-
-class ConfigMode: ...
-
-
-class DefaultConfig(ConfigMode): ...
-
-
-default_config = DefaultConfig()
-
-
-@dataclass(frozen=True)
-class CustomConfig(ConfigMode):
-    info: ConfigInfo
-
-
-def get_args(info: BuildInfo, exe=None, launch_mode: LaunchMode | None = None, linux_nohup=True) -> list[str] | str:
+def get_args(
+    info: BuildInfo,
+    exe=None,
+    launch_mode: LaunchArgs.LaunchMode | None = None,
+    linux_nohup=True,
+) -> list[str] | str:
     platform = get_platform()
     library_folder = get_library_folder()
     blender_args = get_blender_startup_arguments()
@@ -509,12 +509,12 @@ def get_args(info: BuildInfo, exe=None, launch_mode: LaunchMode | None = None, l
         args = f"open -W -n {b3d_exe.as_posix()} --args"
 
     if launch_mode is not None:
-        if isinstance(launch_mode, LaunchWithBlendFile):
+        if isinstance(launch_mode, LaunchArgs.LaunchWithBlendFile):
             if isinstance(args, list):
                 args.append(launch_mode.blendfile.as_posix())
             else:
                 args += f' "{launch_mode.blendfile.as_posix()}"'
-        elif isinstance(launch_mode, LaunchOpenLast):
+        elif isinstance(launch_mode, LaunchArgs.LaunchOpenLast):
             if isinstance(args, list):
                 args.append("--open-last")
             else:
@@ -526,14 +526,14 @@ def get_args(info: BuildInfo, exe=None, launch_mode: LaunchMode | None = None, l
 def launch_build(
     info: BuildInfo,
     exe=None,
-    launch_mode: LaunchMode | None = None,
-    config_mode: ConfigMode = default_config,
+    launch_mode: LaunchArgs.LaunchMode | None = None,
+    preference_mode: LaunchArgs.PrefsMode = LaunchArgs.default_preferences,
 ):
     args = get_args(info, exe, launch_mode)
 
     env = None
-    if isinstance(config_mode, CustomConfig):
-        env = config_mode.info.get_env(info.semversion)
+    if isinstance(preference_mode, LaunchArgs.CustomPreferences):
+        env = preference_mode.info.get_env(info.semversion)
 
     logger.debug(f"Running build {info}")
     logger.debug(f"With args {args!s}")

@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from modules.config_info import ConfigInfo, config_path_name
+from modules.prefs_info import PreferenceInfo, pref_path_name
 from modules.settings import blender_minimum_versions, get_library_folder
 from modules.tasks import TaskQueue
 from PyQt5 import QtCore
@@ -28,7 +28,7 @@ class PreferenceFactoryState(Enum):
 
 
 class PreferenceFactoryWidget(BaseBuildWidget):
-    config_created = pyqtSignal(ConfigInfo)
+    preference_created = pyqtSignal(PreferenceInfo)
 
     def __init__(self, parent, list_widget, task_queue: TaskQueue):
         super().__init__(parent=parent)
@@ -37,7 +37,7 @@ class PreferenceFactoryWidget(BaseBuildWidget):
 
         self.list_widget = list_widget
         self.task_queue = task_queue
-        self.existing_configs: list[str] = []  # Used to check if the name is already taken
+        self.existing_preferences: list[str] = []  # Used to check if the name is already taken
 
         # This is ugly. I will rework the version listing later to have something dynamic instead of a static list.
         self.blender_versions = [version for version in blender_minimum_versions.keys() if version != "None"]
@@ -59,7 +59,7 @@ class PreferenceFactoryWidget(BaseBuildWidget):
         self.creation_button.pressed.connect(self.start_creation)
         # self.creation_button.setFixedHeight(60)
 
-        self.name_text_label = QLabel("Config name", self)
+        self.name_text_label = QLabel("Preferences name", self)
         self.name_text_label.setFont(self.parent.font_8)
         self.name_text_label.setContentsMargins(2, 0, 0, 0)
         self.name_text_edit = QLineEdit(self)
@@ -138,18 +138,18 @@ class PreferenceFactoryWidget(BaseBuildWidget):
             self.confirm_button.show()
             self.cancel_button.show()
 
-    def update_existing_configs(self, existing: list[str]):
-        self.existing_configs = existing
+    def update_existing_prefs(self, existing: list[str]):
+        self.existing_preferences = existing
 
     def start_creation(self):
         self.update_state(PreferenceFactoryState.CREATING)
 
     def text_changed(self):
         if s := self.name_text_edit.text().strip():
-            if s in self.existing_configs:
+            if s in self.existing_preferences:
                 self.name_text_label.setText("Name is already taken!")
             else:
-                self.name_text_label.setText("Config name")
+                self.name_text_label.setText("Preferences name")
             self.confirm_button.setEnabled(True)
         else:
             self.confirm_button.setEnabled(False)
@@ -167,16 +167,21 @@ class PreferenceFactoryWidget(BaseBuildWidget):
             v = self.custom_target_version_dial.value()
 
         major = int(v)
-        minor = round(v * 100) % 100
+        if major <= 2:
+            # 2.93, 2.79, etc.
+            minor = round(v * 100) % 100
+        else:
+            # 3.0, 4.1, etc.
+            minor = round(v * 10) % 100
 
         target_version = Version(major, minor, 0)
-        config_name = config_path_name(name)
+        pref_name = pref_path_name(name)
 
-        info = ConfigInfo(get_library_folder() / "config" / config_name, target_version, name)
+        info = PreferenceInfo(get_library_folder() / "config" / pref_name, target_version, name)
         # ? Do we need to move this to a task? This should be very fast anyways
         info.write()  # Write the file to disk
 
-        self.config_created.emit(info)
+        self.preference_created.emit(info)
         self.update_state(PreferenceFactoryState.READY)
 
     @pyqtSlot()

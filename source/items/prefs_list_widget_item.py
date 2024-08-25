@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from widgets.preference_widget import PreferenceWidget
 
 
-class ConfigListWidgetItem(QListWidgetItem):
+class PrefsListWidgetItem(QListWidgetItem):
     def __init__(self, has_info=True):
         super().__init__()
         self.has_info = has_info
