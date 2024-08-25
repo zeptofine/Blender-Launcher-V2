@@ -4,6 +4,7 @@ import contextlib
 import json
 import logging
 import re
+import base64
 from datetime import datetime, timezone
 from itertools import chain
 from pathlib import Path
@@ -43,7 +44,7 @@ def get_release_tag(connection_manager: ConnectionManager) -> str | None:
         latest_tag = get_tag(connection_manager, url)
 
     logger.info(f"Latest release tag: {latest_tag}")
-    
+
     return latest_tag
 
 
@@ -106,6 +107,30 @@ def get_tag(
         return tag
 
 
+def get_bl_api_data(connection_manager: ConnectionManager) -> str | None:
+    url = "https://api.github.com/repos/Victor-IX/Blender-Launcher-V2/contents/api/blender_launcher_api.json"
+    r = connection_manager.request("GET", url)
+
+    if r is None:
+        return None
+
+    try:
+        data = json.loads(r.data)
+    except json.JSONDecodeError as e:
+        logger.error(f"Failed to parse pre-release tag JSON data: {e}")
+        return None
+
+    file_content = data["content"]
+    file_content_encoding = data.get("encoding")
+
+    if file_content_encoding == "base64":
+        file_content = base64.b64decode(file_content).decode()
+        logger.info(f"Blender Launcher API data have been loaded successfully")
+    else:
+        file_content = None
+        logger.error(f"Failed to load Blender Launcher API data")
+
+
 class Scraper(QThread):
     links = pyqtSignal(BuildInfo)
     new_bl_version = pyqtSignal(str)
@@ -150,15 +175,24 @@ class Scraper(QThread):
         self.scrape_automated = get_scrape_automated_builds()
 
     def run(self):
+        self.get_bl_api_data_manager()
         self.get_download_links()
-        self.get_release_tag()
+        self.get_release_tag_manager()
 
-    def get_release_tag(self):
+    def get_release_tag_manager(self):
         assert self.manager.manager is not None
         latest_tag = get_release_tag(self.manager)
 
         if latest_tag is not None:
             self.new_bl_version.emit(latest_tag)
+        self.manager.manager.clear()
+
+    def get_bl_api_data_manager(self):
+        assert self.manager.manager is not None
+        bl_api_data = get_bl_api_data(self.manager)
+
+        if bl_api_data is not None:
+            self.new_bl_version.emit(bl_api_data)
         self.manager.manager.clear()
 
     def get_download_links(self):
