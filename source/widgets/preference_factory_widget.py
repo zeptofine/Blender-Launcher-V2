@@ -2,24 +2,24 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 from modules.config_info import ConfigInfo, config_path_name
-from modules.settings import get_library_folder, blender_minimum_versions
+from modules.settings import blender_minimum_versions, get_library_folder
 from modules.tasks import TaskQueue
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import (
+    QComboBox,
     QDoubleSpinBox,
     QGridLayout,
     QLabel,
     QLineEdit,
     QPushButton,
-    QComboBox,
 )
 from semver import Version
 from widgets.base_build_widget import BaseBuildWidget
 from windows.dialog_window import DialogWindow
 
 if TYPE_CHECKING:
-    from ..windows.main_window import BlenderLauncher
+    from windows.main_window import BlenderLauncher
 
 
 class PreferenceFactoryState(Enum):
@@ -71,11 +71,11 @@ class PreferenceFactoryWidget(BaseBuildWidget):
         self.target_version_dropdown = QComboBox()
         self.target_version_dropdown.addItems(self.blender_versions)
         self.target_version_dropdown.setFixedWidth(85)
-        self.target_version_dropdown.currentIndexChanged.connect(self.update_state)
+        self.target_version_dropdown.currentIndexChanged.connect(lambda _: self.update_state(PreferenceFactoryState.CREATING))
 
-        self.custom_target_vesrion_label = QLabel("custom")
-        self.custom_target_vesrion_label.setContentsMargins(2, 0, 0, 0)
-        self.custom_target_vesrion_label.setFont(self.parent.font_8)
+        self.custom_target_version_label = QLabel("custom")
+        self.custom_target_version_label.setContentsMargins(2, 0, 0, 0)
+        self.custom_target_version_label.setFont(self.parent.font_8)
         self.custom_target_version_dial = QDoubleSpinBox()
         self.custom_target_version_dial.setSingleStep(0.1)
         self.custom_target_version_dial.setDecimals(1)
@@ -98,22 +98,23 @@ class PreferenceFactoryWidget(BaseBuildWidget):
         self.layout.addWidget(self.target_version_label, 0, 2, 1, 1)
         self.layout.addWidget(self.target_version_dropdown, 1, 2, 1, 1)
 
-        self.layout.addWidget(self.custom_target_vesrion_label, 0, 3, 1, 1)
+        self.layout.addWidget(self.custom_target_version_label, 0, 3, 1, 1)
         self.layout.addWidget(self.custom_target_version_dial, 1, 3, 1, 1)
         self.layout.addWidget(self.confirm_button, 0, 4, 2, 1)
         self.layout.addWidget(self.cancel_button, 0, 5, 2, 1)
 
         self.creation_button.setCursor(Qt.CursorShape.PointingHandCursor)
 
+    @pyqtSlot(PreferenceFactoryState)
     def update_state(self, state: PreferenceFactoryState):
         self.state = state
         self.selected_version = self.target_version_dropdown.currentText()
 
-        if self.selected_version == "Custom":
-            self.custom_target_vesrion_label.show()
+        if self.selected_version == "Custom" and state == PreferenceFactoryState.CREATING:
+            self.custom_target_version_label.show()
             self.custom_target_version_dial.show()
         else:
-            self.custom_target_vesrion_label.hide()
+            self.custom_target_version_label.hide()
             self.custom_target_version_dial.hide()
             self.custom_target_version_dial.setValue(4.2)
 
