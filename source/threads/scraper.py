@@ -34,69 +34,76 @@ if TYPE_CHECKING:
 logger = logging.getLogger()
 
 
-def get_latest_tag(
+def get_release_tag(connection_manager: ConnectionManager) -> str | None:
+    if get_use_pre_release_builds():
+        url = "https://api.github.com/repos/Victor-IX/Blender-Launcher-V2/releases"
+        latest_tag = get_tag(connection_manager, url, pre_release=True)
+    else:
+        url = "https://github.com/Victor-IX/Blender-Launcher-V2/releases/latest"
+        latest_tag = get_tag(connection_manager, url)
+
+    logger.info(f"Latest release tag: {latest_tag}")
+    
+    return latest_tag
+
+
+def get_tag(
     connection_manager: ConnectionManager,
-    url,
+    url: str,
+    pre_release=False,
 ) -> str | None:
     r = connection_manager.request("GET", url)
 
     if r is None:
         return None
 
-    url = r.geturl()
-    tag = url.rsplit("/", 1)[-1]
+    if pre_release:
+        try:
+            parsed_data = json.loads(r.data)
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse pre-release tag JSON data: {e}")
+            return None
 
-    r.release_conn()
-    r.close()
+        platform = get_platform()
 
-    return tag
+        if platform.lower() == "linux":
+            for key in (
+                distro.id().title(),
+                distro.like().title(),
+                distro.id(),
+                distro.like(),
+            ):
+                if "ubuntu" in key.lower():
+                    platform = "Ubuntu"
+                    break
 
+        platform_valid_tags = (
+            release["tag_name"]
+            for release in parsed_data
+            for asset in release["assets"]
+            if asset["name"].endswith(".zip") and platform.lower() in asset["name"].lower()
+        )
+        pre_release_tags = (release.lstrip("v") for release in platform_valid_tags)
 
-def get_latest_pre_release_tag(
-    connection_manager: ConnectionManager,
-    url,
-) -> str | None:
-    r = connection_manager.request("GET", url)
+        valid_pre_release_tags = [tag for tag in pre_release_tags if Version.is_valid(tag)]
 
-    if r is None:
+        if valid_pre_release_tags:
+            tag = max(valid_pre_release_tags, key=Version.parse)
+            return f"v{tag}"
+
+        r.release_conn()
+        r.close()
+
         return None
 
-    try:
-        parsed_data = json.loads(r.data)
-    except json.JSONDecodeError:
-        return None
+    else:
+        url = r.geturl()
+        tag = url.rsplit("/", 1)[-1]
 
-    platform = get_platform()
+        r.release_conn()
+        r.close()
 
-    if platform.lower() == "linux":
-        for key in (
-            distro.id().title(),
-            distro.like().title(),
-            distro.id(),
-            distro.like(),
-        ):
-            if "ubuntu" in key.lower():
-                platform = "Ubuntu"
-                break
-
-    platform_valid_tags = (
-        release["tag_name"]
-        for release in parsed_data
-        for asset in release["assets"]
-        if asset["name"].endswith(".zip") and platform.lower() in asset["name"].lower()
-    )
-    pre_release_tags = (release.lstrip("v") for release in platform_valid_tags)
-
-    valid_pre_release_tags = [tag for tag in pre_release_tags if Version.is_valid(tag)]
-
-    if valid_pre_release_tags:
-        tag = max(valid_pre_release_tags, key=Version.parse)
-        return f"v{tag}"
-
-    r.release_conn()
-    r.close()
-
-    return None
+        return tag
 
 
 class Scraper(QThread):
@@ -144,14 +151,11 @@ class Scraper(QThread):
 
     def run(self):
         self.get_download_links()
+        self.get_release_tag()
 
+    def get_release_tag(self):
         assert self.manager.manager is not None
-        if get_use_pre_release_builds():
-            url = "https://api.github.com/repos/Victor-IX/Blender-Launcher-V2/releases"
-            latest_tag = get_latest_pre_release_tag(self.manager, url)
-        else:
-            url = "https://github.com/Victor-IX/Blender-Launcher-V2/releases/latest"
-            latest_tag = get_latest_tag(self.manager, url)
+        latest_tag = get_release_tag(self.manager)
 
         if latest_tag is not None:
             self.new_bl_version.emit(latest_tag)
@@ -325,9 +329,7 @@ class Scraper(QThread):
         if not any(releases):
             logger.info("Failed to gather stable releases")
             logger.info(content)
-            self.stable_error.emit(
-                "No releases were scraped from the site!<br>check -debug logs for more details."
-            )
+            self.stable_error.emit("No releases were scraped from the site!<br>check -debug logs for more details.")
             return
 
         # Convert string to Verison
