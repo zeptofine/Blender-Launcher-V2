@@ -2,7 +2,7 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 from modules.config_info import ConfigInfo, config_path_name
-from modules.settings import get_library_folder
+from modules.settings import get_library_folder, blender_minimum_versions
 from modules.tasks import TaskQueue
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
@@ -12,6 +12,7 @@ from PyQt5.QtWidgets import (
     QLabel,
     QLineEdit,
     QPushButton,
+    QComboBox,
 )
 from semver import Version
 from widgets.base_build_widget import BaseBuildWidget
@@ -38,6 +39,10 @@ class PreferenceFactoryWidget(BaseBuildWidget):
         self.task_queue = task_queue
         self.existing_configs: list[str] = []  # Used to check if the name is already taken
 
+        # This is ugly. I will rework the version listing later to have something dynamic instead of a static list.
+        self.blender_versions = [version for version in blender_minimum_versions.keys() if version != "None"]
+        self.blender_versions.append("Custom")
+
         # box should highlight when dragged over
         self.layout: QGridLayout = QGridLayout()
         self.layout.setContentsMargins(2, 2, 0, 2)
@@ -63,11 +68,18 @@ class PreferenceFactoryWidget(BaseBuildWidget):
         self.target_version_label = QLabel("target")
         self.target_version_label.setContentsMargins(2, 0, 0, 0)
         self.target_version_label.setFont(self.parent.font_8)
-        self.target_version_dial = QDoubleSpinBox(self)
-        self.target_version_dial.setFixedWidth(85)
-        self.target_version_dial.setMinimum(1.0)
-        self.target_version_dial.setDecimals(1)
-        self.target_version_dial.setSingleStep(0.1)
+        self.target_version_dropdown = QComboBox()
+        self.target_version_dropdown.addItems(self.blender_versions)
+        self.target_version_dropdown.setFixedWidth(85)
+        self.target_version_dropdown.currentIndexChanged.connect(self.update_state)
+
+        self.custom_target_vesrion_label = QLabel("custom")
+        self.custom_target_vesrion_label.setContentsMargins(2, 0, 0, 0)
+        self.custom_target_vesrion_label.setFont(self.parent.font_8)
+        self.custom_target_version_dial = QDoubleSpinBox()
+        self.custom_target_version_dial.setSingleStep(0.1)
+        self.custom_target_version_dial.setDecimals(1)
+        self.custom_target_version_dial.setFixedWidth(85)
 
         self.confirm_button = QPushButton("Confirm", self)
         self.confirm_button.setFixedWidth(85)
@@ -84,22 +96,35 @@ class PreferenceFactoryWidget(BaseBuildWidget):
         self.layout.addWidget(self.name_text_label, 0, 1, 1, 1)
         self.layout.addWidget(self.name_text_edit, 1, 1, 1, 1)
         self.layout.addWidget(self.target_version_label, 0, 2, 1, 1)
-        self.layout.addWidget(self.target_version_dial, 1, 2, 1, 1)
-        self.layout.addWidget(self.confirm_button, 0, 3, 2, 1)
-        self.layout.addWidget(self.cancel_button, 0, 4, 2, 1)
+        self.layout.addWidget(self.target_version_dropdown, 1, 2, 1, 1)
+
+        self.layout.addWidget(self.custom_target_vesrion_label, 0, 3, 1, 1)
+        self.layout.addWidget(self.custom_target_version_dial, 1, 3, 1, 1)
+        self.layout.addWidget(self.confirm_button, 0, 4, 2, 1)
+        self.layout.addWidget(self.cancel_button, 0, 5, 2, 1)
 
         self.creation_button.setCursor(Qt.CursorShape.PointingHandCursor)
 
     def update_state(self, state: PreferenceFactoryState):
         self.state = state
+        self.selected_version = self.target_version_dropdown.currentText()
+
+        if self.selected_version == "Custom":
+            self.custom_target_vesrion_label.show()
+            self.custom_target_version_dial.show()
+        else:
+            self.custom_target_vesrion_label.hide()
+            self.custom_target_version_dial.hide()
+            self.custom_target_version_dial.setValue(4.2)
+
         if state == PreferenceFactoryState.READY:
             self.creation_button.show()
             self.name_text_label.hide()
             self.name_text_edit.hide()
             self.name_text_edit.clear()
             self.target_version_label.hide()
-            self.target_version_dial.hide()
-            self.target_version_dial.setValue(4.02)
+            self.target_version_dropdown.hide()
+
             self.confirm_button.hide()
             self.cancel_button.hide()
         elif state == PreferenceFactoryState.CREATING:
@@ -107,7 +132,8 @@ class PreferenceFactoryWidget(BaseBuildWidget):
             self.name_text_label.show()
             self.name_text_edit.show()
             self.target_version_label.show()
-            self.target_version_dial.show()
+            self.target_version_dropdown.show()
+
             self.confirm_button.show()
             self.cancel_button.show()
 
@@ -132,7 +158,12 @@ class PreferenceFactoryWidget(BaseBuildWidget):
 
     def confirm(self):
         name = self.name_text_edit.text().strip()
-        v = self.target_version_dial.value()
+        version = self.target_version_dropdown.currentText()
+
+        if version != "Custom":
+            v = float(version)
+        else:
+            v = self.custom_target_version_dial.value()
 
         major = int(v)
         minor = round(v * 100) % 100
