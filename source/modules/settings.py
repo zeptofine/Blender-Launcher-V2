@@ -4,13 +4,13 @@ import shutil
 import sys
 import uuid
 from datetime import datetime, timezone
-from functools import cache
 from pathlib import Path
+from semver import Version
+from PyQt5.QtCore import QSettings
 
 from modules._platform import get_config_file, get_config_path, get_cwd, get_platform, local_config, user_config
+from modules.bl_api_manager import dropdown_blender_version
 from modules.version_matcher import VersionSearchQuery
-from PyQt5.QtCore import QSettings
-from semver import Version
 
 EPOCH = datetime.fromtimestamp(0, tz=timezone.utc)
 ISO_EPOCH = EPOCH.isoformat()
@@ -60,22 +60,6 @@ proxy_types = {
     "HTTPS": 2,
     "SOCKS4": 3,
     "SOCKS5": 4,
-}
-
-
-blender_minimum_versions = {
-    "4.0": 0,
-    "3.6": 1,
-    "3.5": 2,
-    "3.4": 3,
-    "3.3": 4,
-    "3.2": 5,
-    "3.1": 6,
-    "3.0": 7,
-    "2.90": 8,
-    "2.80": 9,
-    "2.79": 10,
-    "None": 11,
 }
 
 
@@ -449,13 +433,13 @@ def get_minimum_blender_stable_version():
     value = get_settings().value("minimum_blender_stable_version")
 
     if value is not None and "." in value:
-        return blender_minimum_versions.get(value, 7)
+        return dropdown_blender_version().get(value, 7)
 
     return get_settings().value("minimum_blender_stable_version", defaultValue=7, type=int)
 
 
 def set_minimum_blender_stable_version(blender_minimum_version):
-    get_settings().setValue("minimum_blender_stable_version", blender_minimum_versions[blender_minimum_version])
+    get_settings().setValue("minimum_blender_stable_version", dropdown_blender_version()[blender_minimum_version])
 
 
 def get_scrape_stable_builds() -> bool:

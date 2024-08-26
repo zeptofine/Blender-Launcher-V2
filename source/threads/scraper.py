@@ -16,9 +16,8 @@ from bs4 import BeautifulSoup, SoupStrainer
 from modules._platform import get_architecture, get_platform, reset_locale, set_locale, stable_cache_path
 from modules.build_info import BuildInfo, parse_blender_ver
 from modules.scraper_cache import StableCache
-from modules.bl_api_manager import update_local_api_files, read_lts_blender_version
+from modules.bl_api_manager import update_local_api_files, lts_blender_version, dropdown_blender_version
 from modules.settings import (
-    blender_minimum_versions,
     get_minimum_blender_stable_version,
     get_scrape_automated_builds,
     get_scrape_stable_builds,
@@ -201,7 +200,8 @@ class Scraper(QThread):
 
         if bl_api_data is not None:
             update_local_api_files(bl_api_data)
-            read_lts_blender_version()
+            lts_blender_version()
+            dropdown_blender_version()
 
         self.manager.manager.clear()
 
@@ -378,7 +378,7 @@ class Scraper(QThread):
 
         # Convert string to Verison
         minimum_version_index = get_minimum_blender_stable_version()
-        version_at_index = list(blender_minimum_versions.keys())[minimum_version_index]
+        version_at_index = list(dropdown_blender_version().keys())[minimum_version_index]
         if version_at_index == "None":
             minimum_smver_version = Version(0, 0, 0)
         else:

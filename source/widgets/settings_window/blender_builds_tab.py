@@ -1,5 +1,4 @@
 from modules.settings import (
-    blender_minimum_versions,
     favorite_pages,
     get_bash_arguments,
     get_blender_startup_arguments,
@@ -35,6 +34,7 @@ from modules.settings import (
     set_show_experimental_archive_builds,
     set_show_patch_archive_builds,
 )
+from modules.bl_api_manager import dropdown_blender_version
 from PyQt5 import QtGui
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
@@ -60,7 +60,7 @@ class BlenderBuildsTabWidget(SettingsFormWidget):
 
         # Minimum stable blender download version (this is mainly for cleanliness and speed)
         self.MinStableBlenderVer = QComboBox()
-        self.MinStableBlenderVer.addItems(blender_minimum_versions.keys())
+        self.MinStableBlenderVer.addItems(dropdown_blender_version().keys())
         self.MinStableBlenderVer.setCurrentIndex(get_minimum_blender_stable_version())
         self.MinStableBlenderVer.activated[str].connect(self.change_minimum_blender_stable_version)
 
