@@ -1,7 +1,8 @@
 import json
 import logging
-from pathlib import Path
 from functools import lru_cache
+from pathlib import Path
+
 from modules._platform import get_config_path, get_cwd
 
 logger = logging.getLogger()
@@ -20,21 +21,22 @@ def update_local_api_files(data):
         with open(api_path, "w") as f:
             json.dump(data, f, indent=4)
             logger.info(f"Updated API file in {api_path}")
-        read_blender_version_list.cache_clear()
-    except IOError as e:
+        read_bl_api.cache_clear()
+    except OSError as e:
         logger.error(f"Failed to write API file: {e}")
 
-
 @lru_cache(maxsize=1)
-def read_blender_version_list():
+def read_bl_api()-> dict:
     api = api_path if api_path.exists() else internal_api_path
     if api == internal_api_path:
         logger.error(f"API file not found in {api_path}. Using internal API file.")
 
-    with open(api, "r") as f:
-        data = json.load(f)
+    with open(api) as f:
+        return json.load(f)
 
-    return data.get("blender_versions", {})
+
+def read_blender_version_list() -> dict[str, str]:
+    return read_bl_api().get("blender_versions", {})
 
 
 def lts_blender_version():
