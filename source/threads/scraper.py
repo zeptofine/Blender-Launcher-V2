@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+import base64
 import contextlib
 import json
 import logging
 import re
-import base64
 from datetime import datetime, timezone
 from itertools import chain
 from pathlib import Path
@@ -14,9 +14,9 @@ from urllib.parse import urljoin
 import distro
 from bs4 import BeautifulSoup, SoupStrainer
 from modules._platform import get_architecture, get_platform, reset_locale, set_locale, stable_cache_path
+from modules.bl_api_manager import dropdown_blender_version, lts_blender_version, update_local_api_files
 from modules.build_info import BuildInfo, parse_blender_ver
 from modules.scraper_cache import StableCache
-from modules.bl_api_manager import update_local_api_files, lts_blender_version, dropdown_blender_version
 from modules.settings import (
     get_minimum_blender_stable_version,
     get_scrape_automated_builds,
@@ -377,12 +377,11 @@ class Scraper(QThread):
             return
 
         # Convert string to Verison
-        minimum_version_index = get_minimum_blender_stable_version()
-        version_at_index = list(dropdown_blender_version().keys())[minimum_version_index]
-        if version_at_index == "None":
+        minimum_version_str = get_minimum_blender_stable_version()
+        if minimum_version_str == "None":
             minimum_smver_version = Version(0, 0, 0)
         else:
-            major, minor = version_at_index.split(".")
+            major, minor = minimum_version_str.split(".")
             minimum_smver_version = Version(int(major), int(minor), 0)
 
         cache_modified = False

@@ -43,5 +43,14 @@ def lts_blender_version():
     return tuple(version for version, lts in read_blender_version_list().items() if lts == "LTS")
 
 
-def dropdown_blender_version():
+def dropdown_blender_version() -> dict[str, int]:
+    """Ex:
+
+    {
+        "4.0": 0,
+        "3.6": 1,
+        "3.5": 2,
+        "3.4": 3
+    }
+    """
     return {key: index for index, key in enumerate(read_blender_version_list().keys())}

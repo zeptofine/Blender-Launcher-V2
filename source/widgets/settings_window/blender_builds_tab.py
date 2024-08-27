@@ -1,3 +1,4 @@
+from modules.bl_api_manager import dropdown_blender_version
 from modules.settings import (
     favorite_pages,
     get_bash_arguments,
@@ -34,7 +35,6 @@ from modules.settings import (
     set_show_experimental_archive_builds,
     set_show_patch_archive_builds,
 )
-from modules.bl_api_manager import dropdown_blender_version
 from PyQt5 import QtGui
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
@@ -60,8 +60,13 @@ class BlenderBuildsTabWidget(SettingsFormWidget):
 
         # Minimum stable blender download version (this is mainly for cleanliness and speed)
         self.MinStableBlenderVer = QComboBox()
-        self.MinStableBlenderVer.addItems(dropdown_blender_version().keys())
-        self.MinStableBlenderVer.setCurrentIndex(get_minimum_blender_stable_version())
+        keys = list(dropdown_blender_version().keys())
+        if keys[-1] == "Custom": # this should always be the case, but just to be safe
+            keys.remove("Custom")
+
+        keys.append("None")
+        self.MinStableBlenderVer.addItems(keys)
+        self.MinStableBlenderVer.setCurrentText(get_minimum_blender_stable_version())
         self.MinStableBlenderVer.activated[str].connect(self.change_minimum_blender_stable_version)
 
         # Whether to check for new builds based on a timer
@@ -202,8 +207,8 @@ class BlenderBuildsTabWidget(SettingsFormWidget):
     def change_mark_as_favorite(self, page):
         set_mark_as_favorite(page)
 
-    def change_minimum_blender_stable_version(self, proxy_type):
-        set_minimum_blender_stable_version(proxy_type)
+    def change_minimum_blender_stable_version(self, minimum):
+        set_minimum_blender_stable_version(minimum)
 
     def update_blender_startup_arguments(self):
         args = self.BlenderStartupArguments.text()

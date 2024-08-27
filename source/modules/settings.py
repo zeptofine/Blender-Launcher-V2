@@ -1,3 +1,4 @@
+from __future__ import annotations
 import contextlib
 import os
 import shutil
@@ -5,12 +6,12 @@ import sys
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from semver import Version
-from PyQt5.QtCore import QSettings
 
 from modules._platform import get_config_file, get_config_path, get_cwd, get_platform, local_config, user_config
 from modules.bl_api_manager import dropdown_blender_version
 from modules.version_matcher import VersionSearchQuery
+from PyQt5.QtCore import QSettings
+from semver import Version
 
 EPOCH = datetime.fromtimestamp(0, tz=timezone.utc)
 ISO_EPOCH = EPOCH.isoformat()
@@ -429,17 +430,23 @@ def set_check_for_new_builds_on_startup(b: bool):
     get_settings().setValue("buildcheck_on_startup", b)
 
 
-def get_minimum_blender_stable_version():
-    value = get_settings().value("minimum_blender_stable_version")
+def get_minimum_blender_stable_version() -> str:
+    value = get_settings().value("minimum_blender_stable_version", defaultValue="3.0", type=str)
+    # value can never be None
+    if value == "None":
+        return "3.0"
 
-    if value is not None and "." in value:
-        return dropdown_blender_version().get(value, 7)
+    # backwards compatibility for indexesq
+    # (This is not reccommended because it relies on the dropdown blender versions to be static)
+    with contextlib.suppress(ValueError, IndexError):
+        if "." not in value:
+            return list(dropdown_blender_version())[int(value)]
 
-    return get_settings().value("minimum_blender_stable_version", defaultValue=7, type=int)
+    return value
 
 
-def set_minimum_blender_stable_version(blender_minimum_version):
-    get_settings().setValue("minimum_blender_stable_version", dropdown_blender_version()[blender_minimum_version])
+def set_minimum_blender_stable_version(blender_minimum_version: str):
+    get_settings().setValue("minimum_blender_stable_version", blender_minimum_version)
 
 
 def get_scrape_stable_builds() -> bool:
