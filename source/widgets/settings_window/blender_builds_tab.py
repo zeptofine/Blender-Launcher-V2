@@ -232,12 +232,22 @@ class BlenderBuildsTabWidget(SettingsFormWidget):
         # Blender Startup Arguments
         self.BlenderStartupArguments = QLineEdit()
         self.BlenderStartupArguments.setText(str(get_blender_startup_arguments()))
+        self.BlenderStartupArguments.setToolTip(
+            "Arguments to pass to when launching Blender (after the Blender executable i.e. [… <args>]\
+            \nDEFAULT: None\
+            \nExample: --background"
+        )
         self.BlenderStartupArguments.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
         self.BlenderStartupArguments.setCursorPosition(0)
         self.BlenderStartupArguments.editingFinished.connect(self.update_blender_startup_arguments)
         # Command Line Arguments
         self.BashArguments = QLineEdit()
         self.BashArguments.setText(str(get_bash_arguments()))
+        self.BashArguments.setToolTip(
+            "Instructions to pass to bash when launching Blender (before the Blender executable i.e. [<args> …])\
+            \nDEFAULT: None\
+            \nExample: env __NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia nohup"
+        )
         self.BashArguments.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
         self.BashArguments.setCursorPosition(0)
         self.BashArguments.editingFinished.connect(self.update_bash_arguments)
@@ -249,18 +259,10 @@ class BlenderBuildsTabWidget(SettingsFormWidget):
         if get_platform() == "Linux":
             self.launching_layout.addRow(QLabel("Bash Arguments:", self))
             self.launching_layout.addRow(self.BashArguments)
-            self.BashArguments.setToolTip(
-                "Instructions to pass to bash when launching Blender (before the Blender executable i.e. [<args> …])\
-                \nDEFAULT: None\
-                \nExample: env __NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia nohup"
-            )
+
         self.launching_layout.addRow(QLabel("Startup Arguments:", self))
         self.launching_layout.addRow(self.BlenderStartupArguments)
-        self.BlenderStartupArguments.setToolTip(
-            "Arguments to pass to when launching Blender (after the Blender executable i.e. [… <args>]\
-            \nDEFAULT: None\
-            \nExample: --background"
-        )
+
         self.launching_settings.setLayout(self.launching_layout)
 
         # Layout
