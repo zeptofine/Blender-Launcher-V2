@@ -124,7 +124,7 @@ class AppearanceTabWidget(SettingsFormWidget):
         self.DefaultLibraryPageComboBox.addItems(library_pages.keys())
         self.DefaultLibraryPageComboBox.setToolTip(
             "The default page to open in the Library tab\
-            \nDEFAULT: Stable Releases" 
+            \nDEFAULT: Stable Releases"
         )
         self.DefaultLibraryPageComboBox.setCurrentIndex(get_default_library_page())
         self.DefaultLibraryPageComboBox.activated[str].connect(self.change_default_library_page)

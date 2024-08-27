@@ -205,7 +205,7 @@ Actions that will be performed on newly added builds to Library tab right after 
 #### Bash Arguments
 
 !!! info
-    This only works on Windows.
+    This only works on Linux.
 
 :   Adds specific instructions as if Blender were launching from the command line (before the blender executable i.e. `[args …] blender`).
 

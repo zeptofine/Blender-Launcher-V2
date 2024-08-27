@@ -246,6 +246,7 @@ class BlenderBuildsTabWidget(SettingsFormWidget):
         self.launching_layout.addRow(self.EnableQuickLaunchKeySeq, self.QuickLaunchKeySeq)
         if get_platform() == "Windows":
             self.launching_layout.addRow(self.LaunchBlenderNoConsole)
+        if get_platform() == "Linux":
             self.launching_layout.addRow(QLabel("Bash Arguments:", self))
             self.launching_layout.addRow(self.BashArguments)
             self.BashArguments.setToolTip(
