@@ -84,13 +84,18 @@ class GeneralTabWidget(SettingsFormWidget):
             "Closing the app will minimise it to the system tray instead of closing it completely"
         )
         self.ShowTrayIconCheckBox.clicked.connect(self.toggle_show_tray_icon)
+        self.ShowTrayIconCheckBox.setToolTip(
+            "Closing the app will minimise it to the system tray instead of closing it completely\
+            \nDEFAULT: Off"
+        )
 
         # Worker thread count
         self.WorkerThreadCountBox = QLabel()
         self.WorkerThreadCountBox.setText("Worker Thread Count")
         self.WorkerThreadCount = QSpinBox()
         self.WorkerThreadCount.setToolTip(
-            "Determines how many IO operations can be done at once, ex. Downloading, deleting, and extracting files"
+            "Determines how many IO operations can be done at once, ex. Downloading, deleting, and extracting files\
+            \nDEFAULT: cpu_count * (3/4)"
         )
         self.WorkerThreadCount.editingFinished.connect(self.set_worker_thread_count)
         self.WorkerThreadCount.setMinimum(1)
@@ -113,6 +118,11 @@ class GeneralTabWidget(SettingsFormWidget):
         self.PreReleaseBuildsCheckBox.setText("Use Pre-release Builds")
         self.PreReleaseBuildsCheckBox.setChecked(get_use_pre_release_builds())
         self.PreReleaseBuildsCheckBox.clicked.connect(self.toggle_use_pre_release_builds)
+        self.PreReleaseBuildsCheckBox.setToolTip(
+            "While checking for a new version of Blender Launcher, check for pre-releases.\
+            \nWARNING: These builds are likely to have bugs! They are mainly used for testing new features.\
+            \nDEFAULT: Off"
+        )
 
         # Layout
         self.application_layout = QGridLayout()
@@ -176,7 +186,8 @@ class GeneralTabWidget(SettingsFormWidget):
 
         self.launch_timer_duration = QSpinBox()
         self.launch_timer_duration.setToolTip(
-            "Determines how much time you have while opening blendfiles to change the build you're launching"
+            "Determines how much time you have while opening blendfiles to change the build you're launching\
+            \nDEFAULT: 3s"
         )
         self.launch_timer_duration.setRange(-1, 120)
         self.launch_timer_duration.setValue(get_launch_timer_duration())
