@@ -50,6 +50,7 @@ class GeneralTabWidget(SettingsFormWidget):
         self.LibraryFolderLayoutLabel.setText("Library Folder:")
         self.LibraryFolderLineEdit = QLineEdit()
         self.LibraryFolderLineEdit.setText(str(get_actual_library_folder()))
+        self.LibraryFolderLineEdit.setToolTip("The folder where the app will store Blender builds.")
         self.LibraryFolderLineEdit.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
         self.LibraryFolderLineEdit.setReadOnly(True)
         self.LibraryFolderLineEdit.setCursorPosition(0)
@@ -66,12 +67,20 @@ class GeneralTabWidget(SettingsFormWidget):
         # Launch When System Starts
         self.LaunchWhenSystemStartsCheckBox = QCheckBox()
         self.LaunchWhenSystemStartsCheckBox.setText("Launch When System Starts")
+        self.LaunchWhenSystemStartsCheckBox.setToolTip(
+            "Start the app when the system starts.\
+            \nDEFAULT: Off"
+        )
         self.LaunchWhenSystemStartsCheckBox.setChecked(get_launch_when_system_starts())
         self.LaunchWhenSystemStartsCheckBox.clicked.connect(self.toggle_launch_when_system_starts)
 
         # Launch Minimized To Tray
         self.LaunchMinimizedToTrayCheckBox = QCheckBox()
         self.LaunchMinimizedToTrayCheckBox.setText("Launch Minimized To Tray")
+        self.LaunchMinimizedToTrayCheckBox.setToolTip(
+            "Start the app minimized to the system tray.\
+            \nDEFAULT: Off"
+        )
         self.LaunchMinimizedToTrayCheckBox.setChecked(get_launch_minimized_to_tray())
         self.LaunchMinimizedToTrayCheckBox.setEnabled(get_launch_when_system_starts())
         self.LaunchMinimizedToTrayCheckBox.clicked.connect(self.toggle_launch_minimized_to_tray)
@@ -80,9 +89,6 @@ class GeneralTabWidget(SettingsFormWidget):
         self.ShowTrayIconCheckBox = QCheckBox()
         self.ShowTrayIconCheckBox.setText("Minimise to tray")
         self.ShowTrayIconCheckBox.setChecked(get_show_tray_icon())
-        self.ShowTrayIconCheckBox.setToolTip(
-            "Closing the app will minimise it to the system tray instead of closing it completely"
-        )
         self.ShowTrayIconCheckBox.clicked.connect(self.toggle_show_tray_icon)
         self.ShowTrayIconCheckBox.setToolTip(
             "Closing the app will minimise it to the system tray instead of closing it completely\
@@ -137,7 +143,7 @@ class GeneralTabWidget(SettingsFormWidget):
         self.application_layout.addWidget(self.PreReleaseBuildsCheckBox, 6, 0, 1, 1)
         self.application_settings.setLayout(self.application_layout)
 
-        # Advence Options Settings
+        # Advance Options Settings
         self.advanced_settings = SettingsGroup("Advanced", parent=self)
 
         # Show Preference Menu
@@ -173,8 +179,15 @@ class GeneralTabWidget(SettingsFormWidget):
             self.register_file_association_button = QPushButton(
                 "Register File Association", parent=self.file_association_group
             )
+            self.register_file_association_button.setToolTip(
+                "Add Blender Launcher from the list of programs that can open .blend files"
+            )
+
             self.unregister_file_association_button = QPushButton(
                 "Unregister File Association", parent=self.file_association_group
+            )
+            self.unregister_file_association_button.setToolTip(
+                "Removes Blender Launcher from the list of programs that can open .blend files"
             )
             self.register_file_association_button.clicked.connect(register_windows_filetypes)
             self.register_file_association_button.clicked.connect(self.refresh_association_buttons)
