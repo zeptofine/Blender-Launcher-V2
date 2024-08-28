@@ -33,12 +33,20 @@ class ConnectionTabWidget(SettingsFormWidget):
         # Custom TLS certificates
         self.UseCustomCertificatesCheckBox = QCheckBox()
         self.UseCustomCertificatesCheckBox.setText("Use Custom TLS Certificates")
+        self.UseCustomCertificatesCheckBox.setToolTip(
+            "Use custom TLS certificates for the connection\
+            \nDEFAULT: False"
+        )
         self.UseCustomCertificatesCheckBox.clicked.connect(self.toggle_use_custom_tls_certificates)
         self.UseCustomCertificatesCheckBox.setChecked(get_use_custom_tls_certificates())
 
         # Proxy Type
         self.ProxyTypeComboBox = QComboBox()
         self.ProxyTypeComboBox.addItems(proxy_types.keys())
+        self.ProxyTypeComboBox.setToolTip(
+            "The type of proxy to use for the connection\
+            \nDEFAULT: None"
+        )
         self.ProxyTypeComboBox.setCurrentIndex(get_proxy_type())
         self.ProxyTypeComboBox.activated[str].connect(self.change_proxy_type)
 
@@ -46,6 +54,10 @@ class ConnectionTabWidget(SettingsFormWidget):
         # Host
         self.ProxyHostLineEdit = QLineEdit()
         self.ProxyHostLineEdit.setText(get_proxy_host())
+        self.ProxyHostLineEdit.setToolTip(
+            "The IP address of the proxy server\
+            \nDEFAULT: 255.255.255.255"
+        )
         self.ProxyHostLineEdit.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
 
         rx = QRegExp(
@@ -59,6 +71,10 @@ class ConnectionTabWidget(SettingsFormWidget):
         # Port
         self.ProxyPortLineEdit = QLineEdit()
         self.ProxyPortLineEdit.setText(get_proxy_port())
+        self.ProxyPortLineEdit.setToolTip(
+            "The port number of the proxy server\
+            \nDEFAULT: 9999"
+        )
         self.ProxyPortLineEdit.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
 
         rx = QRegExp(r"\d{2,5}")
@@ -71,12 +87,14 @@ class ConnectionTabWidget(SettingsFormWidget):
         # User
         self.ProxyUserLineEdit = QLineEdit()
         self.ProxyUserLineEdit.setText(get_proxy_user())
+        self.ProxyUserLineEdit.setToolTip("The username to authenticate with the proxy server")
         self.ProxyUserLineEdit.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
         self.ProxyUserLineEdit.editingFinished.connect(self.update_proxy_user)
 
         # Password
         self.ProxyPasswordLineEdit = QLineEdit()
         self.ProxyPasswordLineEdit.setText(get_proxy_password())
+        self.ProxyPasswordLineEdit.setToolTip("The password to authenticate with the proxy server")
         self.ProxyPasswordLineEdit.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
         self.ProxyPasswordLineEdit.setEchoMode(QLineEdit.Password)
         self.ProxyPasswordLineEdit.editingFinished.connect(self.update_proxy_password)
@@ -88,6 +106,11 @@ class ConnectionTabWidget(SettingsFormWidget):
         self.UserIDLabel = QLabel("User ID")
         self.UserIDLineEdit = QLineEdit()
         self.UserIDLineEdit.setText(get_user_id())
+        self.UserIDLineEdit.setToolTip(
+            "The user ID to authenticate with the Blender website\
+            \nDEFAULT: Random UUID\
+            \nFORMAT: 8-64 characters (a-z, A-Z, 0-9, -)"
+        )
 
         rx = QRegExp(r"^[a-zA-Z0-9-]{8,64}$")
 
