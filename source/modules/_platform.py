@@ -112,11 +112,12 @@ def get_environment():
 
     return env
 
+
 def overlay_environment(env: dict | None = None):
     e = get_environment()
     if env is not None:
         e.update(env)
-    
+
     return e
 
 
@@ -201,7 +202,7 @@ def get_cwd():
 
 
 @cache
-def get_config_path():
+def get_user_config_path():
     platform = get_platform()
 
     config_path = ""
@@ -218,7 +219,13 @@ def get_config_path():
 
     if not config_path:
         return get_cwd()
-    return os.path.join(config_path, "Blender Launcher")
+
+    return Path(config_path)
+
+
+@cache
+def get_config_path():
+    return get_user_config_path() / "Blender Launcher"
 
 
 @cache

@@ -5,11 +5,12 @@ import logging
 import os
 import re
 import subprocess
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from items.base_list_widget_item import BaseListWidgetItem
-from modules._platform import _call, get_platform
+from modules._platform import _call, get_platform, get_user_config_path
 from modules.build_info import (
     BuildInfo,
     ReadBuildTask,
@@ -250,9 +251,9 @@ class LibraryWidget(BaseBuildWidget):
         self.showFolderAction.setIcon(self.parent.icons.folder)
         self.showFolderAction.triggered.connect(self.show_folder)
 
-        self.showDefaultPreferencesFolderAction = QAction("Show Preferences Folder")
-        self.showDefaultPreferencesFolderAction.setIcon(self.parent.icons.folder)
-        self.showDefaultPreferencesFolderAction.triggered.connect(self.show_preferences_folder)
+        self.showPreferencesFolderAction = QAction("Show Preferences Folder")
+        self.showPreferencesFolderAction.setIcon(self.parent.icons.folder)
+        self.showPreferencesFolderAction.triggered.connect(lambda _: self.show_preferences_folder())
 
         self.createSymlinkAction = QAction("Create Symlink")
         self.createSymlinkAction.triggered.connect(self.create_symlink)
@@ -310,7 +311,7 @@ class LibraryWidget(BaseBuildWidget):
                 self.menu.addAction(self.showReleaseNotesAction)
 
         self.menu.addAction(self.showFolderAction)
-        self.menu.addAction(self.showDefaultPreferencesFolderAction)
+        self.menu.addAction(self.showPreferencesFolderAction)
         self.menu.addAction(self.editAction)
         self.menu.addAction(self.deleteAction)
 
@@ -789,34 +790,56 @@ class LibraryWidget(BaseBuildWidget):
 
         if platform == "Windows":
             os.startfile(folder.as_posix())
+        elif platform == "macOS":
+            subprocess.call(["open", folder.as_posix()])
         elif platform == "Linux":
             subprocess.call(["xdg-open", folder.as_posix()])
 
-    def show_preferences_folder(self):
-        platform = get_platform()
-        version = self.build_info.display_version
-        segments = version.split(".")
+    def get_default_preferences_folder(self) -> Path:
+        assert self.build_info is not None
+        version = self.build_info.semversion
+        v = f"{version.major}.{version.minor}"
+        config_path = get_user_config_path()
+        folder: Path | None = None
+        if sys.platform == "win32":
+            folder = config_path / "Blender Foundation" / "Blender" / v
+        elif sys.platform == "darwin":
+            folder = config_path / "Blender" / v
+        else:
+            folder = config_path / "blender" / v
 
-        if len(segments) >= 3:
-            version = ".".join(segments[:-1])
+        return folder
 
-        if "(" in version:
-            version = version.split("(")[0]
+    def get_custom_preferences_folder(self) -> Path | None:
+        assert self.build_info is not None
+        target = self.pref_target()
+        if target in self.available_prefs:
+            pinfo = self.available_prefs[target]
+            return pinfo.directory
+        return None
 
-        if platform == "Windows":
-            appdata_folder = os.getenv("APPDATA")
-            folder = os.path.join(appdata_folder, r"Blender Foundation\Blender", version)
-            print(folder)
-            if os.path.exists(folder):
-                os.startfile(folder)
+    @pyqtSlot(Path)
+    def show_preferences_folder(self, target: Path | None = None):
+        if (
+            get_blender_preferences_management() and target is None and (target := self.get_custom_preferences_folder()) is not None
+        ):  # check the custom preferences folder
+            self.show_preferences_folder(target)
+
+        if target is None:
+            target = self.get_default_preferences_folder()
+
+        if not target.exists() and (parent := target.parent).exists():
+            target = parent
+
+        if target.exists():
+            if sys.platform == "win32":
+                os.startfile(target)
+            elif sys.platform == "darwin":
+                subprocess.call(["open", target])
             else:
-                self.info_no_preferences_folder()
-        elif platform == "Linux":
-            folder = os.path.expanduser("~/.config/blender")
-            if os.path.exists(folder):
-                subprocess.call(["xdg-open", folder])
-            else:
-                self.info_no_preferences_folder()
+                subprocess.call(["xdg-open", target])
+        else:
+            self.info_no_preferences_folder()
 
     def list_widget_deleted(self):
         self.list_widget = None
