@@ -22,5 +22,6 @@ python -OO -m PyInstaller ^
 --add-binary="source\resources\icons\bl\bl_file.ico;files" ^
 --add-binary="source\resources\certificates\custom.pem;files" ^
 --add-data="source\resources\api\blender_launcher_api.json;files" ^
+--add-data="source\resources\api\stable_builds_api.json;files" ^
 --distpath="./dist/release" ^
 source\main.py

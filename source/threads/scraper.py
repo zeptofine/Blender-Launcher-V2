@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import contextlib
+from importlib.metadata import files
 import json
 import logging
 import re
@@ -107,18 +108,20 @@ def get_tag(
         return tag
 
 
-def get_bl_api_data(connection_manager: ConnectionManager) -> str | None:
-    url = "https://api.github.com/repos/Victor-IX/Blender-Launcher-V2/contents/source/resources/api/blender_launcher_api.json"
+def get_api_data(connection_manager: ConnectionManager, file: str) -> str | None:
+    base_fmt = "https://api.github.com/repos/Victor-IX/Blender-Launcher-V2/contents/source/resources/api/{}.json"
+    url = base_fmt.format(file)
+    logger.debug(f"Start fetching API data from: {url}")
     r = connection_manager.request("GET", url)
 
     if r is None:
-        logger.error("Failed to fetch data from the URL.")
+        logger.error(f"Failed to fetch data from: {url}.")
         return None
 
     try:
         data = json.loads(r.data)
     except json.JSONDecodeError as e:
-        logger.error(f"Failed to parse blender launcher API JSON data: {e}")
+        logger.error(f"Failed to parse {file} API JSON data: {e}")
         return None
 
     file_content = data["content"]
@@ -128,13 +131,13 @@ def get_bl_api_data(connection_manager: ConnectionManager) -> str | None:
         try:
             file_content = base64.b64decode(file_content).decode("utf-8")
             json_data = json.loads(file_content)
-            logger.info("Blender Launcher API data have been loaded successfully")
+            logger.info(f"API data form {file} have been loaded successfully")
             return json_data
         except (base64.binascii.Error, json.JSONDecodeError) as e:
             logger.error(f"Failed to decode or parse JSON data: {e}")
             return None
     else:
-        logger.error("Failed to load Blender Launcher API data or unsupported encoding.")
+        logger.error(f"Failed to load API data from {file} or unsupported encoding.")
         return None
 
 
@@ -182,7 +185,7 @@ class Scraper(QThread):
         self.scrape_automated = get_scrape_automated_builds()
 
     def run(self):
-        self.get_bl_api_data_manager()
+        self.get_api_data_manager()
         self.get_download_links()
         self.get_release_tag_manager()
 
@@ -194,9 +197,11 @@ class Scraper(QThread):
             self.new_bl_version.emit(latest_tag)
         self.manager.manager.clear()
 
-    def get_bl_api_data_manager(self):
+    def get_api_data_manager(self):
         assert self.manager.manager is not None
-        bl_api_data = get_bl_api_data(self.manager)
+
+        bl_api_data = get_api_data(self.manager, "blender_launcher_api")
+        blender_version_api_data = get_api_data(self.manager, "stable_builds_api")
 
         if bl_api_data is not None:
             update_local_api_files(bl_api_data)
