@@ -436,12 +436,11 @@ def get_minimum_blender_stable_version() -> str:
     if value == "None":
         return "3.0"
 
-    # backwards compatibility for indexesq
-    # (This is not reccommended because it relies on the dropdown blender versions to be static)
+    # backwards compatibility for indexes
+    # (This is not recommended because it relies on the dropdown blender versions to be static)
     with contextlib.suppress(ValueError, IndexError):
         if "." not in value:
             return list(dropdown_blender_version())[int(value)]
-
     return value
 
 

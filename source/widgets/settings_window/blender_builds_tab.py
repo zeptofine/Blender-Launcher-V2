@@ -61,7 +61,6 @@ class BlenderBuildsTabWidget(SettingsFormWidget):
         # Minimum stable blender download version (this is mainly for cleanliness and speed)
         self.MinStableBlenderVer = QComboBox()
         keys = list(dropdown_blender_version().keys())
-        keys.append("None")
         self.MinStableBlenderVer.addItems(keys)
         self.MinStableBlenderVer.setCurrentText(get_minimum_blender_stable_version())
         self.MinStableBlenderVer.activated[str].connect(self.change_minimum_blender_stable_version)
