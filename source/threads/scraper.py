@@ -211,8 +211,8 @@ class Scraper(QThread):
             update_local_api_files(bl_api_data)
             lts_blender_version()
             dropdown_blender_version()
-        if blender_version_api_data is not None:
-            update_stable_builds_cache(blender_version_api_data)
+ 
+        update_stable_builds_cache(blender_version_api_data)
 
         self.manager.manager.clear()
 

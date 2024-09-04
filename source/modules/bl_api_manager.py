@@ -1,4 +1,3 @@
-import os
 import json
 import logging
 from functools import lru_cache
@@ -34,12 +33,22 @@ def update_stable_builds_cache(data):
         config_path.mkdir(parents=True)
         logger.info(f"Created config directory in {config_path}")
 
-    if not os.path.isfile(stable_build_path):
+    # If data no data from the API have been retrieve, read from the internal API file
+    if data is None and internal_stable_build_path.is_file():
+        try:
+            with open(stable_build_path, "r") as f:
+                data = json.load(f)
+        except OSError as e:
+            logger.error(f"Failed to write API file: {e}")
+    else:
+        logger.error(f"Unable to retrieve online build API data and no internal API file found.")
+        return
+
+    if not stable_build_path.is_file():
         try:
             with open(stable_build_path, "w") as f:
                 json.dump(data, f, indent=4)
                 logger.info(f"Updated API file in {bl_api_path}")
-            read_bl_api.cache_clear()
         except OSError as e:
             logger.error(f"Failed to write API file: {e}")
     else:
@@ -50,7 +59,6 @@ def update_stable_builds_cache(data):
             with open(stable_build_path, "w") as f:
                 json.dump(current_data, f, indent=4)
                 logger.info(f"Updated API file in {bl_api_path}")
-            read_bl_api.cache_clear()
         except OSError as e:
             logger.error(f"Failed to write API file: {e}")
 
