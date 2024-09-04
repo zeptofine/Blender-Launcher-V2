@@ -343,7 +343,7 @@ def get_proxy_port():
     port = get_settings().value("proxy/port")
 
     if port is None:
-        return "99999"
+        return "9999"
     return port.strip()
 
 
