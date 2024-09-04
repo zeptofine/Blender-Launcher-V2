@@ -14,7 +14,12 @@ from urllib.parse import urljoin
 import distro
 from bs4 import BeautifulSoup, SoupStrainer
 from modules._platform import get_architecture, get_platform, reset_locale, set_locale, stable_cache_path
-from modules.bl_api_manager import dropdown_blender_version, lts_blender_version, update_local_api_files
+from modules.bl_api_manager import (
+    dropdown_blender_version,
+    lts_blender_version,
+    update_local_api_files,
+    update_stable_builds_cache,
+)
 from modules.build_info import BuildInfo, parse_blender_ver
 from modules.scraper_cache import StableCache
 from modules.settings import (
@@ -200,12 +205,14 @@ class Scraper(QThread):
         assert self.manager.manager is not None
 
         bl_api_data = get_api_data(self.manager, "blender_launcher_api")
-        blender_version_api_data = get_api_data(self.manager, f"stable_builds_api_{get_platform().lower()}")
+        blender_version_api_data = get_api_data(self.manager, f"stable_builds_api_{self.platform.lower()}")
 
         if bl_api_data is not None:
             update_local_api_files(bl_api_data)
             lts_blender_version()
             dropdown_blender_version()
+        if blender_version_api_data is not None:
+            update_stable_builds_cache(blender_version_api_data)
 
         self.manager.manager.clear()
 
