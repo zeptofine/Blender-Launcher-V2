@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import base64
 import contextlib
-from importlib.metadata import files
 import json
 import logging
 import re
@@ -201,7 +200,7 @@ class Scraper(QThread):
         assert self.manager.manager is not None
 
         bl_api_data = get_api_data(self.manager, "blender_launcher_api")
-        blender_version_api_data = get_api_data(self.manager, "stable_builds_api")
+        blender_version_api_data = get_api_data(self.manager, f"stable_builds_api_{get_platform().lower()}")
 
         if bl_api_data is not None:
             update_local_api_files(bl_api_data)
