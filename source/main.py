@@ -18,6 +18,24 @@ from PyQt5.QtWidgets import QApplication
 from semver import Version
 from windows.dialog_window import DialogWindow
 
+LOG_COLORS = {
+    "DEBUG": "\033[36m",  # Cyan
+    "INFO": "\033[37m",  # White
+    "WARNING": "\033[33m",  # Yellow
+    "ERROR": "\033[31m",  # Red
+    "CRITICAL": "\033[41m",  # Red background
+}
+
+RESET_COLOR = "\033[0m"  # Reset to default color
+
+
+class ColoredFormatter(logging.Formatter):
+    def format(self, record):
+        log_color = LOG_COLORS.get(record.levelname, RESET_COLOR)
+        message = super().format(record)
+        return f"{log_color}{message}{RESET_COLOR}"
+
+
 version = Version(
     2,
     2,
@@ -32,13 +50,16 @@ _format = "[%(asctime)s:%(levelname)s] %(message)s"
 cache_path = Path(get_cache_path())
 if not cache_path.is_dir():
     cache_path.mkdir()
+color_formatter = ColoredFormatter(_format)
+file_handler = logging.FileHandler(cache_path.absolute() / "Blender Launcher.log")
+stream_handler = logging.StreamHandler(stream=sys.stdout)
+stream_handler.setFormatter(color_formatter)
+
 logging.basicConfig(
     format=_format,
-    handlers=[
-        logging.FileHandler(cache_path.absolute() / "Blender Launcher.log"),
-        logging.StreamHandler(stream=sys.stdout),
-    ],
+    handlers=[file_handler, stream_handler],
 )
+
 logger = logging.getLogger(__name__)
 
 
