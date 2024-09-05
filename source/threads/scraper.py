@@ -128,7 +128,7 @@ def get_api_data(connection_manager: ConnectionManager, file: str) -> str | None
         logger.error(f"Failed to parse {file} API JSON data: {e}")
         return None
 
-    file_content = data["content"]
+    file_content = data["content"] if "content" in data else None
     file_content_encoding = data.get("encoding")
 
     if file_content_encoding == "base64" and file_content:
