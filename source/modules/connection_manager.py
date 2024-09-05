@@ -51,7 +51,7 @@ class ConnectionManager(QObject):
         self.manager: REQUEST_MANAGER | None = None
 
         # Basic Headers
-        agent = f"BL-v2/v.{self.version!s}/{get_platform_full()}/UserID-{get_user_id()}"
+        agent = f"BlenderLauncherV2/v.{self.version!s}/{get_platform_full()}/UserID-{get_user_id()}"
         self._headers = {"user-agent": agent}
         logger.info(f"Connection Manager Header: {agent}")
         # Get custom certificates file path

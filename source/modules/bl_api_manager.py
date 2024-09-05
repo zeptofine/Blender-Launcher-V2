@@ -40,15 +40,14 @@ def update_stable_builds_cache(data):
                 data = json.load(f)
         except OSError as e:
             logger.error(f"Failed to write API file: {e}")
-    else:
+    if data is None:
         logger.error(f"Unable to retrieve online build API data and no internal API file found.")
         return
-
     if not stable_build_path.is_file():
         try:
             with open(stable_build_path, "w") as f:
                 json.dump(data, f, indent=4)
-                logger.info(f"Updated API file in {bl_api_path}")
+                logger.info(f"Create Build Cache file in {stable_build_path}")
         except OSError as e:
             logger.error(f"Failed to write API file: {e}")
     else:
@@ -58,7 +57,7 @@ def update_stable_builds_cache(data):
                 current_data.update(data)
             with open(stable_build_path, "w") as f:
                 json.dump(current_data, f, indent=4)
-                logger.info(f"Updated API file in {bl_api_path}")
+                logger.info(f"Updated Build Cache file in {stable_build_path}")
         except OSError as e:
             logger.error(f"Failed to write API file: {e}")
 
