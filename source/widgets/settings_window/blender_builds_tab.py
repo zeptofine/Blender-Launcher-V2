@@ -1,5 +1,5 @@
+from modules.bl_api_manager import dropdown_blender_version
 from modules.settings import (
-    blender_minimum_versions,
     favorite_pages,
     get_bash_arguments,
     get_blender_startup_arguments,
@@ -60,12 +60,14 @@ class BlenderBuildsTabWidget(SettingsFormWidget):
 
         # Minimum stable blender download version (this is mainly for cleanliness and speed)
         self.MinStableBlenderVer = QComboBox()
-        self.MinStableBlenderVer.addItems(blender_minimum_versions.keys())
+        # TODO: Add a "custom" key with a new section for custom min version input (useful if you want to fetch very old versions)
+        keys = list(dropdown_blender_version().keys())
+        self.MinStableBlenderVer.addItems(keys)
         self.MinStableBlenderVer.setToolTip(
             "Minimum stable Blender version to scrape\
             \nDEFAULT: 3.2"
         )
-        self.MinStableBlenderVer.setCurrentIndex(get_minimum_blender_stable_version())
+        self.MinStableBlenderVer.setCurrentText(get_minimum_blender_stable_version())
         self.MinStableBlenderVer.activated[str].connect(self.change_minimum_blender_stable_version)
 
         # Whether to check for new builds based on a timer
@@ -273,8 +275,8 @@ class BlenderBuildsTabWidget(SettingsFormWidget):
     def change_mark_as_favorite(self, page):
         set_mark_as_favorite(page)
 
-    def change_minimum_blender_stable_version(self, proxy_type):
-        set_minimum_blender_stable_version(proxy_type)
+    def change_minimum_blender_stable_version(self, minimum):
+        set_minimum_blender_stable_version(minimum)
 
     def update_blender_startup_arguments(self):
         args = self.BlenderStartupArguments.text()
