@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import contextlib
 import json
 import logging
@@ -13,10 +14,15 @@ from urllib.parse import urljoin
 import distro
 from bs4 import BeautifulSoup, SoupStrainer
 from modules._platform import get_architecture, get_platform, reset_locale, set_locale, stable_cache_path
+from modules.bl_api_manager import (
+    dropdown_blender_version,
+    lts_blender_version,
+    update_local_api_files,
+    update_stable_builds_cache,
+)
 from modules.build_info import BuildInfo, parse_blender_ver
 from modules.scraper_cache import StableCache
 from modules.settings import (
-    blender_minimum_versions,
     get_minimum_blender_stable_version,
     get_scrape_automated_builds,
     get_scrape_stable_builds,
@@ -34,69 +40,109 @@ if TYPE_CHECKING:
 logger = logging.getLogger()
 
 
-def get_latest_tag(
+def get_release_tag(connection_manager: ConnectionManager) -> str | None:
+    if get_use_pre_release_builds():
+        url = "https://api.github.com/repos/Victor-IX/Blender-Launcher-V2/releases"
+        latest_tag = get_tag(connection_manager, url, pre_release=True)
+    else:
+        url = "https://github.com/Victor-IX/Blender-Launcher-V2/releases/latest"
+        latest_tag = get_tag(connection_manager, url)
+
+    logger.info(f"Latest release tag: {latest_tag}")
+
+    return latest_tag
+
+
+def get_tag(
     connection_manager: ConnectionManager,
-    url,
+    url: str,
+    pre_release=False,
 ) -> str | None:
     r = connection_manager.request("GET", url)
 
     if r is None:
         return None
 
-    url = r.geturl()
-    tag = url.rsplit("/", 1)[-1]
+    if pre_release:
+        try:
+            parsed_data = json.loads(r.data)
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse pre-release tag JSON data: {e}")
+            return None
 
-    r.release_conn()
-    r.close()
+        platform = get_platform()
 
-    return tag
+        if platform.lower() == "linux":
+            for key in (
+                distro.id().title(),
+                distro.like().title(),
+                distro.id(),
+                distro.like(),
+            ):
+                if "ubuntu" in key.lower():
+                    platform = "Ubuntu"
+                    break
+
+        platform_valid_tags = (
+            release["tag_name"]
+            for release in parsed_data
+            for asset in release["assets"]
+            if asset["name"].endswith(".zip") and platform.lower() in asset["name"].lower()
+        )
+        pre_release_tags = (release.lstrip("v") for release in platform_valid_tags)
+
+        valid_pre_release_tags = [tag for tag in pre_release_tags if Version.is_valid(tag)]
+
+        if valid_pre_release_tags:
+            tag = max(valid_pre_release_tags, key=Version.parse)
+            return f"v{tag}"
+
+        r.release_conn()
+        r.close()
+
+        return None
+
+    else:
+        url = r.geturl()
+        tag = url.rsplit("/", 1)[-1]
+
+        r.release_conn()
+        r.close()
+
+        return tag
 
 
-def get_latest_pre_release_tag(
-    connection_manager: ConnectionManager,
-    url,
-) -> str | None:
+def get_api_data(connection_manager: ConnectionManager, file: str) -> str | None:
+    base_fmt = "https://api.github.com/repos/Victor-IX/Blender-Launcher-V2/contents/source/resources/api/{}.json"
+    url = base_fmt.format(file)
+    logger.debug(f"Start fetching API data from: {url}")
     r = connection_manager.request("GET", url)
 
     if r is None:
+        logger.error(f"Failed to fetch data from: {url}.")
         return None
 
     try:
-        parsed_data = json.loads(r.data)
-    except json.JSONDecodeError:
+        data = json.loads(r.data)
+    except json.JSONDecodeError as e:
+        logger.error(f"Failed to parse {file} API JSON data: {e}")
         return None
 
-    platform = get_platform()
+    file_content = data["content"] if "content" in data else None
+    file_content_encoding = data.get("encoding")
 
-    if platform.lower() == "linux":
-        for key in (
-            distro.id().title(),
-            distro.like().title(),
-            distro.id(),
-            distro.like(),
-        ):
-            if "ubuntu" in key.lower():
-                platform = "Ubuntu"
-                break
-
-    platform_valid_tags = (
-        release["tag_name"]
-        for release in parsed_data
-        for asset in release["assets"]
-        if asset["name"].endswith(".zip") and platform.lower() in asset["name"].lower()
-    )
-    pre_release_tags = (release.lstrip("v") for release in platform_valid_tags)
-
-    valid_pre_release_tags = [tag for tag in pre_release_tags if Version.is_valid(tag)]
-
-    if valid_pre_release_tags:
-        tag = max(valid_pre_release_tags, key=Version.parse)
-        return f"v{tag}"
-
-    r.release_conn()
-    r.close()
-
-    return None
+    if file_content_encoding == "base64" and file_content:
+        try:
+            file_content = base64.b64decode(file_content).decode("utf-8")
+            json_data = json.loads(file_content)
+            logger.info(f"API data form {file} have been loaded successfully")
+            return json_data
+        except (base64.binascii.Error, json.JSONDecodeError) as e:
+            logger.error(f"Failed to decode or parse JSON data: {e}")
+            return None
+    else:
+        logger.error(f"Failed to load API data from {file} or unsupported encoding.")
+        return None
 
 
 class Scraper(QThread):
@@ -143,18 +189,31 @@ class Scraper(QThread):
         self.scrape_automated = get_scrape_automated_builds()
 
     def run(self):
+        self.get_api_data_manager()
         self.get_download_links()
+        self.get_release_tag_manager()
 
+    def get_release_tag_manager(self):
         assert self.manager.manager is not None
-        if get_use_pre_release_builds():
-            url = "https://api.github.com/repos/Victor-IX/Blender-Launcher-V2/releases"
-            latest_tag = get_latest_pre_release_tag(self.manager, url)
-        else:
-            url = "https://github.com/Victor-IX/Blender-Launcher-V2/releases/latest"
-            latest_tag = get_latest_tag(self.manager, url)
+        latest_tag = get_release_tag(self.manager)
 
         if latest_tag is not None:
             self.new_bl_version.emit(latest_tag)
+        self.manager.manager.clear()
+
+    def get_api_data_manager(self):
+        assert self.manager.manager is not None
+
+        bl_api_data = get_api_data(self.manager, "blender_launcher_api")
+        blender_version_api_data = get_api_data(self.manager, f"stable_builds_api_{self.platform.lower()}")
+
+        if bl_api_data is not None:
+            update_local_api_files(bl_api_data)
+            lts_blender_version()
+            dropdown_blender_version()
+
+        update_stable_builds_cache(blender_version_api_data)
+
         self.manager.manager.clear()
 
     def get_download_links(self):
@@ -325,18 +384,15 @@ class Scraper(QThread):
         if not any(releases):
             logger.info("Failed to gather stable releases")
             logger.info(content)
-            self.stable_error.emit(
-                "No releases were scraped from the site!<br>check -debug logs for more details."
-            )
+            self.stable_error.emit("No releases were scraped from the site!<br>check -debug logs for more details.")
             return
 
         # Convert string to Verison
-        minimum_version_index = get_minimum_blender_stable_version()
-        version_at_index = list(blender_minimum_versions.keys())[minimum_version_index]
-        if version_at_index == "None":
+        minimum_version_str = get_minimum_blender_stable_version()
+        if minimum_version_str == "None":
             minimum_smver_version = Version(0, 0, 0)
         else:
-            major, minor = version_at_index.split(".")
+            major, minor = minimum_version_str.split(".")
             minimum_smver_version = Version(int(major), int(minor), 0)
 
         cache_modified = False

@@ -43,11 +43,20 @@ class AppearanceTabWidget(SettingsFormWidget):
         # Use System Title Bar
         self.UseSystemTitleBar = QCheckBox()
         self.UseSystemTitleBar.setText("Use System Title Bar")
+        self.UseSystemTitleBar.setToolTip(
+            "Use the system title bar instead of the custom one\
+            \nDEFAULT: False"
+        )
         self.UseSystemTitleBar.setChecked(get_use_system_titlebar())
         self.UseSystemTitleBar.clicked.connect(self.toggle_system_titlebar)
         # High Dpi Scaling
         self.EnableHighDpiScalingCheckBox = QCheckBox()
         self.EnableHighDpiScalingCheckBox.setText("Enable High DPI Scaling")
+        self.EnableHighDpiScalingCheckBox.setToolTip(
+            "Enable high DPI scaling for the application\
+            \nautomatically scale the user interface based on the monitor’s pixel density\
+            \nDEFAULT: True"
+        )
         self.EnableHighDpiScalingCheckBox.clicked.connect(self.toggle_enable_high_dpi_scaling)
         self.EnableHighDpiScalingCheckBox.setChecked(get_enable_high_dpi_scaling())
 
@@ -61,14 +70,26 @@ class AppearanceTabWidget(SettingsFormWidget):
 
         self.EnableNewBuildsNotifications = QCheckBox()
         self.EnableNewBuildsNotifications.setText("New Available Build")
+        self.EnableNewBuildsNotifications.setToolTip(
+            "Show a notification when a new build is available\
+            \nDEFAULT: True"
+        )
         self.EnableNewBuildsNotifications.clicked.connect(self.toggle_enable_new_builds_notifications)
         self.EnableNewBuildsNotifications.setChecked(get_enable_new_builds_notifications())
         self.EnableDownloadNotifications = QCheckBox()
         self.EnableDownloadNotifications.setText("Finished Downloading")
+        self.EnableDownloadNotifications.setToolTip(
+            "Show a notification when a download is finished\
+            \nDEFAULT: True"
+        )
         self.EnableDownloadNotifications.clicked.connect(self.toggle_enable_download_notifications)
         self.EnableDownloadNotifications.setChecked(get_enable_download_notifications())
         self.EnableErrorNotifications = QCheckBox()
         self.EnableErrorNotifications.setText("Errors")
+        self.EnableErrorNotifications.setToolTip(
+            "Show a notification when an error occurs\
+            \nDEFAULT: True"
+        )
         self.EnableErrorNotifications.clicked.connect(self.toggle_enable_download_notifications)
         self.EnableErrorNotifications.setChecked(get_enable_download_notifications())
 
@@ -83,21 +104,37 @@ class AppearanceTabWidget(SettingsFormWidget):
         # Default Tab
         self.DefaultTabComboBox = QComboBox()
         self.DefaultTabComboBox.addItems(tabs.keys())
+        self.DefaultTabComboBox.setToolTip(
+            "The default tab to open when the application starts\
+            \nDEFAULT: Library"
+        )
         self.DefaultTabComboBox.setCurrentIndex(get_default_tab())
         self.DefaultTabComboBox.activated[str].connect(self.change_default_tab)
         # Sync Library and Downloads pages
         self.SyncLibraryAndDownloadsPages = QCheckBox()
         self.SyncLibraryAndDownloadsPages.setText("Sync Library && Downloads Pages")
+        self.SyncLibraryAndDownloadsPages.setToolTip(
+            "Sync the selected Library tab with the corresponding Downloads tab\
+            \nDEFAULT: True"
+        )
         self.SyncLibraryAndDownloadsPages.clicked.connect(self.toggle_sync_library_and_downloads_pages)
         self.SyncLibraryAndDownloadsPages.setChecked(get_sync_library_and_downloads_pages())
         # Default Library Page
         self.DefaultLibraryPageComboBox = QComboBox()
         self.DefaultLibraryPageComboBox.addItems(library_pages.keys())
+        self.DefaultLibraryPageComboBox.setToolTip(
+            "The default page to open in the Library tab\
+            \nDEFAULT: Stable Releases"
+        )
         self.DefaultLibraryPageComboBox.setCurrentIndex(get_default_library_page())
         self.DefaultLibraryPageComboBox.activated[str].connect(self.change_default_library_page)
         # Default Downloads Page
         self.DefaultDownloadsPageComboBox = QComboBox()
         self.DefaultDownloadsPageComboBox.addItems(downloads_pages.keys())
+        self.DefaultDownloadsPageComboBox.setToolTip(
+            "The default page to open in the Downloads tab\
+            \nDEFAULT: Stable Releases"
+        )
         self.DefaultDownloadsPageComboBox.setCurrentIndex(get_default_downloads_page())
         self.DefaultDownloadsPageComboBox.activated[str].connect(self.change_default_downloads_page)
 

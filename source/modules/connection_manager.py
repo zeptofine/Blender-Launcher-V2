@@ -51,7 +51,7 @@ class ConnectionManager(QObject):
         self.manager: REQUEST_MANAGER | None = None
 
         # Basic Headers
-        agent = f"Blender-Launcher-v2/v.{self.version!s}/{get_platform_full()}/UserID-{get_user_id()}"
+        agent = f"BlenderLauncherV2/v.{self.version!s}/{get_platform_full()}/UserID-{get_user_id()}"
         self._headers = {"user-agent": agent}
         logger.info(f"Connection Manager Header: {agent}")
         # Get custom certificates file path
@@ -59,6 +59,8 @@ class ConnectionManager(QObject):
             self.cacert = sys._MEIPASS + "/files/custom.pem"  # noqa: SLF001
         else:
             self.cacert = (get_cwd() / "source/resources/certificates/custom.pem").as_posix()
+
+        self.request_counter = 0
 
     def setup(self):
         if self.proxy_type == 0:  # Use generic requests
@@ -130,6 +132,16 @@ class ConnectionManager(QObject):
     def request(self, _method, _url, fields=None, headers=None, **urlopen_kw):
         try:
             assert self.manager is not None
+
+            """
+            Counter for request. Not supposed to exceed 7 requests
+            4 requests for Blender Builder
+            1 requests for Blender Download
+            3 requests for GitHub
+            """
+            self.request_counter += 1
+            logger.debug(f"Request Counter: {self.request_counter}")
+
             return self.manager.request(_method, _url, fields, headers, **urlopen_kw)
         except Exception:
             self.error.emit()

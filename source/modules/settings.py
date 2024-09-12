@@ -1,13 +1,14 @@
+from __future__ import annotations
 import contextlib
 import os
 import shutil
 import sys
 import uuid
 from datetime import datetime, timezone
-from functools import cache
 from pathlib import Path
 
 from modules._platform import get_config_file, get_config_path, get_cwd, get_platform, local_config, user_config
+from modules.bl_api_manager import dropdown_blender_version
 from modules.version_matcher import VersionSearchQuery
 from PyQt5.QtCore import QSettings
 from semver import Version
@@ -60,22 +61,6 @@ proxy_types = {
     "HTTPS": 2,
     "SOCKS4": 3,
     "SOCKS5": 4,
-}
-
-
-blender_minimum_versions = {
-    "4.0": 0,
-    "3.6": 1,
-    "3.5": 2,
-    "3.4": 3,
-    "3.3": 4,
-    "3.2": 5,
-    "3.1": 6,
-    "3.0": 7,
-    "2.90": 8,
-    "2.80": 9,
-    "2.79": 10,
-    "None": 11,
 }
 
 
@@ -358,7 +343,7 @@ def get_proxy_port():
     port = get_settings().value("proxy/port")
 
     if port is None:
-        return "99999"
+        return "9999"
     return port.strip()
 
 
@@ -445,17 +430,22 @@ def set_check_for_new_builds_on_startup(b: bool):
     get_settings().setValue("buildcheck_on_startup", b)
 
 
-def get_minimum_blender_stable_version():
-    value = get_settings().value("minimum_blender_stable_version")
+def get_minimum_blender_stable_version() -> str:
+    value = get_settings().value("minimum_blender_stable_version", defaultValue="3.0", type=str)
+    # value can never be None
+    if value == "None":
+        return "3.0"
 
-    if value is not None and "." in value:
-        return blender_minimum_versions.get(value, 7)
+    # backwards compatibility for indexes
+    # (This is not recommended because it relies on the dropdown blender versions to be static)
+    with contextlib.suppress(ValueError, IndexError):
+        if "." not in value:
+            return list(dropdown_blender_version())[int(value)]
+    return value
 
-    return get_settings().value("minimum_blender_stable_version", defaultValue=7, type=int)
 
-
-def set_minimum_blender_stable_version(blender_minimum_version):
-    get_settings().setValue("minimum_blender_stable_version", blender_minimum_versions[blender_minimum_version])
+def set_minimum_blender_stable_version(blender_minimum_version: str):
+    get_settings().setValue("minimum_blender_stable_version", blender_minimum_version)
 
 
 def get_scrape_stable_builds() -> bool:

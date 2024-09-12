@@ -11,7 +11,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QWidget
 from threads.downloader import DownloadTask
 from threads.extractor import ExtractTask
-from threads.scraper import get_latest_tag
+from threads.scraper import get_release_tag
 from widgets.base_progress_bar_widget import BaseProgressBarWidget
 from windows.base_window import BaseWindow
 
@@ -63,7 +63,7 @@ class BlenderLauncherUpdater(BaseWindow):
 
         if release_tag is None:
             assert self.manager is not None
-            release_tag = get_latest_tag(self.cm, "https://github.com/Victor-IX/Blender-Launcher-V2/releases/latest")
+            release_tag = get_release_tag(self.cm)
             if release_tag is None:
                 # This is ok because release_tag can only be None when
                 # update is invoked from CLI without a release tag

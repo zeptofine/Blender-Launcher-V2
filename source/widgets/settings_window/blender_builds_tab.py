@@ -1,5 +1,5 @@
+from modules.bl_api_manager import dropdown_blender_version
 from modules.settings import (
-    blender_minimum_versions,
     favorite_pages,
     get_bash_arguments,
     get_blender_startup_arguments,
@@ -60,8 +60,14 @@ class BlenderBuildsTabWidget(SettingsFormWidget):
 
         # Minimum stable blender download version (this is mainly for cleanliness and speed)
         self.MinStableBlenderVer = QComboBox()
-        self.MinStableBlenderVer.addItems(blender_minimum_versions.keys())
-        self.MinStableBlenderVer.setCurrentIndex(get_minimum_blender_stable_version())
+        # TODO: Add a "custom" key with a new section for custom min version input (useful if you want to fetch very old versions)
+        keys = list(dropdown_blender_version().keys())
+        self.MinStableBlenderVer.addItems(keys)
+        self.MinStableBlenderVer.setToolTip(
+            "Minimum stable Blender version to scrape\
+            \nDEFAULT: 3.2"
+        )
+        self.MinStableBlenderVer.setCurrentText(get_minimum_blender_stable_version())
         self.MinStableBlenderVer.activated[str].connect(self.change_minimum_blender_stable_version)
 
         # Whether to check for new builds based on a timer
@@ -69,11 +75,18 @@ class BlenderBuildsTabWidget(SettingsFormWidget):
         self.CheckForNewBuildsAutomatically.setChecked(False)
         self.CheckForNewBuildsAutomatically.clicked.connect(self.toggle_check_for_new_builds_automatically)
         self.CheckForNewBuildsAutomatically.setText("Check automatically")
+        self.CheckForNewBuildsAutomatically.setToolTip(
+            "Check for new Blender builds automatically\
+            \nDEFAULT: Off"
+        )
         # How often to check for new builds if ^^ enabled
         self.NewBuildsCheckFrequency = QSpinBox()
         self.NewBuildsCheckFrequency.setEnabled(get_check_for_new_builds_automatically())
         self.NewBuildsCheckFrequency.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
-        self.NewBuildsCheckFrequency.setToolTip("Time in hours between new builds check")
+        self.NewBuildsCheckFrequency.setToolTip(
+            "Time in hours between new Blender builds check\
+            \nDEFAULT: 12h"
+        )
         self.NewBuildsCheckFrequency.setMaximum(24 * 7 * 4)  # 4 weeks?
         self.NewBuildsCheckFrequency.setMinimum(12)
         self.NewBuildsCheckFrequency.setPrefix("Interval: ")
@@ -85,28 +98,52 @@ class BlenderBuildsTabWidget(SettingsFormWidget):
         self.CheckForNewBuildsOnStartup.setChecked(get_check_for_new_builds_on_startup())
         self.CheckForNewBuildsOnStartup.clicked.connect(self.toggle_check_on_startup)
         self.CheckForNewBuildsOnStartup.setText("On startup")
+        self.CheckForNewBuildsOnStartup.setToolTip(
+            "Check for new Blender builds on Blender Launcher startup\
+            \nDEFAULT: On"
+        )
 
         # Scraping builds settings
         self.ScrapeStableBuilds = QCheckBox(self)
         self.ScrapeStableBuilds.setChecked(get_scrape_stable_builds())
         self.ScrapeStableBuilds.clicked.connect(self.toggle_scrape_stable_builds)
         self.ScrapeStableBuilds.setText("Scrape stable builds")
+        self.ScrapeStableBuilds.setToolTip(
+            "Scrape stable Blender builds\
+            \nDEFAULT: On"
+        )
         self.ScrapeAutomatedBuilds = QCheckBox(self)
         self.ScrapeAutomatedBuilds.setChecked(get_scrape_automated_builds())
         self.ScrapeAutomatedBuilds.clicked.connect(self.toggle_scrape_automated_builds)
         self.ScrapeAutomatedBuilds.setText("Scrape automated builds (daily/experimental/patch)")
+        self.ScrapeAutomatedBuilds.setToolTip(
+            "Scrape daily, experimental, and patch Blender builds\
+            \nDEFAULT: On"
+        )
 
         # Show Archive Builds
         self.show_daily_archive_builds = QCheckBox(self)
-        self.show_daily_archive_builds.setText("Show Daily Archive Builds")
+        self.show_daily_archive_builds.setText("Show Daily Archived Builds")
+        self.show_daily_archive_builds.setToolTip(
+            "Show Daily Archived Builds\
+            \nDEFAULT: Off"
+        )
         self.show_daily_archive_builds.setChecked(get_show_daily_archive_builds())
         self.show_daily_archive_builds.clicked.connect(self.toggle_show_daily_archive_builds)
         self.show_experimental_archive_builds = QCheckBox(self)
-        self.show_experimental_archive_builds.setText("Show Experimental Archive Builds")
+        self.show_experimental_archive_builds.setText("Show Experimental Archived Builds")
+        self.show_experimental_archive_builds.setToolTip(
+            "Show Experimental Archived Builds\
+            \nDEFAULT: Off"
+        )
         self.show_experimental_archive_builds.setChecked(get_show_experimental_archive_builds())
         self.show_experimental_archive_builds.clicked.connect(self.toggle_show_experimental_archive_builds)
         self.show_patch_archive_builds = QCheckBox(self)
-        self.show_patch_archive_builds.setText("Show Patch Archive Builds")
+        self.show_patch_archive_builds.setText("Show Patch Archived Builds")
+        self.show_patch_archive_builds.setToolTip(
+            "Show Patch Archived Builds\
+            \nDEFAULT: Off"
+        )
         self.show_patch_archive_builds.setChecked(get_show_patch_archive_builds())
         self.show_patch_archive_builds.clicked.connect(self.toggle_show_patch_archive_builds)
 
@@ -130,10 +167,18 @@ class BlenderBuildsTabWidget(SettingsFormWidget):
         # Mark As Favorite
         self.EnableMarkAsFavorite = QCheckBox()
         self.EnableMarkAsFavorite.setText("Mark as Favorite")
+        self.EnableMarkAsFavorite.setToolTip(
+            "Mark a tab as favorite to quickly access it\
+            \nDEFAULT: Off"
+        )
         self.EnableMarkAsFavorite.setChecked(get_mark_as_favorite() != 0)
         self.EnableMarkAsFavorite.clicked.connect(self.toggle_mark_as_favorite)
         self.MarkAsFavorite = QComboBox()
         self.MarkAsFavorite.addItems([fav for fav in favorite_pages if fav != "Disable"])
+        self.MarkAsFavorite.setToolTip(
+            "Select a tab to mark as favorite\
+            \nDEFAULT: Stable Releases"
+        )
         self.MarkAsFavorite.setCurrentIndex(max(get_mark_as_favorite() - 1, 0))
         self.MarkAsFavorite.activated[str].connect(self.change_mark_as_favorite)
         self.MarkAsFavorite.setEnabled(self.EnableMarkAsFavorite.isChecked())
@@ -141,6 +186,10 @@ class BlenderBuildsTabWidget(SettingsFormWidget):
         # Install Template
         self.InstallTemplate = QCheckBox()
         self.InstallTemplate.setText("Install Template")
+        self.InstallTemplate.setToolTip(
+            "Installs a template on newly added builds to the Library tab\
+            \nDEFAULT: Off"
+        )
         self.InstallTemplate.clicked.connect(self.toggle_install_template)
         self.InstallTemplate.setChecked(get_install_template())
 
@@ -156,29 +205,51 @@ class BlenderBuildsTabWidget(SettingsFormWidget):
         # Quick Launch Key Sequence
         self.EnableQuickLaunchKeySeq = QCheckBox()
         self.EnableQuickLaunchKeySeq.setText("Quick Launch Global Shortcut")
+        self.EnableQuickLaunchKeySeq.setToolTip(
+            "Enable a global shortcut to quickly launch Blender\
+            \nDEFAULT: On"
+        )
         self.EnableQuickLaunchKeySeq.clicked.connect(self.toggle_enable_quick_launch_key_seq)
         self.EnableQuickLaunchKeySeq.setChecked(get_enable_quick_launch_key_seq())
         self.QuickLaunchKeySeq = QLineEdit()
         self.QuickLaunchKeySeq.setEnabled(get_enable_quick_launch_key_seq())
         self.QuickLaunchKeySeq.keyPressEvent = self._keyPressEvent
         self.QuickLaunchKeySeq.setText(str(get_quick_launch_key_seq()))
+        self.QuickLaunchKeySeq.setToolTip(
+            "Global shortcut to quickly launch Blender\
+            \nDEFAULT: ctrl + f11"
+        )
         self.QuickLaunchKeySeq.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
         self.QuickLaunchKeySeq.setCursorPosition(0)
         self.QuickLaunchKeySeq.editingFinished.connect(self.update_quick_launch_key_seq)
         # Run Blender using blender-launcher.exe
         self.LaunchBlenderNoConsole = QCheckBox()
         self.LaunchBlenderNoConsole.setText("Hide Console On Startup")
+        self.LaunchBlenderNoConsole.setToolTip(
+            "Hide the console window when launching Blender\
+            \nDEFAULT: On"
+        )
         self.LaunchBlenderNoConsole.clicked.connect(self.toggle_launch_blender_no_console)
         self.LaunchBlenderNoConsole.setChecked(get_launch_blender_no_console())
         # Blender Startup Arguments
         self.BlenderStartupArguments = QLineEdit()
         self.BlenderStartupArguments.setText(str(get_blender_startup_arguments()))
+        self.BlenderStartupArguments.setToolTip(
+            "Arguments to pass to when launching Blender (after the Blender executable i.e. [… <args>]\
+            \nDEFAULT: None\
+            \nExample: --background"
+        )
         self.BlenderStartupArguments.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
         self.BlenderStartupArguments.setCursorPosition(0)
         self.BlenderStartupArguments.editingFinished.connect(self.update_blender_startup_arguments)
         # Command Line Arguments
         self.BashArguments = QLineEdit()
         self.BashArguments.setText(str(get_bash_arguments()))
+        self.BashArguments.setToolTip(
+            "Instructions to pass to bash when launching Blender (before the Blender executable i.e. [<args> …])\
+            \nDEFAULT: None\
+            \nExample: env __NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia nohup"
+        )
         self.BashArguments.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
         self.BashArguments.setCursorPosition(0)
         self.BashArguments.editingFinished.connect(self.update_bash_arguments)
@@ -187,11 +258,13 @@ class BlenderBuildsTabWidget(SettingsFormWidget):
         self.launching_layout.addRow(self.EnableQuickLaunchKeySeq, self.QuickLaunchKeySeq)
         if get_platform() == "Windows":
             self.launching_layout.addRow(self.LaunchBlenderNoConsole)
-        self.launching_layout.addRow(QLabel("Startup Arguments:", self))
-        self.launching_layout.addRow(self.BlenderStartupArguments)
         if get_platform() == "Linux":
             self.launching_layout.addRow(QLabel("Bash Arguments:", self))
             self.launching_layout.addRow(self.BashArguments)
+
+        self.launching_layout.addRow(QLabel("Startup Arguments:", self))
+        self.launching_layout.addRow(self.BlenderStartupArguments)
+
         self.launching_settings.setLayout(self.launching_layout)
 
         # Layout
@@ -202,8 +275,8 @@ class BlenderBuildsTabWidget(SettingsFormWidget):
     def change_mark_as_favorite(self, page):
         set_mark_as_favorite(page)
 
-    def change_minimum_blender_stable_version(self, proxy_type):
-        set_minimum_blender_stable_version(proxy_type)
+    def change_minimum_blender_stable_version(self, minimum):
+        set_minimum_blender_stable_version(minimum)
 
     def update_blender_startup_arguments(self):
         args = self.BlenderStartupArguments.text()
