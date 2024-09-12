@@ -51,7 +51,6 @@ class BaseMenuWidget(QMenu):
 
     def enable_shifting(self):
         """ This is an optional feature because it can be very expensive to do this all the time. """
-        self.setMouseTracking(True)
         self.installEventFilter(self)
 
 
