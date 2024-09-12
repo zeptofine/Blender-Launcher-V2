@@ -1,14 +1,15 @@
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QCursor
+from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtGui import QCursor, QKeyEvent
 from PyQt5.QtWidgets import QDesktopWidget, QMenu
 
 
 class BaseMenuWidget(QMenu):
     action_height = 30
+    holding_shift = pyqtSignal(bool)
 
     def __init__(self, title="", parent=None):
         super().__init__(title=title, parent=parent)
-        self.setWindowFlags(self.windowFlags() | Qt.NoDropShadowWindowHint)
+        self.setWindowFlags(self.windowFlags() | Qt.WindowType.NoDropShadowWindowHint)
         self.action_height = BaseMenuWidget.action_height
         self.screen_size = QDesktopWidget().screenGeometry()
         self.setToolTipsVisible(True)
@@ -47,3 +48,14 @@ class BaseMenuWidget(QMenu):
                 i = i + 1
 
         self.exec_(cursor)
+
+    def enable_shifting(self):
+        """ This is an optional feature because it can be very expensive to do this all the time. """
+        self.installEventFilter(self)
+
+
+    def eventFilter(self, obj, event):
+        if isinstance(event, QKeyEvent):
+            self.holding_shift.emit(event.modifiers() in (Qt.KeyboardModifier.ShiftModifier, Qt.KeyboardModifier.ControlModifier))
+
+        return super().eventFilter(obj, event)
