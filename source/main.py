@@ -133,14 +133,6 @@ def main():
         help="Launch Blender from CLI. does not open any QT frontend. WARNING: LIKELY DOES NOT WORK IN WINDOWS BUNDLED EXECUTABLE",
     )
 
-    # This could be used better
-    launch_target_parser = subparsers.add_parser(
-        "__launch_target",
-        help="This is a target for launching the program from a shortcut.",
-        add_help=False,
-    )
-    launch_target_parser.add_argument("file", nargs="?", type=Path, help="Path to a specific Blender file to launch.")
-
     if sys.platform == "win32":
         subparsers.add_parser(
             "register",
@@ -148,7 +140,17 @@ def main():
         )
         subparsers.add_parser("unregister", help="Undoes the changes that `register` makes. (WIN ONLY)")
 
-    args, argv = parser.parse_known_args()
+    input_args = None
+
+    # Shortcut for launching
+    small_parser = ArgumentParser(add_help=False)
+    small_parser.add_argument("file", nargs="?", type=Path)
+    args, argv = small_parser.parse_known_args()
+    if args.file is not None and args.file.exists():
+        input_args = ["launch", "-f", str(args.file)]
+
+    args, argv = parser.parse_known_args(input_args)
+
     if argv:
         msg = _("unrecognized arguments: ") + " ".join(argv)
         ap.error(parser, msg)
@@ -180,8 +182,6 @@ def main():
 
     if args.command == "launch":
         start_launch(app, args.file, args.version, args.open_last, cli=args.cli)
-    if args.command == "__launch_target" and args.file:
-        start_launch(app, args.file, None, False)
 
     if args.command == "register":
         start_register()
