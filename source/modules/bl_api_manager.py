@@ -1,5 +1,6 @@
 import json
 import logging
+import sys
 from functools import lru_cache
 from pathlib import Path
 
@@ -10,8 +11,13 @@ logger = logging.getLogger()
 config_path = Path(get_config_path())
 bl_api_path = config_path / "Blender Launcher API.json"
 stable_build_path = config_path / "stable_builds.json"
-internal_bl_api_path = get_cwd() / "source/resources/api/blender_launcher_api.json"
-internal_stable_build_path = get_cwd() / f"source/resources/api/stable_builds_api_{get_platform().lower()}.json"
+
+if getattr(sys, "frozen", False):
+    internal_bl_api_path = sys._MEIPASS + "/files/blender_launcher_api.json"  # noqa: SLF001
+    internal_stable_build_path = sys._MEIPASS + f"/files/stable_builds_api_{get_platform().lower()}.json"  # noqa: SLF001
+else:
+    internal_bl_api_path = Path("source/resources/api/blender_launcher_api.json").resolve().as_posix()
+    internal_bl_api_path = Path(f"source/resources/api/stable_builds_api_{get_platform().lower()}.json").resolve().as_posix()
 
 
 def update_local_api_files(data):
