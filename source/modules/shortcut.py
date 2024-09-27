@@ -102,7 +102,7 @@ def register_windows_filetypes():
         else:
             pth = f'"{Path(sys.executable).resolve()}" "{Path(sys.argv[0]).resolve()}"'
 
-        winreg.SetValueEx(command_key, "", 0, winreg.REG_SZ, f'{pth} __launch_target "%1"')
+        winreg.SetValueEx(command_key, "", 0, winreg.REG_SZ, f'{pth} "%1"')
         logging.debug("Registered blenderlauncherv2.blend")
 
     # add it to the OpenWithProgids list
@@ -216,11 +216,11 @@ def generate_program_shortcut(destination: Path):
         exe = sys.executable
 
         wscript.Targetpath = exe
-        args = "__launch_target"
+        args = ""
         if not is_frozen():
             main_py = Path(sys.argv[0]).resolve()
 
-            args = f"{main_py} {args}"
+            args = str(main_py)
 
             # Icon location would be source/resources/icons/bl/bl.ico
             icon_loc = Path(main_py.parent, "resources", "icons", "bl", "bl.ico")
@@ -250,7 +250,7 @@ def generate_program_shortcut(destination: Path):
                 "[Desktop Entry]",
                 "Name=Blender Launcher V2",
                 "GenericName=Launcher",
-                f"Exec={_exec} __launch_target",
+                f"Exec={_exec}",
                 "MimeType=application/x-blender;",
                 "Icon=blender-icon",
                 "Terminal=false",
