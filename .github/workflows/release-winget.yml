@@ -12,6 +12,7 @@ jobs:
   winget-publish:
     name: Publish winget package
     runs-on: ubuntu-latest
+    if: ${{ !contains(github.event.release.tag_name, '-rc')}}
     steps:
       - name: Set winget version env
         env:
