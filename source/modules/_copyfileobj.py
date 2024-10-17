@@ -13,7 +13,7 @@ def copyfileobj(fsrc, fdst, callback, length=0):
     """
 
     try:
-        # Check for optimisation opportunity
+        # Check for optimization opportunity
         if "b" in fsrc.mode and "b" in fdst.mode and fsrc.readinto:
             return _copyfileobj_readinto(fsrc, fdst, callback, length)
     except AttributeError:

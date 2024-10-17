@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from modules._platform import _check_output, _popen, get_platform, reset_locale, set_locale
+from modules.bl_api_manager import lts_blender_version
 from modules.settings import (
     get_bash_arguments,
     get_blender_startup_arguments,
@@ -111,7 +112,7 @@ class BuildInfo:
     # Class variables
     file_version = "1.3"
     # https://www.blender.org/download/lts/
-    lts_tags = ("2.83", "2.93", "3.3", "3.6", "4.2", "4.6", "5.2")
+    lts_tags = lts_blender_version()
 
     # Build variables
     link: str

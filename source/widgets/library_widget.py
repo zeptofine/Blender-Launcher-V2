@@ -206,6 +206,12 @@ class LibraryWidget(BaseBuildWidget):
         self.menu_extended = BaseMenuWidget(parent=self)
         self.menu_extended.setFont(self.parent.font_10)
 
+        # For checking if shift is held on menus
+        self.menu.enable_shifting()
+        self.menu_extended.enable_shifting()
+        self.menu.holding_shift.connect(self.update_delete_action)
+        self.menu_extended.holding_shift.connect(self.update_delete_action)
+
         self.deleteAction = QAction("Delete From Drive", self)
         self.deleteAction.setIcon(self.parent.icons.delete)
         self.deleteAction.triggered.connect(self.ask_remove_from_drive)
@@ -343,6 +349,8 @@ class LibraryWidget(BaseBuildWidget):
         if self.is_damaged:
             return
 
+        self.update_delete_action(self.hovering_and_shifting)
+
         if len(self.list_widget.selectedItems()) > 1:
             self.menu_extended.trigger()
             return
@@ -355,6 +363,13 @@ class LibraryWidget(BaseBuildWidget):
             self.createSymlinkAction.setEnabled(False)
 
         self.menu.trigger()
+
+    @pyqtSlot(bool)
+    def update_delete_action(self, shifting: bool):
+        if shifting:
+            self.deleteAction.setText("Delete from Drive")
+        else:
+            self.deleteAction.setText("Send to Trash")
 
     def mouseDoubleClickEvent(self, _event):
         if self.build_info is not None and self.hovering_and_shifting:
@@ -616,6 +631,13 @@ class LibraryWidget(BaseBuildWidget):
 
     @QtCore.pyqtSlot()
     def ask_remove_from_drive(self):
+
+        # if not shift clicked, ask to send to trash instead of deleting
+        mod = QApplication.keyboardModifiers()
+        if mod not in (Qt.KeyboardModifier.ShiftModifier, Qt.KeyboardModifier.ControlModifier):
+            self.ask_send_to_trash()
+            return
+
         self.item.setSelected(True)
         self.dlg = DialogWindow(
             parent=self.parent,
@@ -637,16 +659,42 @@ class LibraryWidget(BaseBuildWidget):
             self.list_widget.itemWidget(item).remove_from_drive()
 
     @QtCore.pyqtSlot()
-    def remove_from_drive(self):
+    def remove_from_drive(self, trash=False):
         if self.parent_widget is not None:
             self.parent_widget.remove_from_drive()
             return
 
         path = Path(get_library_folder()) / self.link
-        a = RemovalTask(path)
+        a = RemovalTask(path, trash=trash)
         a.finished.connect(self.remover_completed)
         self.parent.task_queue.append(a)
         self.remover_started()
+
+    @QtCore.pyqtSlot()
+    def ask_send_to_trash(self):
+        self.item.setSelected(True)
+        self.dlg = DialogWindow(
+            parent=self.parent,
+            title="Warning",
+            text="Are you sure you want to<br> \
+                  send selected builds to trash?",
+            accept_text="Yes",
+            cancel_text="No",
+        )
+
+        if len(self.list_widget.selectedItems()) > 1:
+            self.dlg.accepted.connect(self.send_to_trash_extended)
+        else:
+            self.dlg.accepted.connect(self.send_to_trash)
+
+    @QtCore.pyqtSlot()
+    def send_to_trash_extended(self):
+        for item in self.list_widget.selectedItems():
+            self.list_widget.itemWidget(item).remove_from_drive(trash=True)
+
+    @QtCore.pyqtSlot()
+    def send_to_trash(self):
+        self.remove_from_drive(trash=True)
 
     # TODO Clear icon if build in quick launch
     def remover_started(self):

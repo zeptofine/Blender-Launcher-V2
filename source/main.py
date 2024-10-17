@@ -18,11 +18,29 @@ from PyQt5.QtWidgets import QApplication
 from semver import Version
 from windows.dialog_window import DialogWindow
 
+LOG_COLORS = {
+    "DEBUG": "\033[36m",  # Cyan
+    "INFO": "\033[37m",  # White
+    "WARNING": "\033[33m",  # Yellow
+    "ERROR": "\033[31m",  # Red
+    "CRITICAL": "\033[41m",  # Red background
+}
+
+RESET_COLOR = "\033[0m"  # Reset to default color
+
+
+class ColoredFormatter(logging.Formatter):
+    def format(self, record):
+        log_color = LOG_COLORS.get(record.levelname, RESET_COLOR)
+        message = super().format(record)
+        return f"{log_color}{message}{RESET_COLOR}"
+
+
 version = Version(
     2,
-    2,
+    3,
     0,
-    # prerelease="rc.3",
+    prerelease="rc.1",
 )
 
 _ = gettext.gettext
@@ -32,13 +50,16 @@ _format = "[%(asctime)s:%(levelname)s] %(message)s"
 cache_path = Path(get_cache_path())
 if not cache_path.is_dir():
     cache_path.mkdir()
+color_formatter = ColoredFormatter(_format)
+file_handler = logging.FileHandler(cache_path.absolute() / "Blender Launcher.log")
+stream_handler = logging.StreamHandler(stream=sys.stdout)
+stream_handler.setFormatter(color_formatter)
+
 logging.basicConfig(
     format=_format,
-    handlers=[
-        logging.FileHandler(cache_path.absolute() / "Blender Launcher.log"),
-        logging.StreamHandler(stream=sys.stdout),
-    ],
+    handlers=[file_handler, stream_handler],
 )
+
 logger = logging.getLogger(__name__)
 
 
@@ -112,14 +133,6 @@ def main():
         help="Launch Blender from CLI. does not open any QT frontend. WARNING: LIKELY DOES NOT WORK IN WINDOWS BUNDLED EXECUTABLE",
     )
 
-    # This could be used better
-    launch_target_parser = subparsers.add_parser(
-        "__launch_target",
-        help="This is a target for launching the program from a shortcut.",
-        add_help=False,
-    )
-    launch_target_parser.add_argument("file", nargs="?", type=Path, help="Path to a specific Blender file to launch.")
-
     if sys.platform == "win32":
         subparsers.add_parser(
             "register",
@@ -127,7 +140,17 @@ def main():
         )
         subparsers.add_parser("unregister", help="Undoes the changes that `register` makes. (WIN ONLY)")
 
-    args, argv = parser.parse_known_args()
+    input_args = None
+
+    # Shortcut for launching
+    small_parser = ArgumentParser(add_help=False)
+    small_parser.add_argument("file", nargs="?", type=Path)
+    args, argv = small_parser.parse_known_args()
+    if args.file is not None and args.file.exists():
+        input_args = ["launch", "-f", str(args.file)]
+
+    args, argv = parser.parse_known_args(input_args)
+
     if argv:
         msg = _("unrecognized arguments: ") + " ".join(argv)
         ap.error(parser, msg)
@@ -159,8 +182,6 @@ def main():
 
     if args.command == "launch":
         start_launch(app, args.file, args.version, args.open_last, cli=args.cli)
-    if args.command == "__launch_target" and args.file:
-        start_launch(app, args.file, None, False)
 
     if args.command == "register":
         start_register()
